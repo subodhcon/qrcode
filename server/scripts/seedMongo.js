@@ -35,53 +35,53 @@ async function seed() {
   });
   console.log('Second Admin seeded:', admin2.email);
 
-  // 2. Seed Location
+  // 2. Seed Location (Kushwaha Haveli)
   const location = await Location.create({
-    name: 'Main Gate',
-    slug: 'main-gate',
-    latitude: 51.505,
-    longitude: -0.09,
+    name: 'Kushwaha Haveli',
+    slug: 'kushwaha-haveli',
+    latitude: 26.5819369,
+    longitude: 85.5436774,
     type: 'Gate',
-    description: 'Campus Main Gate Location'
+    description: 'Main Entrance - Kushwaha Haveli'
   });
   console.log('Location seeded:', location.name);
 
   // 3. Seed Facilities (Medical, Toilet, Police, Help)
   const clinic = await Facility.create({
-    name: 'Campus Emergency Clinic',
-    latitude: 51.506,
-    longitude: -0.091,
-    description: 'Primary emergency care clinic for visitors and staff.',
+    name: 'Sitamarhi Emergency Care Clinic',
+    latitude: 26.5828,
+    longitude: 85.5436,
+    description: '24/7 Primary Emergency Care Clinic',
     type: 'Medical',
     status: 'Active'
   });
   console.log('Medical facility seeded:', clinic.name);
 
   const restroom = await Facility.create({
-    name: 'Main Gate Restrooms',
-    latitude: 51.5052,
-    longitude: -0.0902,
-    description: 'Public restroom facility located near the entrance.',
+    name: 'Haveli Public Restrooms',
+    latitude: 26.5821,
+    longitude: 85.5439,
+    description: 'Clean public restrooms and hygiene facility.',
     type: 'Toilet',
     status: 'Active'
   });
   console.log('Restroom facility seeded:', restroom.name);
 
   const police = await Facility.create({
-    name: 'Campus Police Station',
-    latitude: 51.507,
-    longitude: -0.092,
-    description: 'Campus security headquarters and emergency dispatch.',
+    name: 'Area Police Assistance Booth',
+    latitude: 26.5810,
+    longitude: 85.5428,
+    description: 'Security checkpoint and police assistance station.',
     type: 'Police',
     status: 'Active'
   });
   console.log('Security facility seeded:', police.name);
 
   const helpdesk = await Facility.create({
-    name: 'Visitor Info Desk',
-    latitude: 51.5055,
-    longitude: -0.0898,
-    description: 'Help desk and information center.',
+    name: 'Haveli Visitor Information Desk',
+    latitude: 26.5815,
+    longitude: 85.5434,
+    description: 'Help desk for local information and event navigation.',
     type: 'Help',
     status: 'Active'
   });
@@ -89,11 +89,11 @@ async function seed() {
 
   // 4. Seed QR Code referencing Location
   const qr = await QRCode.create({
-    title: 'Main Gate Access QR',
-    slug: 'main-gate-access-qr',
-    data: 'http://localhost:5173/location/main-gate',
+    title: 'Kushwaha Haveli Access QR',
+    slug: 'kushwaha-haveli-access-qr',
+    data: 'https://qrcode-ljrv.vercel.app/location/kushwaha-haveli',
     status: 'active',
-    imagePath: '/qrcodes/main-gate-access-qr.png',
+    imagePath: '/qrcodes/kushwaha-haveli-access-qr.png',
     locationId: location._id.toString()
   });
   console.log('QR Code seeded:', qr.title);
