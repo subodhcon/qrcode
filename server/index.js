@@ -71,18 +71,15 @@ app.use(errorHandler);
 export default app;
 
 // Database check and server initialization
-const startServer = async () => {
-  try {
-    await connectMongo();
-    console.log('[Database]: Connected successfully via MongoDB Atlas.');
-  } catch (error) {
-    console.warn('[Warning]: MongoDB connection failed. Running in offline/mock mode:', error.message || error);
-  }
+connectMongo().then(() => {
+  console.log('[Database]: Connected successfully via MongoDB Atlas.');
+}).catch((error) => {
+  console.warn('[Warning]: MongoDB connection failed. Running in offline/mock mode:', error.message || error);
+});
 
-
+// Start listening ONLY if running locally (not on Vercel)
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`[Server]: Listening on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode.`);
   });
-};
-
-startServer();
+}
