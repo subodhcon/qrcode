@@ -109,6 +109,8 @@ export default function NavigationMap() {
     if (locationId) fetchData();
   }, [locationId, destinationParam]);
 
+  const [legendOpen, setLegendOpen] = useState(false);
+
   // ── Navigate-to handler from popup ──
   const handleNavigateTo = (facility) => {
     setSelectedFacility(facility);
@@ -158,30 +160,38 @@ export default function NavigationMap() {
   }
 
   return (
-    <div className="relative h-[92vh] min-h-[500px] w-full border border-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+    <div className="relative h-[88vh] md:h-[90vh] min-h-[550px] w-full border border-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
       {/* ── Back Button ── */}
-      <div className="absolute top-4 left-4 z-30">
+      <div className="absolute top-3 left-3 z-30">
         <Link
           to={`/location/${locationId}`}
-          className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl bg-slate-950/80 hover:bg-slate-950 text-white font-medium shadow-lg backdrop-blur-md transition-all text-sm border border-slate-800"
+          className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-slate-950/85 hover:bg-slate-950 text-white font-bold shadow-lg backdrop-blur-md transition-all text-xs border border-slate-800"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           Back
         </Link>
       </div>
 
-      {/* ── Legend Overlay ── */}
-      <div className="absolute top-4 right-4 z-30 bg-slate-950/85 border border-slate-800 rounded-xl px-3 py-2.5 backdrop-blur-md shadow-lg">
-        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">Facilities</p>
-        <div className="space-y-1">
-          {Object.entries(TYPE_CONFIG).map(([key, cfg]) => (
-            <div key={key} className="flex items-center gap-2 text-xs text-slate-300">
-              <span className="text-sm">{cfg.emoji}</span>
-              <span className="font-medium">{cfg.label}</span>
-            </div>
-          ))}
+      {/* ── Legend Overlay (Mobile Collapsible) ── */}
+      <div className="absolute top-3 right-3 z-30 flex flex-col items-end gap-1.5">
+        <button
+          onClick={() => setLegendOpen(!legendOpen)}
+          className="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-950/85 border border-slate-800 text-white font-bold shadow-lg backdrop-blur-md"
+        >
+          🗺️
+        </button>
+        <div className={`${legendOpen ? 'block' : 'hidden'} md:block bg-slate-950/85 border border-slate-800 rounded-xl px-3 py-2.5 backdrop-blur-md shadow-lg`}>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">Facilities</p>
+          <div className="space-y-1">
+            {Object.entries(TYPE_CONFIG).map(([key, cfg]) => (
+              <div key={key} className="flex items-center gap-2 text-[11px] text-slate-300">
+                <span className="text-xs">{cfg.emoji}</span>
+                <span className="font-semibold">{cfg.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -275,13 +285,15 @@ export default function NavigationMap() {
       </div>
 
       {/* ── Bottom Info Bar ── */}
-      <div className="absolute bottom-4 left-4 right-4 z-30 max-w-lg mx-auto">
+      <div className="absolute bottom-3 left-3 right-3 z-30 max-w-md mx-auto">
         {selectedFacility ? (
           /* Selected destination info */
-          <div className="bg-slate-950/90 border border-slate-800/80 rounded-2xl p-4 shadow-xl backdrop-blur-md flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 md:p-4 shadow-2xl backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+            
+            {/* Navigating to section */}
+            <div className="flex items-center gap-2.5 pb-2 sm:pb-0 border-b border-slate-800/80 sm:border-none">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
                 style={{
                   backgroundColor: `${TYPE_CONFIG[selectedFacility.type]?.color || '#6366f1'}15`,
                   border: `1px solid ${TYPE_CONFIG[selectedFacility.type]?.color || '#6366f1'}33`,
@@ -289,47 +301,52 @@ export default function NavigationMap() {
               >
                 {TYPE_CONFIG[selectedFacility.type]?.emoji || '📍'}
               </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500">
                   Navigating To
                 </p>
-                <h4 className="text-sm font-black text-white leading-tight">
+                <h4 className="text-xs md:text-sm font-black text-white leading-tight truncate">
                   {selectedFacility.name}
                 </h4>
               </div>
             </div>
 
-            <div className="h-8 w-px bg-slate-800" />
+            {/* Middle separator for desktop */}
+            <div className="hidden sm:block h-8 w-px bg-slate-800" />
 
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            {/* Travel and Distance metrics side-by-side */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-4">
+              {/* Metric 1: Travel */}
+              <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Travel</p>
+                  <h4 className="text-xs md:text-sm font-black text-white">{selectedFacility.walkingTimeFormatted}</h4>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Travel</p>
-                <h4 className="text-sm font-black text-white">{selectedFacility.walkingTimeFormatted}</h4>
+
+              {/* Metric 2: Distance */}
+              <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Distance</p>
+                  <h4 className="text-xs md:text-sm font-black text-white">{selectedFacility.distanceFormatted}</h4>
+                </div>
               </div>
             </div>
 
-            <div className="h-8 w-px bg-slate-800" />
-
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Distance</p>
-                <h4 className="text-sm font-black text-white">{selectedFacility.distanceFormatted}</h4>
-              </div>
-            </div>
           </div>
         ) : (
           /* No destination selected — prompt */
-          <div className="bg-slate-950/90 border border-slate-800/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-center">
+          <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 shadow-2xl backdrop-blur-md text-center">
             <p className="text-xs text-slate-400">
               <span className="text-white font-bold">📍 {location.name}</span>
               <span className="mx-2 text-slate-700">·</span>
@@ -340,7 +357,7 @@ export default function NavigationMap() {
       </div>
 
       {/* Powered by Confluxaa */}
-      <div className="absolute bottom-20 left-0 right-0 z-20 text-center">
+      <div className="absolute bottom-24 left-0 right-0 z-20 text-center">
         <span className="text-[9px] text-slate-600 font-medium bg-slate-950/60 px-2 py-0.5 rounded-full backdrop-blur-sm">
           Powered by{' '}
           <span className="font-extrabold text-transparent bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text">
@@ -351,3 +368,4 @@ export default function NavigationMap() {
     </div>
   );
 }
+
