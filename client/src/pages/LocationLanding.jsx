@@ -27,7 +27,7 @@ export default function LocationLanding() {
         // 2. Fetch Nearest Facilities dynamically by type query parameter
         const fetchFacility = async (type, setter, fallback) => {
           try {
-            const res = await api.get(`/medical/nearest/${resolvedLocation.id}?type=${type}`);
+            const res = await api.get(`/medical/nearest/${resolvedLocation._id || resolvedLocation.id}?type=${type}`);
             setter(res.data);
           } catch (err) {
             console.warn(`[API]: Failed to fetch nearest ${type}. Using fallback.`, err);
