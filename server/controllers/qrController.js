@@ -6,9 +6,13 @@ import QRCode from 'qrcode';
 const publicDir = path.resolve('public');
 const qrImagesDir = path.join(publicDir, 'qrcodes');
 
-// Ensure directory exists
-if (!fs.existsSync(qrImagesDir)) {
-  fs.mkdirSync(qrImagesDir, { recursive: true });
+// Ensure directory exists - wrapped to prevent failure on read-only serverless filesystems
+try {
+  if (!fs.existsSync(qrImagesDir)) {
+    fs.mkdirSync(qrImagesDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn('[Warning]: Ephemeral filesystem. QR codes will be generated dynamically on-the-fly.', e.message);
 }
 
 /**
@@ -40,8 +44,7 @@ export const list = async (req, res) => {
 };
 
 /**
- * Generate a new QR code.
- * Expected body: { title, data, locationId? }
+ * Create a new QR code (Serverless-compatible, filesystem-free).
  */
 export const create = async (req, res) => {
   const { title, data, locationId } = req.body;
@@ -50,9 +53,14 @@ export const create = async (req, res) => {
   const fileName = `${slug}.png`;
   const filePath = path.join(qrImagesDir, fileName);
   try {
-    // Generate PNG buffer
-    const pngBuffer = await QRCode.toBuffer(data, { width: 300, margin: 1 });
-    fs.writeFileSync(filePath, pngBuffer);
+    // Attempt local write for legacy systems, but do not fail if read-only
+    try {
+      const pngBuffer = await QRCode.toBuffer(data, { width: 300, margin: 1 });
+      fs.writeFileSync(filePath, pngBuffer);
+    } catch (fsErr) {
+      console.log('[Info]: Skipping physical file write on serverless environment.');
+    }
+
     const qr = await QRCodeModel.create({
       title,
       slug,
@@ -88,16 +96,19 @@ export const update = async (req, res) => {
 };
 
 /**
- * Download QR code PNG.
+ * Download QR code PNG (Dynamically generated in-memory, serverless-friendly).
  */
 export const download = async (req, res) => {
   const { slug } = req.params;
   try {
     const qr = await QRCodeModel.findOne({ slug });
     if (!qr) return res.status(404).json({ error: 'QR not found' });
-    const absolutePath = path.join(publicDir, qr.imagePath);
-    if (!fs.existsSync(absolutePath)) return res.status(404).json({ error: 'Image file missing' });
-    res.download(absolutePath, `${slug}.png`);
+
+    // Generate PNG buffer dynamically on-the-fly
+    const pngBuffer = await QRCode.toBuffer(qr.data, { width: 300, margin: 1 });
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', `attachment; filename="${slug}.png"`);
+    return res.send(pngBuffer);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to download QR code' });

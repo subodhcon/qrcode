@@ -25,8 +25,26 @@ app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve Public Static files (QR PNG images)
+import { QRCode as QRCodeModel } from './models/QRCode.js';
+import QRCode from 'qrcode';
+
+// Serve Public Static files (QR PNG images) - Fallback for static files
 app.use(express.static('public'));
+
+// Dynamic serverless fallback for serving QR code images from MongoDB in-memory
+app.get('/qrcodes/:filename', async (req, res) => {
+  const { filename } = req.params;
+  const slug = filename.replace('.png', '');
+  try {
+    const qr = await QRCodeModel.findOne({ slug });
+    if (!qr) return res.status(404).send('Not Found');
+    const pngBuffer = await QRCode.toBuffer(qr.data, { width: 300, margin: 1 });
+    res.setHeader('Content-Type', 'image/png');
+    return res.send(pngBuffer);
+  } catch (error) {
+    return res.status(500).send('Error generating image');
+  }
+});
 
 // Routing Mapping
 app.use('/api', routes);
@@ -36,6 +54,8 @@ app.use(notFoundHandler);
 
 // Global Error Handler
 app.use(errorHandler);
+
+export default app;
 
 // Database check and server initialization
 const startServer = async () => {

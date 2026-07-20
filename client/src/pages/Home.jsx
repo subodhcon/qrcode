@@ -65,7 +65,7 @@ export default function Home() {
           {/* Genuine QR Code Image */}
           <div className="w-full h-full bg-white rounded-2xl p-3 flex items-center justify-center overflow-hidden shadow-md">
             <img 
-              src="http://localhost:5000/qrcodes/main-gate-access-qr.png" 
+              src={`${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api$/, '')}/qrcodes/main-gate-access-qr.png`} 
               alt="Location Access QR" 
               className="w-full h-full object-contain"
               onError={(e) => {
