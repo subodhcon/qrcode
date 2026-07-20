@@ -46,18 +46,40 @@ async function seed() {
   });
   console.log('Location seeded:', location.name);
 
-  // 3. Seed Facilities (Medical, Toilet, Police, Help)
-  const clinic = await Facility.create({
-    name: 'Sitamarhi Emergency Care Clinic',
-    latitude: 26.5828,
-    longitude: 85.5436,
-    description: '24/7 Primary Emergency Care Clinic',
+  // 3. Seed Facilities (Multiple entries of each type)
+  // --- MEDICAL CARE ---
+  const clinic1 = await Facility.create({
+    name: 'Haveli First-Aid Point',
+    latitude: 26.5823,
+    longitude: 85.5442,
+    description: 'Immediate first-aid care, bandage, and local support.',
     type: 'Medical',
     status: 'Active'
   });
-  console.log('Medical facility seeded:', clinic.name);
+  console.log('Medical facility seeded:', clinic1.name);
 
-  const restroom = await Facility.create({
+  const clinic2 = await Facility.create({
+    name: 'Sitamarhi Emergency Care Clinic',
+    latitude: 26.5828,
+    longitude: 85.5436,
+    description: '24/7 Primary Emergency Care Clinic with active doctors.',
+    type: 'Medical',
+    status: 'Active'
+  });
+  console.log('Medical facility seeded:', clinic2.name);
+
+  const clinic3 = await Facility.create({
+    name: 'Red Cross Pharmacy & Clinic',
+    latitude: 26.5835,
+    longitude: 85.5430,
+    description: 'Red Cross medical assistance point and pharmacy.',
+    type: 'Medical',
+    status: 'Active'
+  });
+  console.log('Medical facility seeded:', clinic3.name);
+
+  // --- RESTROOMS / TOILETS ---
+  const restroom1 = await Facility.create({
     name: 'Haveli Public Restrooms',
     latitude: 26.5821,
     longitude: 85.5439,
@@ -65,19 +87,41 @@ async function seed() {
     type: 'Toilet',
     status: 'Active'
   });
-  console.log('Restroom facility seeded:', restroom.name);
+  console.log('Restroom facility seeded:', restroom1.name);
 
-  const police = await Facility.create({
-    name: 'Area Police Assistance Booth',
-    latitude: 26.5810,
-    longitude: 85.5428,
-    description: 'Security checkpoint and police assistance station.',
+  const restroom2 = await Facility.create({
+    name: 'Haveli South Restrooms',
+    latitude: 26.5816,
+    longitude: 85.5432,
+    description: 'Secondary toilets located in the south wing.',
+    type: 'Toilet',
+    status: 'Active'
+  });
+  console.log('Restroom facility seeded:', restroom2.name);
+
+  // --- SECURITY / POLICE ---
+  const police1 = await Facility.create({
+    name: 'Haveli Security Guard Post',
+    latitude: 26.5818,
+    longitude: 85.5435,
+    description: 'Local security assistance desk at the main gate.',
     type: 'Police',
     status: 'Active'
   });
-  console.log('Security facility seeded:', police.name);
+  console.log('Security facility seeded:', police1.name);
 
-  const helpdesk = await Facility.create({
+  const police2 = await Facility.create({
+    name: 'Area Police Assistance Booth',
+    latitude: 26.5810,
+    longitude: 85.5428,
+    description: 'Sitamarhi Police checkpoint and assistance booth.',
+    type: 'Police',
+    status: 'Active'
+  });
+  console.log('Security facility seeded:', police2.name);
+
+  // --- HELP DESKS ---
+  const helpdesk1 = await Facility.create({
     name: 'Haveli Visitor Information Desk',
     latitude: 26.5815,
     longitude: 85.5434,
@@ -85,7 +129,17 @@ async function seed() {
     type: 'Help',
     status: 'Active'
   });
-  console.log('Help Desk facility seeded:', helpdesk.name);
+  console.log('Help Desk facility seeded:', helpdesk1.name);
+
+  const helpdesk2 = await Facility.create({
+    name: 'Sitamarhi Tourism Help Center',
+    latitude: 26.5825,
+    longitude: 85.5450,
+    description: 'Tourism assistance and local guides support desk.',
+    type: 'Help',
+    status: 'Active'
+  });
+  console.log('Help Desk facility seeded:', helpdesk2.name);
 
   // 4. Seed QR Code referencing Location
   const qr = await QRCode.create({
