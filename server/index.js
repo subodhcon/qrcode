@@ -3,15 +3,23 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import routes from './routes/index.js';
-import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import { errorHandler } from './middlewares/errorHandler.js';
 import { connectMongo } from './config/mongo.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const clientDistPath = path.resolve(__dirname, '../client/dist');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Security Middlewares
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false // Disable CSP to allow Leaflet tiles and scripts to run cleanly
+}));
 app.use(cors({
   origin: '*', // Customize this as per production requirements
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -31,6 +39,9 @@ import QRCode from 'qrcode';
 // Serve Public Static files (QR PNG images) - Fallback for static files
 app.use(express.static('public'));
 
+// Serve client compiled build files
+app.use(express.static(clientDistPath));
+
 // Dynamic serverless fallback for serving QR code images from MongoDB in-memory
 app.get('/qrcodes/:filename', async (req, res) => {
   const { filename } = req.params;
@@ -49,8 +60,10 @@ app.get('/qrcodes/:filename', async (req, res) => {
 // Routing Mapping
 app.use('/api', routes);
 
-// Route Not Found Handler
-app.use(notFoundHandler);
+// SPA routing fallback - Serve index.html for non-API frontend paths
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientDistPath, 'index.html'));
+});
 
 // Global Error Handler
 app.use(errorHandler);
