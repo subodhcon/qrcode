@@ -90,13 +90,14 @@ const createFacilityIcon = (type, isSelected = false) => {
 /* ────────────────────────────────────────────
    Auto-fit map bounds helper component
    ──────────────────────────────────────────── */
-function FitBounds({ bounds }) {
+function FitBounds({ bounds, selectedFacility }) {
   const map = useMap();
   useEffect(() => {
     if (bounds && bounds.length >= 2) {
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17 });
+      const maxZ = selectedFacility ? 19 : 18;
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: maxZ });
     }
-  }, [map, bounds]);
+  }, [map, bounds, selectedFacility]);
   return null;
 }
 
@@ -226,12 +227,18 @@ export default function NavigationMap() {
   const mapBounds = useMemo(() => {
     if (!activeOrigin) return null;
     const points = [[activeOrigin.latitude, activeOrigin.longitude]];
-    if (location && activeOrigin.isGps) {
-      points.push([location.latitude, location.longitude]);
+    if (selectedFacility) {
+      // Tight focus on origin -> selected destination
+      points.push([selectedFacility.latitude, selectedFacility.longitude]);
+    } else {
+      // Overview mode: include scanned gate and all facilities
+      if (location && activeOrigin.isGps) {
+        points.push([location.latitude, location.longitude]);
+      }
+      facilities.forEach((f) => points.push([f.latitude, f.longitude]));
     }
-    facilities.forEach((f) => points.push([f.latitude, f.longitude]));
     return points.length >= 2 ? points : null;
-  }, [activeOrigin, location, facilities]);
+  }, [activeOrigin, selectedFacility, location, facilities]);
 
   // ── Navigate-to handler ──
   const handleNavigateTo = (facility) => {
@@ -320,17 +327,20 @@ export default function NavigationMap() {
       <div className="flex-1 w-full h-full relative z-10">
         <MapContainer
           center={[activeOrigin.latitude, activeOrigin.longitude]}
-          zoom={16}
+          zoom={18}
+          maxZoom={20}
           scrollWheelZoom={true}
           className="w-full h-full"
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={20}
+            maxNativeZoom={19}
           />
 
           {/* Auto-fit bounds */}
-          {mapBounds && <FitBounds bounds={mapBounds} />}
+          {mapBounds && <FitBounds bounds={mapBounds} selectedFacility={selectedFacility} />}
 
           {/* Scanned Gate Origin Marker */}
           {location && (
