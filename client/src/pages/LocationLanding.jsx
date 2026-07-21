@@ -117,20 +117,24 @@ export default function LocationLanding() {
         const resolvedLocation = locationResponse.data;
         setLocation(resolvedLocation);
 
-        const fetchFacility = async (type, setter, fallback) => {
+        const fetchFacility = async (type, setter) => {
           try {
             const res = await api.get(`/medical/nearest/${resolvedLocation._id || resolvedLocation.id}?type=${type}`);
-            setter(res.data);
+            if (res.data && res.data.success && res.data.data) {
+              setter(res.data.data);
+            } else {
+              setter(null);
+            }
           } catch {
-            setter(fallback);
+            setter(null);
           }
         };
 
         await Promise.all([
-          fetchFacility('Medical', setMedical, { name: 'Campus Emergency Clinic', distanceFormatted: '125m', walkingTimeFormatted: '2 mins' }),
-          fetchFacility('Toilet', setToilet, { name: 'Main Gate Restrooms', distanceFormatted: '30m', walkingTimeFormatted: '1 min' }),
-          fetchFacility('Police', setPolice, { name: 'Campus Police Station', distanceFormatted: '180m', walkingTimeFormatted: '3 mins' }),
-          fetchFacility('Help', setHelp, { name: 'Visitor Info Desk', distanceFormatted: '60m', walkingTimeFormatted: '1 min' }),
+          fetchFacility('Medical', setMedical),
+          fetchFacility('Toilet', setToilet),
+          fetchFacility('Police', setPolice),
+          fetchFacility('Help', setHelp),
         ]);
       } catch (err) {
         setError(err.message || 'Failed to load location.');
@@ -265,20 +269,22 @@ export default function LocationLanding() {
       </div>
 
       {/* ── Nearby Facilities Section ── */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-black text-white">Nearby Facilities</h2>
-          <span className="text-[11px] text-slate-500 font-medium">Tap to navigate</span>
-        </div>
+      {(medical || help || toilet || police) && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-white">Nearby Facilities</h2>
+            <span className="text-[11px] text-slate-500 font-medium">Tap to navigate</span>
+          </div>
 
-        {/* 2-column grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <FacilityCard type="Medical" data={medical} locationSlug={location?.slug} />
-          <FacilityCard type="Help" data={help} locationSlug={location?.slug} />
-          <FacilityCard type="Toilet" data={toilet} locationSlug={location?.slug} />
-          <FacilityCard type="Police" data={police} locationSlug={location?.slug} />
+          {/* 2-column dynamic grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {medical && <FacilityCard type="Medical" data={medical} locationSlug={location?.slug} />}
+            {help && <FacilityCard type="Help" data={help} locationSlug={location?.slug} />}
+            {toilet && <FacilityCard type="Toilet" data={toilet} locationSlug={location?.slug} />}
+            {police && <FacilityCard type="Police" data={police} locationSlug={location?.slug} />}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Powered by footer ── */}
       <div className="text-center text-[10px] text-slate-700 font-medium pt-2">
