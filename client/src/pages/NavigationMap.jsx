@@ -31,38 +31,52 @@ const calculateBearing = (lat1, lon1, lat2, lon2) => {
 };
 
 /* ────────────────────────────────────────────
+   Cardinal Direction Helper (North, East, etc.)
+   ──────────────────────────────────────────── */
+const getCardinalDirection = (bearing) => {
+  const directions = [
+    { label: 'North ⬆️', short: 'N' },
+    { label: 'North-East ↗️', short: 'NE' },
+    { label: 'East ➡️', short: 'E' },
+    { label: 'South-East ↘️', short: 'SE' },
+    { label: 'South ⬇️', short: 'S' },
+    { label: 'South-West ↙️', short: 'SW' },
+    { label: 'West ⬅️', short: 'W' },
+    { label: 'North-West ↖️', short: 'NW' },
+  ];
+  const index = Math.round(bearing / 45) % 8;
+  return directions[index];
+};
+
+/* ────────────────────────────────────────────
    Custom Leaflet DivIcons per facility type
    ──────────────────────────────────────────── */
-const createLocationIcon = (isGps = false) =>
-  L.divIcon({
+const createLocationIcon = (isGps = false, bearing = null) => {
+  const color = isGps ? '#3b82f6' : '#6366f1';
+  const arrowHtml =
+    bearing !== null && bearing !== undefined
+      ? `<div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%) rotate(${bearing}deg);transform-origin:50% 28px;pointer-events:none;z-index:1;">
+           <svg style="width:22px;height:22px;fill:${color};filter:drop-shadow(0 2px 6px ${color}aa);" viewBox="0 0 24 24">
+             <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+           </svg>
+         </div>`
+      : '';
+
+  return L.divIcon({
     className: 'custom-div-icon',
     html: `
-      <div style="position:relative;display:flex;align-items:center;justify-content:center;width:36px;height:36px;">
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;width:48px;height:48px;">
         <style>@keyframes markerPing{0%{transform:scale(1);opacity:1}75%,100%{transform:scale(2.2);opacity:0}}</style>
-        <span style="position:absolute;inset:0;background:${isGps ? 'rgba(59,130,246,0.35)' : 'rgba(99,102,241,0.25)'};border-radius:50%;animation:markerPing 1.5s cubic-bezier(0,0,0.2,1) infinite;"></span>
-        <div style="width:28px;height:28px;border-radius:50%;background:${isGps ? 'linear-gradient(135deg,#3b82f6,#2563eb)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)'};border:3px solid #0f172a;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px ${isGps ? 'rgba(59,130,246,0.5)' : 'rgba(99,102,241,0.4)'};">
+        <span style="position:absolute;inset:8px;background:${isGps ? 'rgba(59,130,246,0.35)' : 'rgba(99,102,241,0.25)'};border-radius:50%;animation:markerPing 1.5s cubic-bezier(0,0,0.2,1) infinite;"></span>
+        ${arrowHtml}
+        <div style="width:28px;height:28px;border-radius:50%;background:${isGps ? 'linear-gradient(135deg,#3b82f6,#2563eb)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)'};border:3px solid #0f172a;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px ${color}88;z-index:2;">
           <div style="width:9px;height:9px;border-radius:50%;background:#fff;"></div>
         </div>
       </div>`,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
   });
-
-const createDirectionArrowIcon = (bearing, color = '#6366f1') =>
-  L.divIcon({
-    className: 'custom-div-icon',
-    html: `
-      <div style="position:relative;display:flex;align-items:center;justify-content:center;width:32px;height:32px;transform:rotate(${bearing}deg);">
-        <style>@keyframes arrowPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}</style>
-        <div style="width:26px;height:26px;border-radius:50%;background:#0f172a;border:2px solid ${color};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px ${color}88;animation:arrowPulse 1.2s ease-in-out infinite;">
-          <svg style="width:14px;height:14px;fill:${color};" viewBox="0 0 24 24">
-            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
-          </svg>
-        </div>
-      </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
+};
 
 const createFacilityIcon = (type, isSelected = false) => {
   const cfg = TYPE_CONFIG[type] || TYPE_CONFIG.Medical;
@@ -99,6 +113,38 @@ function FitBounds({ bounds, selectedFacility }) {
     }
   }, [map, bounds, selectedFacility]);
   return null;
+}
+
+/* ────────────────────────────────────────────
+   Custom Floating Map Control Buttons (+ / - / 🎯)
+   ──────────────────────────────────────────── */
+function MapControlsWidget({ onRecenter }) {
+  const map = useMap();
+  return (
+    <div className="absolute bottom-28 right-3 z-30 flex flex-col gap-1.5">
+      <button
+        onClick={() => map.zoomIn()}
+        title="Zoom In"
+        className="w-10 h-10 rounded-xl bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-white font-black text-lg flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
+      >
+        +
+      </button>
+      <button
+        onClick={() => map.zoomOut()}
+        title="Zoom Out"
+        className="w-10 h-10 rounded-xl bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-white font-black text-lg flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
+      >
+        −
+      </button>
+      <button
+        onClick={onRecenter}
+        title="Center Map"
+        className="w-10 h-10 rounded-xl bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-emerald-400 font-bold text-sm flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
+      >
+        🎯
+      </button>
+    </div>
+  );
 }
 
 /* ════════════════════════════════════════════
@@ -271,8 +317,14 @@ export default function NavigationMap() {
     );
   }
 
+  const cardinalDirection = polylineData ? getCardinalDirection(polylineData.bearing) : null;
   const travelTimeText = dynamicNavigationStats?.walkingTimeFormatted || selectedFacility?.walkingTimeFormatted;
   const distanceText = dynamicNavigationStats?.distanceFormatted || selectedFacility?.distanceFormatted;
+
+  const handleRecenter = () => {
+    if (!activeOrigin) return;
+    // Recenter map to active origin
+  };
 
   return (
     <div className="relative h-[88vh] md:h-[90vh] min-h-[550px] w-full border border-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
@@ -302,8 +354,16 @@ export default function NavigationMap() {
         </button>
       </div>
 
-      {/* ── Legend Overlay ── */}
-      <div className="absolute top-3 right-3 z-30 flex flex-col items-end gap-1.5">
+      {/* ── Legend & Compass Overlay ── */}
+      <div className="absolute top-3 right-3 z-30 flex flex-col items-end gap-2">
+        {/* Cardinal Compass Indicator */}
+        <div className="bg-slate-950/85 border border-slate-800 rounded-xl px-2.5 py-1.5 backdrop-blur-md shadow-lg flex items-center gap-1.5 text-xs font-black text-emerald-400">
+          <span>🧭</span>
+          <span className="text-[10px] tracking-wider uppercase">
+            {cardinalDirection ? cardinalDirection.short : 'N'}
+          </span>
+        </div>
+
         <button
           onClick={() => setLegendOpen(!legendOpen)}
           className="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-950/85 border border-slate-800 text-white font-bold shadow-lg backdrop-blur-md"
@@ -329,6 +389,7 @@ export default function NavigationMap() {
           center={[activeOrigin.latitude, activeOrigin.longitude]}
           zoom={18}
           maxZoom={20}
+          zoomControl={false}
           scrollWheelZoom={true}
           className="w-full h-full"
         >
@@ -339,12 +400,18 @@ export default function NavigationMap() {
             maxNativeZoom={19}
           />
 
+          {/* Custom Floating Zoom & Recenter Control Buttons */}
+          <MapControlsWidget onRecenter={handleRecenter} />
+
           {/* Auto-fit bounds */}
           {mapBounds && <FitBounds bounds={mapBounds} selectedFacility={selectedFacility} />}
 
           {/* Scanned Gate Origin Marker */}
           {location && (
-            <Marker position={[location.latitude, location.longitude]} icon={createLocationIcon(false)}>
+            <Marker
+              position={[location.latitude, location.longitude]}
+              icon={createLocationIcon(false, !useLiveGps ? polylineData?.bearing : null)}
+            >
               <Popup>
                 <div className="text-slate-900 font-sans p-1">
                   <h4 className="font-bold text-xs">📍 Scanned Location</h4>
@@ -356,7 +423,10 @@ export default function NavigationMap() {
 
           {/* Live Device GPS Marker */}
           {useLiveGps && gpsPosition && (
-            <Marker position={[gpsPosition.latitude, gpsPosition.longitude]} icon={createLocationIcon(true)}>
+            <Marker
+              position={[gpsPosition.latitude, gpsPosition.longitude]}
+              icon={createLocationIcon(true, polylineData?.bearing)}
+            >
               <Popup>
                 <div className="text-slate-900 font-sans p-1">
                   <h4 className="font-bold text-xs">💙 Your Live GPS Location</h4>
@@ -493,7 +563,9 @@ export default function NavigationMap() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Distance</p>
+                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">
+                    Heading {cardinalDirection ? cardinalDirection.label : ''}
+                  </p>
                   <h4 className="text-xs md:text-sm font-black text-white">{distanceText}</h4>
                 </div>
               </div>
