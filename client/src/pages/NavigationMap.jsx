@@ -55,10 +55,12 @@ const createLocationIcon = (isGps = false, bearing = null) => {
   const color = isGps ? '#3b82f6' : '#6366f1';
   const arrowHtml =
     bearing !== null && bearing !== undefined
-      ? `<div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%) rotate(${bearing}deg);transform-origin:50% 28px;pointer-events:none;z-index:1;">
-           <svg style="width:22px;height:22px;fill:${color};filter:drop-shadow(0 2px 6px ${color}aa);" viewBox="0 0 24 24">
-             <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
-           </svg>
+      ? `<div style="position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;transform:rotate(${bearing}deg);pointer-events:none;z-index:5;">
+           <div style="transform:translateY(-12px);filter:drop-shadow(0 3px 8px ${color}cc);">
+             <svg style="width:26px;height:26px;fill:${color};stroke:#0f172a;stroke-width:2;stroke-linejoin:round;" viewBox="0 0 24 24">
+               <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+             </svg>
+           </div>
          </div>`
       : '';
 
