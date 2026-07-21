@@ -1,10 +1,8 @@
-import React, { useRef, useState, useEffect } from 'react';
-import html2canvas from 'html2canvas';
+import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import Loading from '../components/Loading';
 
 export default function Home() {
-  const placardRef = useRef(null);
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,26 +24,122 @@ export default function Home() {
     fetchLocations();
   }, []);
 
+  // Pure Canvas download — no html2canvas CORS issues
   const downloadQR = async () => {
-    if (!placardRef.current || downloading) return;
+    if (downloading) return;
     setDownloading(true);
     try {
-      const btn = placardRef.current.querySelector('.download-btn');
-      if (btn) btn.style.display = 'none';
-      const canvas = await html2canvas(placardRef.current, { useCORS: true, backgroundColor: '#020617', scale: 2 });
-      if (btn) btn.style.display = 'flex';
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = `${selectedLocation?.slug || 'location'}-qr-placard.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const slug = selectedLocation?.slug || 'location';
+      const name = selectedLocation?.name || 'Venue';
+      const primaryUrl  = `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api$/, '')}/qrcodes/${slug}-access-qr.png`;
+      const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/location/${slug}`)}`;
+
+      // Fetch QR as blob to avoid canvas taint
+      const loadImg = (url) =>
+        fetch(url)
+          .then((r) => { if (!r.ok) throw new Error(); return r.blob(); })
+          .then((blob) => new Promise((res, rej) => {
+            const img = new Image();
+            img.onload  = () => res(img);
+            img.onerror = rej;
+            img.src = URL.createObjectURL(blob);
+          }));
+
+      let qrImg;
+      try { qrImg = await loadImg(primaryUrl); }
+      catch { qrImg = await loadImg(fallbackUrl); }
+
+      // Canvas dimensions @2x for crisp print quality
+      const W = 720, H = 1040, R = 40;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      const rr = (x, y, w, h, r) => {
+        ctx.beginPath();
+        ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+        ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+        ctx.lineTo(x+w,y+h-r);
+        ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+        ctx.lineTo(x+r,y+h);
+        ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+        ctx.lineTo(x,y+r);
+        ctx.quadraticCurveTo(x,y,x+r,y);
+        ctx.closePath();
+      };
+
+      // Background
+      const bg = ctx.createLinearGradient(0,0,0,H);
+      bg.addColorStop(0,'#0f172a'); bg.addColorStop(1,'#020617');
+      rr(0,0,W,H,R); ctx.fillStyle=bg; ctx.fill();
+      rr(0,0,W,H,R); ctx.strokeStyle='rgba(30,41,59,0.8)'; ctx.lineWidth=2; ctx.stroke();
+
+      // Glow
+      const g=ctx.createRadialGradient(80,80,0,80,80,200);
+      g.addColorStop(0,'rgba(16,185,129,0.1)'); g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+      // Badge pill
+      const bW=260,bH=40,bX=(W-bW)/2,bY=56;
+      rr(bX,bY,bW,bH,20); ctx.fillStyle='rgba(16,185,129,0.1)'; ctx.fill();
+      rr(bX,bY,bW,bH,20); ctx.strokeStyle='rgba(16,185,129,0.25)'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(bX+22,bY+20,5,0,Math.PI*2);
+      ctx.fillStyle='#10b981'; ctx.fill();
+      ctx.font='bold 17px Arial,sans-serif'; ctx.fillStyle='#10b981';
+      ctx.textAlign='center'; ctx.fillText('SCAN & NAVIGATE', W/2+6, bY+27);
+
+      // Location name
+      ctx.font='bold 44px Arial,sans-serif'; ctx.fillStyle='#ffffff';
+      ctx.fillText(name, W/2, 168);
+
+      // Subtitle
+      ctx.font='22px Arial,sans-serif'; ctx.fillStyle='#64748b';
+      ctx.fillText('Event Navigation System', W/2, 208);
+
+      // QR white box
+      const qS=420, qX=(W-qS)/2, qY=240, qP=22;
+      rr(qX,qY,qS,qS,20); ctx.fillStyle='#ffffff'; ctx.fill();
+      ctx.drawImage(qrImg, qX+qP, qY+qP, qS-qP*2, qS-qP*2);
+
+      // Scanner corners
+      [[qX+12,qY+12,1,1],[qX+qS-12,qY+12,-1,1],[qX+12,qY+qS-12,1,-1],[qX+qS-12,qY+qS-12,-1,-1]]
+        .forEach(([cx,cy,dx,dy])=>{
+          ctx.strokeStyle='#10b981'; ctx.lineWidth=3.5; ctx.lineCap='round';
+          ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx*18,cy); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,cy+dy*18); ctx.stroke();
+        });
+
+      // You Are Here
+      ctx.font='bold 30px Arial,sans-serif'; ctx.fillStyle='#ffffff';
+      ctx.fillText('📍 You Are Here', W/2, 730);
+      ctx.font='21px Arial,sans-serif'; ctx.fillStyle='#94a3b8';
+      ctx.fillText('Scan to find nearest medical, security & facilities', W/2, 768);
+
+      // Divider
+      ctx.beginPath(); ctx.moveTo(60,840); ctx.lineTo(W-60,840);
+      ctx.strokeStyle='rgba(30,41,59,0.6)'; ctx.lineWidth=1.5; ctx.stroke();
+
+      // Footer
+      ctx.font='19px Arial,sans-serif'; ctx.fillStyle='#475569';
+      ctx.fillText('Developed by Confluxaa  •  confluxaa.com', W/2, 878);
+
+      // Download
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href=url; a.download=`${slug}-qr-placard.png`;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+      }, 'image/png');
+
     } catch (err) {
       console.error('Download failed:', err);
+      alert('Download failed. Please try again.');
     } finally {
       setDownloading(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -103,7 +197,6 @@ export default function Home() {
 
       {/* ── QR Placard Card ── */}
       <div
-        ref={placardRef}
         className="relative w-full max-w-[360px] rounded-[28px] overflow-hidden"
         style={{
           background: 'linear-gradient(160deg, #0f172a 0%, #020617 100%)',
