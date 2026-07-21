@@ -211,11 +211,12 @@ export default function AdminDashboard() {
     if (!itemToDelete) return;
     setDeleteSubmitting(true);
     try {
+      const targetId = itemToDelete._id || itemToDelete.id;
       if (activeTab === 'facilities') {
-        await api.delete(`/medical/${itemToDelete.id}`);
+        await api.delete(`/medical/${targetId}`);
         fetchFacilities();
       } else {
-        await api.delete(`/locations/${itemToDelete.id}`);
+        await api.delete(`/locations/${targetId}`);
         fetchLocations();
       }
       closeDeleteModal();
@@ -330,7 +331,7 @@ export default function AdminDashboard() {
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {facilities.map((fac) => (
-                <tr key={fac.id} className="hover:bg-slate-950/20 transition-colors">
+                <tr key={fac._id || fac.id} className="hover:bg-slate-950/20 transition-colors">
                   <td className="py-4 px-6 font-bold text-white text-sm">{fac.name}</td>
                   <td className="py-4 px-6 text-slate-400 text-xs font-mono">{fac.type || 'Medical'}</td>
                   <td className="py-4 px-6 font-mono text-slate-400 text-xs">
