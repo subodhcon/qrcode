@@ -26,13 +26,6 @@ const MAP_STYLES = {
     attribution: '&copy; OpenStreetMap contributors',
     maxNativeZoom: 19,
   },
-  satellite: {
-    label: 'Satellite',
-    icon: '🛰️',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri World Imagery',
-    maxNativeZoom: 18,
-  },
   dark: {
     label: 'Dark Vector',
     icon: '🌙',
