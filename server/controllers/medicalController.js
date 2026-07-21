@@ -98,11 +98,14 @@ export const getMedicalCenters = async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const search = req.query.search || '';
-  const type = req.query.type || 'Medical';
+  const type = req.query.type;
   const skip = (page - 1) * limit;
 
   try {
-    const query = { type, deletedAt: null };
+    const query = { deletedAt: null };
+    if (type) {
+      query.type = type;
+    }
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
