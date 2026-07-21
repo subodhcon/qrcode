@@ -496,15 +496,6 @@ export default function NavigationMap() {
                   opacity: 0.9,
                 }}
               />
-              {/* Midpoint Direction Bearing Arrow Marker */}
-              <Marker
-                position={polylineData.midpoint}
-                icon={createDirectionArrowIcon(
-                  polylineData.bearing,
-                  TYPE_CONFIG[selectedFacility?.type]?.color || '#6366f1'
-                )}
-                interactive={false}
-              />
             </>
           )}
         </MapContainer>
