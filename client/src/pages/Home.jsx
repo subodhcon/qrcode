@@ -1,20 +1,46 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
+import api from '../services/api';
+import Loading from '../components/Loading';
 
 export default function Home() {
   const placardRef = useRef(null);
+  const [locations, setLocations] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await api.get('/locations');
+        const list = res.data || [];
+        setLocations(list);
+        if (list.length > 0) {
+          setSelectedLocation(list[0]);
+        } else {
+          // Fallback if DB is empty
+          setSelectedLocation({ name: 'Kushwaha Haveli', slug: 'kushwaha-haveli' });
+        }
+      } catch (err) {
+        console.warn('Failed to fetch locations, using fallback:', err);
+        setSelectedLocation({ name: 'Kushwaha Haveli', slug: 'kushwaha-haveli' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLocations();
+  }, []);
 
   const downloadQR = async () => {
     if (!placardRef.current) return;
     try {
-      // Temporarily hide the download button during capture so it doesn't show in the image
       const btn = placardRef.current.querySelector('.download-btn');
       if (btn) btn.style.display = 'none';
 
       const canvas = await html2canvas(placardRef.current, {
         useCORS: true,
-        backgroundColor: '#020617', // dark slate background matching tailwind style
-        scale: 2 // double scale for crisp print quality
+        backgroundColor: '#020617',
+        scale: 2
       });
 
       if (btn) btn.style.display = 'block';
@@ -22,7 +48,7 @@ export default function Home() {
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = 'main-gate-placard.png';
+      link.download = `${selectedLocation?.slug || 'location'}-placard.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -31,8 +57,49 @@ export default function Home() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <Loading message="Loading venue location placards..." />
+      </div>
+    );
+  }
+
+  const locationName = selectedLocation?.name || 'Kushwaha Haveli';
+  const locationSlug = selectedLocation?.slug || 'kushwaha-haveli';
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+  const qrTargetUrl = `${window.location.origin}/location/${locationSlug}`;
+
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center py-8 px-4">
+    <div className="min-h-[80vh] flex flex-col items-center justify-center py-8 px-4 space-y-6">
+      
+      {/* Location Selector (If multiple locations exist) */}
+      {locations.length > 1 && (
+        <div className="w-full max-w-sm bg-slate-900/90 border border-slate-800 rounded-2xl p-2 flex items-center gap-2 overflow-x-auto shadow-lg backdrop-blur-md">
+          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 px-2 shrink-0">
+            Select Location:
+          </span>
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {locations.map((loc) => {
+              const isSelected = selectedLocation?.slug === loc.slug;
+              return (
+                <button
+                  key={loc.slug || loc._id}
+                  onClick={() => setSelectedLocation(loc)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                      : 'bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  📍 {loc.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Premium Genuine QR Placard Frame */}
       <div 
         ref={placardRef}
@@ -49,8 +116,8 @@ export default function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             Scan & Navigate
           </div>
-          <h2 className="text-xl font-black text-white tracking-tight">Main Gate Access</h2>
-          <p className="text-xs text-slate-400">Campus Location System</p>
+          <h2 className="text-xl font-black text-white tracking-tight">{locationName}</h2>
+          <p className="text-xs text-slate-400">Event Navigation System</p>
         </div>
 
         {/* QR Code Container with Scanner Frame */}
@@ -65,11 +132,11 @@ export default function Home() {
           {/* Genuine QR Code Image */}
           <div className="w-full h-full bg-white rounded-2xl p-3 flex items-center justify-center overflow-hidden shadow-md">
             <img 
-              src={`${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api$/, '')}/qrcodes/main-gate-access-qr.png`} 
+              src={`${apiBase}/qrcodes/${locationSlug}-access-qr.png`} 
               alt="Location Access QR" 
               className="w-full h-full object-contain"
               onError={(e) => {
-                e.target.src = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(window.location.origin + "/location/main-gate");
+                e.target.src = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(qrTargetUrl);
               }}
             />
           </div>
@@ -88,7 +155,7 @@ export default function Home() {
           onClick={downloadQR}
           className="download-btn w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-emerald-900/30 focus:outline-none cursor-pointer"
         >
-          Download Print File
+          Download Print File ({locationSlug})
         </button>
 
         {/* Developer Tag inside Placard */}
