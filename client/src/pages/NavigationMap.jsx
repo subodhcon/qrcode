@@ -114,7 +114,8 @@ export default function NavigationMap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ── GPS Tracking State ──
+  // ── GPS Tracking & UI State ──
+  const [legendOpen, setLegendOpen] = useState(false);
   const [useLiveGps, setUseLiveGps] = useState(false);
   const [gpsPosition, setGpsPosition] = useState(null);
   const [gpsError, setGpsError] = useState(null);
