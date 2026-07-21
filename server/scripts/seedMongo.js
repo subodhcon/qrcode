@@ -35,8 +35,8 @@ async function seed() {
   });
   console.log('Second Admin seeded:', admin2.email);
 
-  // 2. Seed Location (Kushwaha Haveli)
-  const location = await Location.create({
+  // 2. Seed Locations (Kushwaha Haveli & Main Gate)
+  const location1 = await Location.create({
     name: 'Kushwaha Haveli',
     slug: 'kushwaha-haveli',
     latitude: 26.5819369,
@@ -44,7 +44,17 @@ async function seed() {
     type: 'Gate',
     description: 'Main Entrance - Kushwaha Haveli'
   });
-  console.log('Location seeded:', location.name);
+  console.log('Location 1 seeded:', location1.name);
+
+  const location2 = await Location.create({
+    name: 'Main Gate',
+    slug: 'main-gate',
+    latitude: 26.582214,
+    longitude: 85.543955,
+    type: 'Gate',
+    description: 'Event Venue Main Gate Entrance'
+  });
+  console.log('Location 2 seeded:', location2.name);
 
   // 3. Seed Facilities (Multiple entries of each type)
   // --- MEDICAL CARE ---
@@ -141,16 +151,26 @@ async function seed() {
   });
   console.log('Help Desk facility seeded:', helpdesk2.name);
 
-  // 4. Seed QR Code referencing Location
-  const qr = await QRCode.create({
+  // 4. Seed QR Codes for both locations
+  const qr1 = await QRCode.create({
     title: 'Kushwaha Haveli Access QR',
     slug: 'kushwaha-haveli-access-qr',
     data: 'https://qrcode-ljrv.vercel.app/location/kushwaha-haveli',
     status: 'active',
     imagePath: '/qrcodes/kushwaha-haveli-access-qr.png',
-    locationId: location._id.toString()
+    locationId: location1._id.toString()
   });
-  console.log('QR Code seeded:', qr.title);
+  console.log('QR Code 1 seeded:', qr1.title);
+
+  const qr2 = await QRCode.create({
+    title: 'Main Gate Access QR',
+    slug: 'main-gate-access-qr',
+    data: 'https://qrcode-ljrv.vercel.app/location/main-gate',
+    status: 'active',
+    imagePath: '/qrcodes/main-gate-access-qr.png',
+    locationId: location2._id.toString()
+  });
+  console.log('QR Code 2 seeded:', qr2.title);
 
   console.log('✅ Seeding completed!');
   process.exit(0);
