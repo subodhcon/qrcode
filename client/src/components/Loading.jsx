@@ -1,25 +1,39 @@
 import React from 'react';
 
 /**
- * A premium reusable Loading spinner component.
- * Supports full screen or container bound loading states.
+ * Premium reusable Loading component.
+ * Uses an emerald arc ring + pulsing dot with brand typography.
  */
-export default function Loading({ fullScreen = false, message = 'Loading resources...' }) {
+export default function Loading({ fullScreen = false, message = 'Loading...' }) {
   const containerClasses = fullScreen
     ? 'fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md'
-    : 'w-full min-h-[300px] flex flex-col items-center justify-center p-8';
+    : 'w-full min-h-[260px] flex flex-col items-center justify-center p-8';
 
   return (
     <div className={containerClasses}>
-      <div className="relative flex items-center justify-center">
-        {/* Outer glowing ring */}
-        <div className="w-16 h-16 rounded-full border-4 border-t-indigo-500 border-r-purple-500 border-b-pink-500 border-l-slate-800 animate-spin"></div>
-        {/* Inner pulsing logo/dot */}
-        <div className="absolute w-6 h-6 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-full animate-ping opacity-75"></div>
+      <div className="relative flex items-center justify-center mb-5">
+        {/* Outer arc ring */}
+        <svg className="w-14 h-14 animate-spin" viewBox="0 0 56 56" fill="none">
+          <circle cx="28" cy="28" r="22" stroke="#1e293b" strokeWidth="4" />
+          <path
+            d="M28 6 A22 22 0 0 1 50 28"
+            stroke="url(#spinGrad)"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          <defs>
+            <linearGradient id="spinGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#10b981" />
+              <stop offset="100%" stopColor="#6366f1" />
+            </linearGradient>
+          </defs>
+        </svg>
+        {/* Center pulsing dot */}
+        <span className="absolute w-3 h-3 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-500/50" />
       </div>
-      
+
       {message && (
-        <p className="mt-4 text-sm font-medium text-slate-400 tracking-wide animate-pulse">
+        <p className="text-xs font-semibold text-slate-500 tracking-wide animate-pulse">
           {message}
         </p>
       )}

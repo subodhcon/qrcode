@@ -140,32 +140,48 @@ function FitBounds({ bounds, selectedFacility }) {
 /* ────────────────────────────────────────────
    Custom Floating Map Control Buttons (+ / - / 🎯)
    ──────────────────────────────────────────── */
-function MapControlsWidget({ onRecenter }) {
+function MapControlsWidget({ onRecenter, mapStyleKey, setMapStyleKey }) {
   const map = useMap();
   return (
-    <div className="absolute bottom-28 right-3 z-30 flex flex-col gap-1.5">
-      <button
-        onClick={() => map.zoomIn()}
-        title="Zoom In"
-        className="w-10 h-10 rounded-xl bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-white font-black text-lg flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
-      >
-        +
-      </button>
-      <button
-        onClick={() => map.zoomOut()}
-        title="Zoom Out"
-        className="w-10 h-10 rounded-xl bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-white font-black text-lg flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
-      >
-        −
-      </button>
-      <button
-        onClick={onRecenter}
-        title="Center Map"
-        className="w-10 h-10 rounded-xl bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-emerald-400 font-bold text-sm flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
-      >
-        🎯
-      </button>
-    </div>
+    <>
+      {/* Zoom controls — bottom right */}
+      <div className="absolute bottom-32 right-3 z-30 flex flex-col gap-1.5">
+        <button
+          onClick={() => map.zoomIn()}
+          title="Zoom In"
+          className="w-11 h-11 rounded-2xl bg-slate-950/92 hover:bg-slate-900 border border-slate-800/80 text-white font-black text-xl flex items-center justify-center shadow-2xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
+        >+</button>
+        <button
+          onClick={() => map.zoomOut()}
+          title="Zoom Out"
+          className="w-11 h-11 rounded-2xl bg-slate-950/92 hover:bg-slate-900 border border-slate-800/80 text-white font-black text-xl flex items-center justify-center shadow-2xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
+        >−</button>
+        <button
+          onClick={onRecenter}
+          title="Recenter"
+          className="w-11 h-11 rounded-2xl bg-slate-950/92 hover:bg-slate-900 border border-slate-800/80 text-emerald-400 text-base flex items-center justify-center shadow-2xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
+        >🎯</button>
+      </div>
+
+      {/* Map style switcher — bottom right below zoom */}
+      <div className="absolute bottom-3 right-3 z-30 flex flex-col gap-1">
+        {Object.entries(MAP_STYLES).map(([key, style]) => {
+          const isSelected = mapStyleKey === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setMapStyleKey(key)}
+              className={`w-11 h-11 rounded-2xl text-sm flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95 border ${
+                isSelected
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-emerald-500/30'
+                  : 'bg-slate-950/92 text-slate-300 border-slate-800/80 hover:bg-slate-900'
+              }`}
+              title={style.label}
+            >{style.icon}</button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -363,23 +379,23 @@ export default function NavigationMap() {
   }
 
   return (
-    <div className="relative h-[88vh] md:h-[90vh] min-h-[550px] w-full border border-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+    <div className="relative h-[88vh] md:h-[90vh] min-h-[550px] w-full rounded-2xl overflow-hidden flex flex-col animate-fade-in" style={{ boxShadow: '0 0 0 1px rgba(30,41,59,0.6), 0 30px 80px rgba(0,0,0,0.6)' }}>
       
       {/* ── Top Google Maps Turn-by-Turn Header Banner (When Navigating) ── */}
       {selectedFacility && (
-        <div className="absolute top-0 left-0 right-0 z-40 bg-emerald-600 border-b border-emerald-500/80 text-white px-4 py-3 shadow-2xl backdrop-blur-md flex items-center justify-between animate-fadeIn">
+        <div className="absolute top-0 left-0 right-0 z-40 text-white px-4 py-3 shadow-2xl backdrop-blur-xl flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', borderBottom: '1px solid rgba(52,211,153,0.3)' }}>
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-xl shrink-0 shadow-inner">
+            <div className="w-10 h-10 rounded-2xl bg-white/12 border border-white/15 flex items-center justify-center text-xl shrink-0">
               {cardinalDirection ? cardinalDirection.icon : '⬆️'}
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] uppercase font-black tracking-widest text-emerald-100/90 flex items-center gap-1">
-                <span>Google Navigation Mode</span>
-                <span>·</span>
+              <p className="text-[10px] uppercase font-black tracking-widest text-emerald-100/80 flex items-center gap-1.5">
+                <span>Navigation</span>
+                <span className="opacity-40">·</span>
                 <span>{travelTimeText} walk</span>
               </p>
-              <h3 className="text-xs md:text-sm font-black text-white truncate">
-                Head {cardinalDirection ? cardinalDirection.label : ''} towards {selectedFacility.name}
+              <h3 className="text-sm font-black text-white truncate leading-tight">
+                Head {cardinalDirection ? cardinalDirection.label : ''} → {selectedFacility.name}
               </h3>
             </div>
           </div>
@@ -406,105 +422,80 @@ export default function NavigationMap() {
         </div>
       )}
 
-      {/* ── Top Control Bar (Back + Live GPS + Map Style Switcher) ── */}
-      <div className={`absolute ${selectedFacility ? 'top-16' : 'top-3'} left-3 right-3 z-30 flex flex-wrap items-center justify-between gap-2 transition-all`}>
-        <div className="flex items-center gap-2">
-          <Link
-            to={`/location/${locationId}`}
-            className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-slate-950/85 hover:bg-slate-950 text-white font-bold shadow-lg backdrop-blur-md transition-all text-xs border border-slate-800"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </Link>
+      {/* ── Top Control Bar — compact unified pill ── */}
+      <div className={`absolute ${selectedFacility ? 'top-16' : 'top-3'} left-3 z-30 flex items-center gap-1.5 transition-all duration-200`}>
+        {/* Back pill */}
+        <Link
+          to={`/location/${locationId}`}
+          className="inline-flex items-center gap-1.5 py-2 px-3 rounded-2xl text-xs font-bold text-white transition-all active:scale-95 border border-slate-800/80"
+          style={{ background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(16px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </Link>
 
-          {/* Live GPS Toggle Button */}
-          <button
-            onClick={() => setUseLiveGps(!useLiveGps)}
-            className={`inline-flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs shadow-lg backdrop-blur-md transition-all border cursor-pointer ${
-              useLiveGps
-                ? 'bg-blue-600 border-blue-400 text-white shadow-blue-900/40'
-                : 'bg-slate-950/85 border-slate-800 text-slate-300 hover:text-white'
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${useLiveGps ? 'bg-white animate-ping' : 'bg-blue-500'}`} />
-            {useLiveGps ? 'GPS Active' : 'Enable Live GPS'}
-          </button>
-        </div>
-
-        {/* Map Basemap Style Switcher */}
-        <div className="bg-slate-950/85 border border-slate-800 rounded-xl p-1 shadow-lg backdrop-blur-md flex items-center gap-1">
-          {Object.entries(MAP_STYLES).map(([key, style]) => {
-            const isSelected = mapStyleKey === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setMapStyleKey(key)}
-                className={`py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                  isSelected
-                    ? 'bg-emerald-500 text-slate-950 shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
-                }`}
-              >
-                <span>{style.icon}</span>
-                <span className="hidden sm:inline">{style.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* GPS toggle */}
+        <button
+          onClick={() => setUseLiveGps(!useLiveGps)}
+          className={`inline-flex items-center gap-1.5 py-2 px-3 rounded-2xl font-bold text-xs transition-all border cursor-pointer active:scale-95 ${
+            useLiveGps
+              ? 'bg-blue-600 border-blue-400/50 text-white'
+              : 'border-slate-800/80 text-slate-300 hover:text-white'
+          }`}
+          style={!useLiveGps ? { background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(16px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' } : {}}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${useLiveGps ? 'bg-white animate-ping' : 'bg-blue-400'}`} />
+          {useLiveGps ? 'GPS On' : 'GPS'}
+        </button>
       </div>
 
-      {/* ── Category Search & Filter Pills Bar (When not navigating) ── */}
+      {/* ── Search collapsible chip (overview mode only) ── */}
       {!selectedFacility && (
-        <div className="absolute top-16 left-3 right-3 z-30 max-w-lg mx-auto space-y-2">
-          {/* Search Input */}
-          <div className="relative w-full">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2">
+          {/* Search trigger chip */}
+          <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5" style={{ background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(16px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
             <input
               type="text"
-              placeholder="🔍 Search nearby clinics, toilets, police posts..."
+              placeholder="Search facilities..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full py-2.5 px-4 rounded-2xl bg-slate-950/90 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500 shadow-2xl backdrop-blur-md transition-all"
+              className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-36 sm:w-48"
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
+            {searchQuery ? (
+              <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white transition-colors text-[10px] cursor-pointer">✕</button>
+            ) : (
+              <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             )}
           </div>
 
-          {/* Category Pill Filters */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {/* Category filter pills */}
+          <div className="flex items-center gap-1 no-scrollbar overflow-x-auto max-w-xs sm:max-w-sm">
             <button
               onClick={() => setSelectedCategory('All')}
-              className={`px-3 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap transition-all shadow-md cursor-pointer ${
+              className={`px-2.5 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${
                 selectedCategory === 'All'
-                  ? 'bg-emerald-500 text-slate-950 font-black'
-                  : 'bg-slate-950/85 border border-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                  : 'border-slate-800/80 text-slate-400 hover:text-white'
               }`}
-            >
-              All ({facilities.length})
-            </button>
+              style={selectedCategory !== 'All' ? { background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(12px)' } : {}}
+            >All {facilities.length}</button>
             {Object.entries(TYPE_CONFIG).map(([key, cfg]) => {
               const count = facilities.filter((f) => f.type === key).length;
-              const isSelected = selectedCategory === key;
+              const isSel = selectedCategory === key;
               return (
                 <button
                   key={key}
                   onClick={() => setSelectedCategory(key)}
-                  className={`px-3 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap transition-all shadow-md cursor-pointer flex items-center gap-1 ${
-                    isSelected
-                      ? 'bg-emerald-500 text-slate-950 font-black'
-                      : 'bg-slate-950/85 border border-slate-800 text-slate-400 hover:text-white'
+                  className={`px-2.5 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${
+                    isSel ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'border-slate-800/80 text-slate-400 hover:text-white'
                   }`}
+                  style={!isSel ? { background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(12px)' } : {}}
                 >
-                  <span>{cfg.emoji}</span>
-                  <span>{cfg.label}</span>
-                  <span className="opacity-60">({count})</span>
+                  <span>{cfg.emoji}</span>{count}
                 </button>
               );
             })}
@@ -514,7 +505,7 @@ export default function NavigationMap() {
 
       {/* ── Step-by-Step Navigation Instructions Drawer ── */}
       {showSteps && selectedFacility && (
-        <div className="absolute inset-x-3 bottom-24 z-50 max-w-md mx-auto bg-slate-950/95 border border-slate-800 rounded-3xl p-5 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-4">
+        <div className="absolute inset-x-3 bottom-28 z-50 max-w-sm mx-auto rounded-3xl p-5 shadow-2xl space-y-4" style={{ background: 'rgba(2,6,23,0.96)', border: '1px solid rgba(30,41,59,0.8)', backdropFilter: 'blur(20px)' }}>
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <h4 className="text-sm font-black text-white flex items-center gap-2">
               <span>📋 Step-by-Step Directions</span>
@@ -577,6 +568,7 @@ export default function NavigationMap() {
           zoomControl={false}
           scrollWheelZoom={true}
           className="w-full h-full"
+          style={{ background: '#e8e0d8' }}
         >
           <TileLayer
             attribution={activeMapStyle.attribution}
@@ -585,8 +577,8 @@ export default function NavigationMap() {
             maxNativeZoom={activeMapStyle.maxNativeZoom}
           />
 
-          {/* Custom Floating Zoom & Recenter Control Buttons */}
-          <MapControlsWidget onRecenter={handleRecenter} />
+          {/* Custom Floating Zoom/Recenter + Map Style Switcher */}
+          <MapControlsWidget onRecenter={handleRecenter} mapStyleKey={mapStyleKey} setMapStyleKey={setMapStyleKey} />
 
           {/* Auto-fit bounds */}
           {mapBounds && <FitBounds bounds={mapBounds} selectedFacility={selectedFacility} />}
