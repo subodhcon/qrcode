@@ -685,15 +685,15 @@ export default function NavigationMap() {
       </div>
 
       {/* ── Bottom Info Bar ── */}
-      <div className="absolute bottom-3 left-3 right-3 z-30 max-w-md mx-auto">
+      <div className="absolute bottom-3 left-3 right-3 z-30 max-w-xl mx-auto">
         {selectedFacility ? (
           /* Selected destination info */
           <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 md:p-4 shadow-2xl backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
             
             {/* Navigating to section */}
-            <div className="flex items-center gap-2.5 pb-2 sm:pb-0 border-b border-slate-800/80 sm:border-none">
+            <div className="flex items-center gap-2.5 pb-2 sm:pb-0 border-b border-slate-800/80 sm:border-none min-w-0 flex-1">
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
                 style={{
                   backgroundColor: `${TYPE_CONFIG[selectedFacility.type]?.color || '#6366f1'}15`,
                   border: `1px solid ${TYPE_CONFIG[selectedFacility.type]?.color || '#6366f1'}33`,
@@ -702,7 +702,7 @@ export default function NavigationMap() {
                 {TYPE_CONFIG[selectedFacility.type]?.emoji || '📍'}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500">
+                <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 truncate">
                   Navigating To ({activeOrigin?.isGps ? 'Live GPS' : 'QR Gate'})
                 </p>
                 <h4 className="text-xs md:text-sm font-black text-white leading-tight truncate">
@@ -712,10 +712,10 @@ export default function NavigationMap() {
             </div>
 
             {/* Middle separator for desktop */}
-            <div className="hidden sm:block h-8 w-px bg-slate-800" />
+            <div className="hidden sm:block h-8 w-px bg-slate-800 shrink-0" />
 
             {/* Travel and Distance metrics side-by-side */}
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-4 shrink-0">
               {/* Metric 1: Travel */}
               <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
                 <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
@@ -725,7 +725,7 @@ export default function NavigationMap() {
                 </div>
                 <div>
                   <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Travel</p>
-                  <h4 className="text-xs md:text-sm font-black text-white">{travelTimeText}</h4>
+                  <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{travelTimeText}</h4>
                 </div>
               </div>
 
@@ -738,9 +738,9 @@ export default function NavigationMap() {
                 </div>
                 <div>
                   <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">
-                    Heading {cardinalDirection ? cardinalDirection.label : ''}
+                    Dist ({cardinalDirection?.short || 'N'})
                   </p>
-                  <h4 className="text-xs md:text-sm font-black text-white">{distanceText}</h4>
+                  <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{distanceText}</h4>
                 </div>
               </div>
             </div>
