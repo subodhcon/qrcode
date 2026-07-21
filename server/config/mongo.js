@@ -9,17 +9,21 @@ if (!MONGODB_URI) {
   console.warn('⚠️ MONGODB_URI / MONGO_URI not set. Running database-less mode.');
 }
 
+let isConnected = false;
+
 export const connectMongo = async () => {
+  if (isConnected || mongoose.connection.readyState === 1) {
+    return;
+  }
   if (!MONGODB_URI) return;
   try {
-    await mongoose.connect(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    const db = await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
     });
+    isConnected = db.connections[0].readyState === 1;
     console.log('✅ Connected to MongoDB Atlas');
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);
-    // Do not call process.exit(1) in serverless environments
   }
 };
 

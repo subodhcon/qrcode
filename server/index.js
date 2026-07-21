@@ -57,6 +57,12 @@ app.get('/qrcodes/:filename', async (req, res) => {
   }
 });
 
+// Middleware to ensure DB connection is ready before handling API requests
+app.use('/api', async (req, res, next) => {
+  await connectMongo();
+  next();
+});
+
 // Routing Mapping
 app.use('/api', routes);
 
