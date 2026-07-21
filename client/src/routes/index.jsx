@@ -1,6 +1,6 @@
 /* oxlint-disable react/only-export-components */
 import React, { lazy, Suspense } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import RootLayout from '../layouts/RootLayout';
 import Loading from '../components/Loading';
 
@@ -35,6 +35,10 @@ export const router = createBrowserRouter([
       {
         path: 'map/:locationId',
         element: withSuspense(NavigationMap),
+      },
+      {
+        path: 'admin',
+        element: <Navigate to="/admin/login" replace />,
       },
       {
         path: 'admin/login',
