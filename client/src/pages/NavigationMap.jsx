@@ -16,21 +16,52 @@ const TYPE_CONFIG = {
 };
 
 /* ────────────────────────────────────────────
+   Bearing Angle Math (for Directional Arrows)
+   ──────────────────────────────────────────── */
+const calculateBearing = (lat1, lon1, lat2, lon2) => {
+  const rad = Math.PI / 180;
+  const phi1 = lat1 * rad;
+  const phi2 = lat2 * rad;
+  const deltaLambda = (lon2 - lon1) * rad;
+
+  const y = Math.sin(deltaLambda) * Math.cos(phi2);
+  const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda);
+  const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  return bearing;
+};
+
+/* ────────────────────────────────────────────
    Custom Leaflet DivIcons per facility type
    ──────────────────────────────────────────── */
-const createLocationIcon = () =>
+const createLocationIcon = (isGps = false) =>
   L.divIcon({
     className: 'custom-div-icon',
     html: `
       <div style="position:relative;display:flex;align-items:center;justify-content:center;width:36px;height:36px;">
-        <style>@keyframes markerPing{0%{transform:scale(1);opacity:1}75%,100%{transform:scale(2);opacity:0}}</style>
-        <span style="position:absolute;inset:0;background:rgba(99,102,241,0.25);border-radius:50%;animation:markerPing 1.5s cubic-bezier(0,0,0.2,1) infinite;"></span>
-        <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:3px solid #0f172a;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(99,102,241,0.4);">
-          <div style="width:8px;height:8px;border-radius:50%;background:#fff;"></div>
+        <style>@keyframes markerPing{0%{transform:scale(1);opacity:1}75%,100%{transform:scale(2.2);opacity:0}}</style>
+        <span style="position:absolute;inset:0;background:${isGps ? 'rgba(59,130,246,0.35)' : 'rgba(99,102,241,0.25)'};border-radius:50%;animation:markerPing 1.5s cubic-bezier(0,0,0.2,1) infinite;"></span>
+        <div style="width:28px;height:28px;border-radius:50%;background:${isGps ? 'linear-gradient(135deg,#3b82f6,#2563eb)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)'};border:3px solid #0f172a;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px ${isGps ? 'rgba(59,130,246,0.5)' : 'rgba(99,102,241,0.4)'};">
+          <div style="width:9px;height:9px;border-radius:50%;background:#fff;"></div>
         </div>
       </div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 18],
+  });
+
+const createDirectionArrowIcon = (bearing, color = '#6366f1') =>
+  L.divIcon({
+    className: 'custom-div-icon',
+    html: `
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;width:32px;height:32px;transform:rotate(${bearing}deg);">
+        <style>@keyframes arrowPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}</style>
+        <div style="width:26px;height:26px;border-radius:50%;background:#0f172a;border:2px solid ${color};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px ${color}88;animation:arrowPulse 1.2s ease-in-out infinite;">
+          <svg style="width:14px;height:14px;fill:${color};" viewBox="0 0 24 24">
+            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+          </svg>
+        </div>
+      </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
   });
 
 const createFacilityIcon = (type, isSelected = false) => {
@@ -83,6 +114,11 @@ export default function NavigationMap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ── GPS Tracking State ──
+  const [useLiveGps, setUseLiveGps] = useState(false);
+  const [gpsPosition, setGpsPosition] = useState(null);
+  const [gpsError, setGpsError] = useState(null);
+
   // ── Fetch all facilities near this location ──
   useEffect(() => {
     const fetchData = async () => {
@@ -109,30 +145,98 @@ export default function NavigationMap() {
     if (locationId) fetchData();
   }, [locationId, destinationParam]);
 
-  const [legendOpen, setLegendOpen] = useState(false);
+  // ── GPS Tracking Hook ──
+  useEffect(() => {
+    let watchId;
+    if (useLiveGps && navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          setGpsPosition({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          });
+          setGpsError(null);
+        },
+        (err) => {
+          console.warn('GPS error:', err);
+          setGpsError(err.message || 'Unable to fetch GPS position');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } else {
+      setGpsPosition(null);
+    }
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [useLiveGps]);
 
-  // ── Navigate-to handler from popup ──
+  // ── Active Origin (Live GPS or Scanned Gate) ──
+  const activeOrigin = useMemo(() => {
+    if (useLiveGps && gpsPosition) {
+      return {
+        latitude: gpsPosition.latitude,
+        longitude: gpsPosition.longitude,
+        name: 'Live Device GPS',
+        isGps: true,
+      };
+    }
+    return location ? { ...location, isGps: false } : null;
+  }, [useLiveGps, gpsPosition, location]);
+
+  // ── Haversine Calculation ──
+  const dynamicNavigationStats = useMemo(() => {
+    if (!activeOrigin || !selectedFacility) return null;
+    const R = 6371000;
+    const rad = Math.PI / 180;
+    const dLat = (selectedFacility.latitude - activeOrigin.latitude) * rad;
+    const dLon = (selectedFacility.longitude - activeOrigin.longitude) * rad;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(activeOrigin.latitude * rad) *
+        Math.cos(selectedFacility.latitude * rad) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c;
+    const walkingTimeMinutes = Math.max(1, Math.round(d / 80));
+    return {
+      distanceFormatted: d > 1000 ? `${(d / 1000).toFixed(1)}km` : `${Math.round(d)}m`,
+      walkingTimeFormatted: `${walkingTimeMinutes} min${walkingTimeMinutes > 1 ? 's' : ''}`,
+    };
+  }, [activeOrigin, selectedFacility]);
+
+  // ── Polyline & Midpoint Direction Arrow ──
+  const polylineData = useMemo(() => {
+    if (!activeOrigin || !selectedFacility) return null;
+    const p1 = [activeOrigin.latitude, activeOrigin.longitude];
+    const p2 = [selectedFacility.latitude, selectedFacility.longitude];
+    const midpoint = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+    const bearing = calculateBearing(p1[0], p1[1], p2[0], p2[1]);
+    return {
+      path: [p1, p2],
+      midpoint,
+      bearing,
+    };
+  }, [activeOrigin, selectedFacility]);
+
+  // ── Compute map bounds ──
+  const mapBounds = useMemo(() => {
+    if (!activeOrigin) return null;
+    const points = [[activeOrigin.latitude, activeOrigin.longitude]];
+    if (location && activeOrigin.isGps) {
+      points.push([location.latitude, location.longitude]);
+    }
+    facilities.forEach((f) => points.push([f.latitude, f.longitude]));
+    return points.length >= 2 ? points : null;
+  }, [activeOrigin, location, facilities]);
+
+  // ── Navigate-to handler ──
   const handleNavigateTo = (facility) => {
     setSelectedFacility(facility);
     setSearchParams({ destination: facility.name });
   };
-
-  // ── Compute map bounds ──
-  const mapBounds = useMemo(() => {
-    if (!location) return null;
-    const points = [[location.latitude, location.longitude]];
-    facilities.forEach((f) => points.push([f.latitude, f.longitude]));
-    return points.length >= 2 ? points : null;
-  }, [location, facilities]);
-
-  // ── Polyline to selected destination ──
-  const polylinePath = useMemo(() => {
-    if (!location || !selectedFacility) return null;
-    return [
-      [location.latitude, location.longitude],
-      [selectedFacility.latitude, selectedFacility.longitude],
-    ];
-  }, [location, selectedFacility]);
 
   /* ── Loading ── */
   if (loading) {
@@ -159,10 +263,13 @@ export default function NavigationMap() {
     );
   }
 
+  const travelTimeText = dynamicNavigationStats?.walkingTimeFormatted || selectedFacility?.walkingTimeFormatted;
+  const distanceText = dynamicNavigationStats?.distanceFormatted || selectedFacility?.distanceFormatted;
+
   return (
     <div className="relative h-[88vh] md:h-[90vh] min-h-[550px] w-full border border-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
-      {/* ── Back Button ── */}
-      <div className="absolute top-3 left-3 z-30">
+      {/* ── Top Control Bar (Back + Live GPS Toggle) ── */}
+      <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
         <Link
           to={`/location/${locationId}`}
           className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-slate-950/85 hover:bg-slate-950 text-white font-bold shadow-lg backdrop-blur-md transition-all text-xs border border-slate-800"
@@ -172,9 +279,22 @@ export default function NavigationMap() {
           </svg>
           Back
         </Link>
+
+        {/* Live GPS Toggle Button */}
+        <button
+          onClick={() => setUseLiveGps(!useLiveGps)}
+          className={`inline-flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs shadow-lg backdrop-blur-md transition-all border cursor-pointer ${
+            useLiveGps
+              ? 'bg-blue-600 border-blue-400 text-white shadow-blue-900/40'
+              : 'bg-slate-950/85 border-slate-800 text-slate-300 hover:text-white'
+          }`}
+        >
+          <span className={`w-2 h-2 rounded-full ${useLiveGps ? 'bg-white animate-ping' : 'bg-blue-500'}`} />
+          {useLiveGps ? 'GPS Active' : 'Enable Live GPS'}
+        </button>
       </div>
 
-      {/* ── Legend Overlay (Mobile Collapsible) ── */}
+      {/* ── Legend Overlay ── */}
       <div className="absolute top-3 right-3 z-30 flex flex-col items-end gap-1.5">
         <button
           onClick={() => setLegendOpen(!legendOpen)}
@@ -198,7 +318,7 @@ export default function NavigationMap() {
       {/* ── Leaflet Map ── */}
       <div className="flex-1 w-full h-full relative z-10">
         <MapContainer
-          center={[location.latitude, location.longitude]}
+          center={[activeOrigin.latitude, activeOrigin.longitude]}
           zoom={16}
           scrollWheelZoom={true}
           className="w-full h-full"
@@ -211,15 +331,29 @@ export default function NavigationMap() {
           {/* Auto-fit bounds */}
           {mapBounds && <FitBounds bounds={mapBounds} />}
 
-          {/* Current Location Marker */}
-          <Marker position={[location.latitude, location.longitude]} icon={createLocationIcon()}>
-            <Popup>
-              <div className="text-slate-900 font-sans p-1">
-                <h4 className="font-bold text-xs">📍 You Are Here</h4>
-                <p className="text-[10px] text-slate-500 mt-0.5">{location.name}</p>
-              </div>
-            </Popup>
-          </Marker>
+          {/* Scanned Gate Origin Marker */}
+          {location && (
+            <Marker position={[location.latitude, location.longitude]} icon={createLocationIcon(false)}>
+              <Popup>
+                <div className="text-slate-900 font-sans p-1">
+                  <h4 className="font-bold text-xs">📍 Scanned Location</h4>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{location.name}</p>
+                </div>
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Live Device GPS Marker */}
+          {useLiveGps && gpsPosition && (
+            <Marker position={[gpsPosition.latitude, gpsPosition.longitude]} icon={createLocationIcon(true)}>
+              <Popup>
+                <div className="text-slate-900 font-sans p-1">
+                  <h4 className="font-bold text-xs">💙 Your Live GPS Location</h4>
+                  <p className="text-[10px] text-blue-600 mt-0.5">Accuracy: ~{Math.round(gpsPosition.accuracy)}m</p>
+                </div>
+              </Popup>
+            </Marker>
+          )}
 
           {/* Facility Markers */}
           {facilities.map((f) => {
@@ -268,18 +402,29 @@ export default function NavigationMap() {
             );
           })}
 
-          {/* Route Polyline to selected destination */}
-          {polylinePath && (
-            <Polyline
-              positions={polylinePath}
-              pathOptions={{
-                color: TYPE_CONFIG[selectedFacility?.type]?.color || '#6366f1',
-                weight: 4,
-                dashArray: '10, 8',
-                lineCap: 'round',
-                opacity: 0.85,
-              }}
-            />
+          {/* Directional Route Polyline */}
+          {polylineData && (
+            <>
+              <Polyline
+                positions={polylineData.path}
+                pathOptions={{
+                  color: TYPE_CONFIG[selectedFacility?.type]?.color || '#6366f1',
+                  weight: 5,
+                  dashArray: '8, 8',
+                  lineCap: 'round',
+                  opacity: 0.9,
+                }}
+              />
+              {/* Midpoint Direction Bearing Arrow Marker */}
+              <Marker
+                position={polylineData.midpoint}
+                icon={createDirectionArrowIcon(
+                  polylineData.bearing,
+                  TYPE_CONFIG[selectedFacility?.type]?.color || '#6366f1'
+                )}
+                interactive={false}
+              />
+            </>
           )}
         </MapContainer>
       </div>
@@ -303,7 +448,7 @@ export default function NavigationMap() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500">
-                  Navigating To
+                  Navigating To ({activeOrigin?.isGps ? 'Live GPS' : 'QR Gate'})
                 </p>
                 <h4 className="text-xs md:text-sm font-black text-white leading-tight truncate">
                   {selectedFacility.name}
@@ -325,7 +470,7 @@ export default function NavigationMap() {
                 </div>
                 <div>
                   <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Travel</p>
-                  <h4 className="text-xs md:text-sm font-black text-white">{selectedFacility.walkingTimeFormatted}</h4>
+                  <h4 className="text-xs md:text-sm font-black text-white">{travelTimeText}</h4>
                 </div>
               </div>
 
@@ -338,7 +483,7 @@ export default function NavigationMap() {
                 </div>
                 <div>
                   <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Distance</p>
-                  <h4 className="text-xs md:text-sm font-black text-white">{selectedFacility.distanceFormatted}</h4>
+                  <h4 className="text-xs md:text-sm font-black text-white">{distanceText}</h4>
                 </div>
               </div>
             </div>
@@ -348,7 +493,7 @@ export default function NavigationMap() {
           /* No destination selected — prompt */
           <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 shadow-2xl backdrop-blur-md text-center">
             <p className="text-xs text-slate-400">
-              <span className="text-white font-bold">📍 {location.name}</span>
+              <span className="text-white font-bold">📍 {activeOrigin?.name || location.name}</span>
               <span className="mx-2 text-slate-700">·</span>
               Tap any facility marker to navigate
             </p>
