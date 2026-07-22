@@ -120,8 +120,8 @@ export default function LocationLanding() {
         const fetchFacility = async (type, setter) => {
           try {
             const res = await api.get(`/medical/nearest/${resolvedLocation._id || resolvedLocation.id}?type=${type}`);
-            if (res.data && res.data.success && res.data.data) {
-              setter(res.data.data);
+            if (res && res.success && res.data) {
+              setter(res.data);
             } else {
               setter(null);
             }
