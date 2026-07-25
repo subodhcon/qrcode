@@ -33,6 +33,10 @@ export const router = createBrowserRouter([
         element: withSuspense(LocationLanding),
       },
       {
+        path: 'map',
+        element: withSuspense(NavigationMap),
+      },
+      {
         path: 'map/:locationId',
         element: withSuspense(NavigationMap),
       },

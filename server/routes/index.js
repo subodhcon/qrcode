@@ -1,56 +1,38 @@
 import { Router } from 'express';
 import { getHealth } from '../controllers/healthController.js';
+import { getAllFacilitiesNear } from '../controllers/mapController.js';
 import { 
-  getLocationBySlug, 
-  getLocations, 
-  createLocation, 
-  updateLocation, 
-  deleteLocation 
-} from '../controllers/locationController.js';
-import {
-  getNearestMedicalCenter,
-  getMedicalCenters,
-  createMedicalCenter,
-  updateMedicalCenter,
-  deleteMedicalCenter
-} from '../controllers/medicalController.js';
-import { getNavigationDetails, getAllFacilitiesNear } from '../controllers/mapController.js';
-import { getTelemetryStats } from '../controllers/analyticsController.js';
+  getTelemetryStats, 
+  trackQRScan, 
+  trackNavigationClick 
+} from '../controllers/analyticsController.js';
+import { 
+  getCategories, 
+  createCategory, 
+  updateCategory, 
+  deleteCategory 
+} from '../controllers/categoryController.js';
 import { login, logout, getProfile } from '../controllers/authController.js';
 import { requireAuth } from '../middlewares/auth.js';
-import qrRoutes from '../routes/qrRoutes.js';
 
 const router = Router();
-router.use('/qr', qrRoutes);
 
 // Health Check API
 router.get('/health', getHealth);
 
-// Location Details API
-router.get('/location/:slug', getLocationBySlug);
+// Category CRUD APIs
+router.get('/categories', getCategories);
+router.post('/categories', requireAuth, createCategory);
+router.put('/categories/:id', requireAuth, updateCategory);
+router.delete('/categories/:id', requireAuth, deleteCategory);
 
-// Locations CRUD APIs
-router.get('/locations', getLocations);
-router.post('/locations', requireAuth, createLocation);
-router.put('/locations/:id', requireAuth, updateLocation);
-router.delete('/locations/:id', requireAuth, deleteLocation);
-
-// Medical Nearest API
-router.get('/medical/nearest/:locationId', getNearestMedicalCenter);
-
-// Analytics API
+// Telemetry Logging APIs
+router.post('/analytics/scan', trackQRScan);
+router.post('/analytics/click', trackNavigationClick);
 router.get('/analytics/telemetry', requireAuth, getTelemetryStats);
 
-// Medical CRUD APIs
-router.get('/medical', getMedicalCenters);
-router.post('/medical', requireAuth, createMedicalCenter);
-router.put('/medical/:id', requireAuth, updateMedicalCenter);
-router.delete('/medical/:id', requireAuth, deleteMedicalCenter);
-
-// Navigation API
-router.get('/navigation', getNavigationDetails);
-
-// Facilities Near a Location (all types, with distances)
+// Google Maps live search API proxy
+router.get('/facilities/near', getAllFacilitiesNear);
 router.get('/facilities/near/:locationSlug', getAllFacilitiesNear);
 
 // Admin Authentication APIs

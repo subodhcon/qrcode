@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Location } from '../models/Location.js';
 import { Facility } from '../models/Facility.js';
+import { Category } from '../models/Category.js';
 
 // Haversine distance calculator in meters
 function getHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -120,25 +121,52 @@ export const getNavigationDetails = async (req, res, next) => {
  */
 export const getAllFacilitiesNear = async (req, res, next) => {
   const { locationSlug } = req.params;
+  const { lat, lng, category } = req.query;
 
   try {
-    // 1. Resolve the gate location by slug
-    const location = await Location.findOne({ slug: locationSlug });
-    if (!location) {
-      return res.status(404).json({
+    let origin = null;
+
+    // 1. Resolve origin (either from GPS query parameters or gate slug)
+    if (lat && lng) {
+      origin = {
+        name: 'Current Location',
+        latitude: parseFloat(lat),
+        longitude: parseFloat(lng),
+      };
+    } else if (locationSlug) {
+      const location = await Location.findOne({ slug: locationSlug });
+      if (!location) {
+        return res.status(404).json({
+          success: false,
+          message: `Location '${locationSlug}' not found.`,
+        });
+      }
+      origin = {
+        name: location.name,
+        slug: location.slug,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      };
+    }
+
+    if (!origin) {
+      return res.status(400).json({
         success: false,
-        message: `Location '${locationSlug}' not found.`,
+        message: 'Either lat/lng query parameters or locationSlug URL parameter is required.',
       });
     }
 
-    // 2. Fetch all active facilities
-    const facilities = await Facility.find({ deletedAt: null, status: 'Active' });
+    // 2. Fetch active facilities from DB
+    const dbQuery = { deletedAt: null, status: 'Active' };
+    if (category && category !== 'All') {
+      dbQuery.type = category;
+    }
+    const dbFacilities = await Facility.find(dbQuery);
 
-    // 3. Compute distances and enrich each facility
-    const enriched = facilities.map((f) => {
+    const enrichedDb = dbFacilities.map((f) => {
       const distanceMeters = getHaversineDistance(
-        location.latitude,
-        location.longitude,
+        origin.latitude,
+        origin.longitude,
         f.latitude,
         f.longitude
       );
@@ -158,21 +186,81 @@ export const getAllFacilitiesNear = async (req, res, next) => {
             : `${(distanceMeters / 1000).toFixed(1)}km`,
         walkingTime: walkingTimeMinutes,
         walkingTimeFormatted: `${walkingTimeMinutes} min${walkingTimeMinutes > 1 ? 's' : ''}`,
+        source: 'db',
       };
     });
 
-    // 4. Sort by distance (closest first)
-    enriched.sort((a, b) => a.distance - b.distance);
+    // 3. Fetch facilities from Google Places API (if key available)
+    let enrichedGoogle = [];
+    const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
+
+    if (googleApiKey) {
+      try {
+        let typeParam = '';
+        let keywordParam = '';
+
+        if (category && category !== 'All') {
+          const dbCat = await Category.findOne({ name: category, status: 'Active' });
+          if (dbCat) {
+            typeParam = dbCat.googleType || '';
+            keywordParam = dbCat.keyword || '';
+          } else {
+            keywordParam = category;
+          }
+        } else {
+          // General search
+          keywordParam = 'landmark|restaurant|hospital|toilet';
+        }
+
+
+        let googleUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${origin.latitude},${origin.longitude}&radius=2000&key=${googleApiKey}`;
+        if (typeParam) googleUrl += `&type=${typeParam}`;
+        if (keywordParam) googleUrl += `&keyword=${encodeURIComponent(keywordParam)}`;
+
+        const googleRes = await fetch(googleUrl);
+        const googleData = await googleRes.json();
+
+        if (googleData.results && Array.isArray(googleData.results)) {
+          enrichedGoogle = googleData.results.map((place) => {
+            const distanceMeters = getHaversineDistance(
+              origin.latitude,
+              origin.longitude,
+              place.geometry.location.lat,
+              place.geometry.location.lng
+            );
+            const walkingTimeMinutes = Math.max(1, Math.round(distanceMeters / 80));
+
+            return {
+              id: `google-${place.place_id}`,
+              name: place.name,
+              type: category || 'General',
+              latitude: place.geometry.location.lat,
+              longitude: place.geometry.location.lng,
+              description: place.vicinity || '',
+              distance: distanceMeters,
+              distanceFormatted:
+                distanceMeters < 1000
+                  ? `${Math.round(distanceMeters)}m`
+                  : `${(distanceMeters / 1000).toFixed(1)}km`,
+              walkingTime: walkingTimeMinutes,
+              walkingTimeFormatted: `${walkingTimeMinutes} min${walkingTimeMinutes > 1 ? 's' : ''}`,
+              source: 'google',
+            };
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching Google Places:', err);
+      }
+    }
+
+    // 4. Merge results & sort by distance
+    const merged = [...enrichedDb, ...enrichedGoogle];
+    merged.sort((a, b) => a.distance - b.distance);
 
     return res.status(200).json({
       success: true,
-      location: {
-        name: location.name,
-        slug: location.slug,
-        latitude: location.latitude,
-        longitude: location.longitude,
-      },
-      facilities: enriched,
+      location: origin,
+      facilities: merged,
     });
   } catch (error) {
     next(error);

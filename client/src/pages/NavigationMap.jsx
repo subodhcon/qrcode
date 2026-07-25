@@ -1,379 +1,462 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
-import L from 'leaflet';
 import api from '../services/api';
 import Loading from '../components/Loading';
 
-/* ────────────────────────────────────────────
-   Facility-type colour palette
-   ──────────────────────────────────────────── */
-const TYPE_CONFIG = {
-  Medical: { color: '#ef4444', bg: 'bg-red-500',    ring: 'shadow-red-500/40',    emoji: '🚑', label: 'Medical Center' },
-  Toilet:  { color: '#06b6d4', bg: 'bg-cyan-500',   ring: 'shadow-cyan-500/40',   emoji: '🚻', label: 'Restroom' },
-  Police:  { color: '#6366f1', bg: 'bg-indigo-500', ring: 'shadow-indigo-500/40', emoji: '🚨', label: 'Security / Police' },
-  Help:    { color: '#14b8a6', bg: 'bg-teal-500',   ring: 'shadow-teal-500/40',   emoji: 'ℹ️', label: 'Help Desk' },
-};
+// Map Style Switcher options for Google Maps
+const MAP_TYPES = [
+  { key: 'roadmap', label: 'Standard Map', icon: '🗺️' },
+  { key: 'satellite', label: 'Satellite', icon: '🛰️' },
+  { key: 'hybrid', label: 'Hybrid', icon: '🌲' },
+];
 
-/* ────────────────────────────────────────────
-   Map Basemap Tile Options (Standard, Satellite, Dark)
-   ──────────────────────────────────────────── */
-const MAP_STYLES = {
-  standard: {
-    label: 'Standard',
-    icon: '🗺️',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors',
-    maxNativeZoom: 19,
-  },
-  dark: {
-    label: 'Dark Vector',
-    icon: '🌙',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    maxNativeZoom: 19,
-  },
-};
-
-/* ────────────────────────────────────────────
-   Bearing Angle Math (for Directional Arrows)
-   ──────────────────────────────────────────── */
-const calculateBearing = (lat1, lon1, lat2, lon2) => {
-  const rad = Math.PI / 180;
-  const phi1 = lat1 * rad;
-  const phi2 = lat2 * rad;
-  const deltaLambda = (lon2 - lon1) * rad;
-
-  const y = Math.sin(deltaLambda) * Math.cos(phi2);
-  const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda);
-  const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-  return bearing;
-};
-
-/* ────────────────────────────────────────────
-   Cardinal Direction Helper (North, East, etc.)
-   ──────────────────────────────────────────── */
-const getCardinalDirection = (bearing) => {
-  const directions = [
-    { label: 'North ⬆️', short: 'N', icon: '⬆️' },
-    { label: 'North-East ↗️', short: 'NE', icon: '↗️' },
-    { label: 'East ➡️', short: 'E', icon: '➡️' },
-    { label: 'South-East ↘️', short: 'SE', icon: '↘️' },
-    { label: 'South ⬇️', short: 'S', icon: '⬇️' },
-    { label: 'South-West ↙️', short: 'SW', icon: '↙️' },
-    { label: 'West ⬅️', short: 'W', icon: '⬅️' },
-    { label: 'North-West ↖️', short: 'NW', icon: '↖️' },
-  ];
-  const index = Math.round(bearing / 45) % 8;
-  return directions[index];
-};
-
-/* ────────────────────────────────────────────
-   Custom Leaflet DivIcons per facility type
-   ──────────────────────────────────────────── */
-const createLocationIcon = (isGps = false, bearing = null) => {
-  const color = isGps ? '#3b82f6' : '#6366f1';
-  const arrowHtml =
-    bearing !== null && bearing !== undefined
-      ? `<div style="position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;transform:rotate(${bearing}deg);pointer-events:none;z-index:5;">
-           <div style="transform:translateY(-12px);filter:drop-shadow(0 3px 8px ${color}cc);">
-             <svg style="width:26px;height:26px;fill:${color};stroke:#0f172a;stroke-width:2;stroke-linejoin:round;" viewBox="0 0 24 24">
-               <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
-             </svg>
-           </div>
-         </div>`
-      : '';
-
-  return L.divIcon({
-    className: 'custom-div-icon',
-    html: `
-      <div style="position:relative;display:flex;align-items:center;justify-content:center;width:48px;height:48px;">
-        <style>@keyframes markerPing{0%{transform:scale(1);opacity:1}75%,100%{transform:scale(2.2);opacity:0}}</style>
-        <span style="position:absolute;inset:8px;background:${isGps ? 'rgba(59,130,246,0.35)' : 'rgba(99,102,241,0.25)'};border-radius:50%;animation:markerPing 1.5s cubic-bezier(0,0,0.2,1) infinite;"></span>
-        ${arrowHtml}
-        <div style="width:28px;height:28px;border-radius:50%;background:${isGps ? 'linear-gradient(135deg,#3b82f6,#2563eb)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)'};border:3px solid #0f172a;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px ${color}88;z-index:2;">
-          <div style="width:9px;height:9px;border-radius:50%;background:#fff;"></div>
-        </div>
-      </div>`,
-    iconSize: [48, 48],
-    iconAnchor: [24, 24],
-  });
-};
-
-const createFacilityIcon = (type, isSelected = false) => {
-  const cfg = TYPE_CONFIG[type] || TYPE_CONFIG.Medical;
-  const size = isSelected ? 42 : 32;
-  const inner = isSelected ? 34 : 26;
-  const border = isSelected ? 4 : 3;
-  const pulse = isSelected
-    ? `<style>@keyframes markerPing{0%{transform:scale(1);opacity:1}75%,100%{transform:scale(2);opacity:0}}</style><span style="position:absolute;inset:0;background:${cfg.color}33;border-radius:50%;animation:markerPing 1.5s cubic-bezier(0,0,0.2,1) infinite;pointer-events:none;"></span>`
-    : '';
-
-  return L.divIcon({
-    className: 'custom-div-icon',
-    html: `
-      <div style="position:relative;display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;cursor:pointer;">
-        ${pulse}
-        <div style="width:${inner}px;height:${inner}px;border-radius:50%;background:${cfg.color};border:${border}px solid #0f172a;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px ${cfg.color}66;font-size:${isSelected ? 16 : 12}px;pointer-events:none;">
-          ${cfg.emoji}
-        </div>
-      </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-};
-
-/* ────────────────────────────────────────────
-   Auto-fit map bounds helper component
-   ──────────────────────────────────────────── */
-function FitBounds({ bounds, selectedFacility }) {
-  const map = useMap();
-  useEffect(() => {
-    if (bounds && bounds.length >= 2) {
-      const maxZ = selectedFacility ? 19 : 18;
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: maxZ });
-    }
-  }, [map, bounds, selectedFacility]);
-  return null;
-}
-
-/* ────────────────────────────────────────────
-   Custom Floating Map Control Buttons (+ / - / 🎯)
-   ──────────────────────────────────────────── */
-function MapControlsWidget({ onRecenter, mapStyleKey, setMapStyleKey }) {
-  const map = useMap();
-  return (
-    <>
-      {/* Zoom controls — bottom right */}
-      <div className="absolute bottom-32 right-3 z-30 flex flex-col gap-1.5">
-        <button
-          onClick={() => map.zoomIn()}
-          title="Zoom In"
-          className="w-11 h-11 rounded-2xl bg-slate-950/92 hover:bg-slate-900 border border-slate-800/80 text-white font-black text-xl flex items-center justify-center shadow-2xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
-        >+</button>
-        <button
-          onClick={() => map.zoomOut()}
-          title="Zoom Out"
-          className="w-11 h-11 rounded-2xl bg-slate-950/92 hover:bg-slate-900 border border-slate-800/80 text-white font-black text-xl flex items-center justify-center shadow-2xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
-        >−</button>
-        <button
-          onClick={onRecenter}
-          title="Recenter"
-          className="w-11 h-11 rounded-2xl bg-slate-950/92 hover:bg-slate-900 border border-slate-800/80 text-emerald-400 text-base flex items-center justify-center shadow-2xl backdrop-blur-md cursor-pointer transition-all active:scale-95"
-        >🎯</button>
-      </div>
-
-      {/* Map style switcher — bottom right below zoom */}
-      <div className="absolute bottom-3 right-3 z-30 flex flex-col gap-1">
-        {Object.entries(MAP_STYLES).map(([key, style]) => {
-          const isSelected = mapStyleKey === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setMapStyleKey(key)}
-              className={`w-11 h-11 rounded-2xl text-sm flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95 border ${
-                isSelected
-                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-emerald-500/30'
-                  : 'bg-slate-950/92 text-slate-300 border-slate-800/80 hover:bg-slate-900'
-              }`}
-              title={style.label}
-            >{style.icon}</button>
-          );
-        })}
-      </div>
-    </>
-  );
-}
-
-/* ════════════════════════════════════════════
-   MAIN COMPONENT
-   ════════════════════════════════════════════ */
 export default function NavigationMap() {
   const { locationId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const destinationParam = searchParams.get('destination');
 
-  const [location, setLocation] = useState(null);
+  // API Key check
+  const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  // Refs for Google Map instances
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersRef = useRef([]);
+  const directionsRendererRef = useRef(null);
+  const directionsServiceRef = useRef(null);
+
+  // State
+  const [categories, setCategories] = useState([]);
   const [facilities, setFacilities] = useState([]);
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // ── GPS Tracking & UI State ──
-  const [legendOpen, setLegendOpen] = useState(false);
-  const [useLiveGps, setUseLiveGps] = useState(false);
+  
+  // Geolocation & Map State
   const [gpsPosition, setGpsPosition] = useState(null);
   const [gpsError, setGpsError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mapType, setMapType] = useState('roadmap');
+  const [showSteps, setShowSteps] = useState(false);
+  const [navigationSteps, setNavigationSteps] = useState([]);
+  const [distanceText, setDistanceText] = useState('');
+  const [durationText, setDurationText] = useState('');
 
-  // ── Fetch all facilities near this location ──
+  // 1. Log QR scan event on mount
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+    const logScan = async () => {
       try {
-        const res = await api.get(`/facilities/near/${locationId}`);
-        setLocation(res.location);
+        await api.post('/analytics/scan');
+      } catch (err) {
+        console.warn('Failed to log scan telemetry:', err);
+      }
+    };
+    logScan();
+  }, []);
+
+  // 2. Fetch categories from backend on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/categories');
+        // Filter only active categories
+        const activeCats = (res.data || []).filter(c => c.status === 'Active');
+        setCategories(activeCats);
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // 3. Check Geolocation on Mount with Fallback
+  useEffect(() => {
+    let gpsTimeout = null;
+
+    // Default Fallback coordinates (Delhi center)
+    const setFallbackLocation = () => {
+      setGpsPosition((current) => {
+        if (current) return current; // Keep actual GPS if already set
+        console.log('Using fallback coordinates');
+        return {
+          latitude: 28.6139,
+          longitude: 77.2090,
+          accuracy: 100,
+        };
+      });
+      setGpsError('Using default location (GPS blocked or timed out).');
+    };
+
+    if (!navigator.geolocation) {
+      setGpsError('Geolocation is not supported by your browser.');
+      setFallbackLocation();
+      return;
+    }
+
+    // Set a 5-second timeout to fall back if user ignores the permission prompt
+    gpsTimeout = setTimeout(() => {
+      setFallbackLocation();
+    }, 5000);
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (gpsTimeout) clearTimeout(gpsTimeout);
+        setGpsPosition({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
+        setGpsError(null);
+      },
+      (err) => {
+        if (gpsTimeout) clearTimeout(gpsTimeout);
+        console.warn('GPS Error:', err);
+        setFallbackLocation();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+      if (gpsTimeout) clearTimeout(gpsTimeout);
+    };
+  }, []);
+
+  // 4. Load Google Maps script dynamically
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  useEffect(() => {
+    if (!googleMapsKey) {
+      setLoading(false);
+      return;
+    }
+
+    if (window.google && window.google.maps) {
+      setScriptLoaded(true);
+      return;
+    }
+
+    const scriptId = 'google-maps-script';
+    const existingScript = document.getElementById(scriptId);
+
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places`;
+      script.id = scriptId;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => setScriptLoaded(true);
+      script.onerror = () => {
+        setError('Failed to load Google Maps script. Check your API key.');
+        setLoading(false);
+      };
+      document.body.appendChild(script);
+    } else {
+      existingScript.addEventListener('load', () => setScriptLoaded(true));
+    }
+  }, [googleMapsKey]);
+
+  // 5. Fetch facilities near User's GPS or Scanned Location Slug
+  useEffect(() => {
+    const fetchFacilities = async () => {
+      // Don't start loading until we have GPS coordinates
+      if (!gpsPosition) {
+        return;
+      }
+
+      try {
+        const params = { 
+          category: selectedCategory,
+          lat: gpsPosition.latitude,
+          lng: gpsPosition.longitude
+        };
+
+        const res = await api.get('/facilities/near', { params });
         setFacilities(res.facilities || []);
 
-        // Auto-select destination from query param
+        // Auto-select destination from query parameter if matches
         if (destinationParam && res.facilities) {
           const match = res.facilities.find(
-            (f) => f.name === destinationParam || f.id === destinationParam
+            (f) => f.name.toLowerCase() === destinationParam.toLowerCase() || f.id === destinationParam
           );
           if (match) setSelectedFacility(match);
         }
+
+        setError(null);
       } catch (err) {
-        setError(err.message || 'Failed to load venue map data.');
+        console.error('Error fetching map data:', err);
+        setError(err.response?.data?.message || 'Failed to load nearby facilities.');
       } finally {
         setLoading(false);
       }
     };
-    if (locationId) fetchData();
-  }, [locationId, destinationParam]);
 
-  // ── GPS Tracking Hook ──
-  useEffect(() => {
-    let watchId;
-    if (useLiveGps && navigator.geolocation) {
-      watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          setGpsPosition({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-          });
-          setGpsError(null);
-        },
-        (err) => {
-          console.warn('GPS error:', err);
-          setGpsError(err.message || 'Unable to fetch GPS position');
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    } else {
-      setGpsPosition(null);
-    }
-    return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
-    };
-  }, [useLiveGps]);
+    fetchFacilities();
+  }, [gpsPosition, selectedCategory, destinationParam]);
 
-  // ── Active Origin (Live GPS or Scanned Gate) ──
+  // Active Origin coordinate
   const activeOrigin = useMemo(() => {
-    if (useLiveGps && gpsPosition) {
+    if (gpsPosition) {
       return {
         latitude: gpsPosition.latitude,
         longitude: gpsPosition.longitude,
-        name: 'Live Device GPS',
-        isGps: true,
+        name: 'My Live GPS Location',
       };
     }
-    return location ? { ...location, isGps: false } : null;
-  }, [useLiveGps, gpsPosition, location]);
+    return null;
+  }, [gpsPosition]);
 
-  // ── Haversine Calculation ──
-  const dynamicNavigationStats = useMemo(() => {
-    if (!activeOrigin || !selectedFacility) return null;
-    const R = 6371000;
-    const rad = Math.PI / 180;
-    const dLat = (selectedFacility.latitude - activeOrigin.latitude) * rad;
-    const dLon = (selectedFacility.longitude - activeOrigin.longitude) * rad;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(activeOrigin.latitude * rad) *
-        Math.cos(selectedFacility.latitude * rad) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const d = R * c;
-    const walkingTimeMinutes = Math.max(1, Math.round(d / 80));
-    return {
-      distanceFormatted: d > 1000 ? `${(d / 1000).toFixed(1)}km` : `${Math.round(d)}m`,
-      walkingTimeFormatted: `${walkingTimeMinutes} min${walkingTimeMinutes > 1 ? 's' : ''}`,
-    };
-  }, [activeOrigin, selectedFacility]);
+  // 6. Initialize Google Map Instance
+  useEffect(() => {
+    if (!scriptLoaded || !mapRef.current || !activeOrigin) return;
 
-  // ── Polyline & Midpoint Direction Arrow ──
-  const polylineData = useMemo(() => {
-    if (!activeOrigin || !selectedFacility) return null;
-    const p1 = [activeOrigin.latitude, activeOrigin.longitude];
-    const p2 = [selectedFacility.latitude, selectedFacility.longitude];
-    const midpoint = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
-    const bearing = calculateBearing(p1[0], p1[1], p2[0], p2[1]);
-    return {
-      path: [p1, p2],
-      midpoint,
-      bearing,
-    };
-  }, [activeOrigin, selectedFacility]);
+    if (!mapInstanceRef.current) {
+      // Create new Google Map
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+        center: { lat: activeOrigin.latitude, lng: activeOrigin.longitude },
+        zoom: 17,
+        disableDefaultUI: true,
+        zoomControl: false,
+        mapTypeControl: false,
+        styles: [
+          {
+            featureType: 'poi',
+            elementType: 'labels',
+            stylers: [{ visibility: 'on' }],
+          },
+        ],
+      });
 
-  // ── Compute map bounds ──
-  const mapBounds = useMemo(() => {
-    if (!activeOrigin) return null;
-    const points = [[activeOrigin.latitude, activeOrigin.longitude]];
-    if (selectedFacility) {
-      points.push([selectedFacility.latitude, selectedFacility.longitude]);
+      // Setup directions
+      directionsServiceRef.current = new window.google.maps.DirectionsService();
+      directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
+        map: mapInstanceRef.current,
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: '#10b981',
+          strokeWeight: 6,
+          strokeOpacity: 0.85,
+        },
+      });
     } else {
-      if (location && activeOrigin.isGps) {
-        points.push([location.latitude, location.longitude]);
+      // Re-center map if origin changes but no destination is selected
+      if (!selectedFacility) {
+        mapInstanceRef.current.setCenter({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
       }
-      facilities.forEach((f) => points.push([f.latitude, f.longitude]));
     }
-    return points.length >= 2 ? points : null;
-  }, [activeOrigin, selectedFacility, location, facilities]);
+  }, [scriptLoaded, activeOrigin, selectedFacility]);
 
-  // ── Advanced Google Maps Style UI State ──
-  const [mapStyleKey, setMapStyleKey] = useState('standard');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [showSteps, setShowSteps] = useState(false);
+  // 7. Update Map Type
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setMapTypeId(mapType);
+    }
+  }, [mapType]);
 
-  const activeMapStyle = MAP_STYLES[mapStyleKey] || MAP_STYLES.standard;
-
-  // ── Filtered Facilities ──
+  // Filter facilities by search query locally
   const filteredFacilities = useMemo(() => {
-    return facilities.filter((f) => {
-      const matchesCat = selectedCategory === 'All' || f.type === selectedCategory;
-      const matchesSearch =
-        searchQuery.trim() === '' || f.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCat && matchesSearch;
+    return facilities.filter((f) =>
+      f.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [facilities, searchQuery]);
+
+  // 8. Draw Markers and Popups
+  useEffect(() => {
+    if (!scriptLoaded || !mapInstanceRef.current) return;
+
+    // Clear existing markers
+    markersRef.current.forEach((marker) => marker.setMap(null));
+    markersRef.current = [];
+
+    const map = mapInstanceRef.current;
+
+    // A. Current Location Marker
+    if (activeOrigin) {
+      const pinColor = '#3b82f6';
+      const userMarker = new window.google.maps.Marker({
+        position: { lat: activeOrigin.latitude, lng: activeOrigin.longitude },
+        map,
+        title: activeOrigin.name,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: pinColor,
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        },
+      });
+
+      const userInfoWindow = new window.google.maps.InfoWindow({
+        content: `<div style="color:#0f172a;font-family:sans-serif;font-size:12px;padding:4px;">
+          <strong>📍 ${activeOrigin.name}</strong>
+          <p style="margin:2px 0 0 0;font-size:10px;color:#3b82f6;">Live GPS accuracy: ~${Math.round(gpsPosition.accuracy)}m</p>
+        </div>`,
+      });
+
+      userMarker.addListener('click', () => {
+        userInfoWindow.open(map, userMarker);
+      });
+
+      markersRef.current.push(userMarker);
+    }
+
+    // B. Facilities Markers
+    filteredFacilities.forEach((fac) => {
+      // Find emoji/color config from category records
+      const catConfig = categories.find(c => c.name === fac.type);
+      const color = '#10b981';
+      const emoji = catConfig?.emoji || '📍';
+      const isSelected = selectedFacility && selectedFacility.id === fac.id;
+
+      const marker = new window.google.maps.Marker({
+        position: { lat: fac.latitude, lng: fac.longitude },
+        map,
+        title: fac.name,
+        label: {
+          text: emoji,
+          fontSize: isSelected ? '15px' : '12px',
+        },
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: isSelected ? 18 : 14,
+          fillColor: '#ffffff',
+          fillOpacity: 0.95,
+          strokeColor: color,
+          strokeWeight: 2,
+        },
+      });
+
+      const infoContent = `
+        <div style="font-family: sans-serif; padding: 6px; min-width: 140px; color: #0f172a;">
+          <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: ${color}; margin-bottom: 2px;">
+            ${emoji} ${fac.type} (Google Map Listing)
+          </div>
+          <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">${fac.name}</div>
+          <div style="font-size: 10px; color: #64748b; margin-bottom: 6px;">
+            Distance: ${fac.distanceFormatted}
+          </div>
+          ${
+            isSelected
+              ? '<span style="font-size:10px;font-weight:bold;color:#10b981;">✓ Selected Destination</span>'
+              : `<button id="nav-btn-${fac.id}" style="background-color:${color};color:#ffffff;border:none;padding:5px 10px;font-size:10px;font-weight:bold;border-radius:4px;cursor:pointer;width:100%;">Navigate Here</button>`
+          }
+        </div>
+      `;
+
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: infoContent,
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(map, marker);
+
+        // Bind navigation click event inside popup dynamically
+        window.google.maps.event.addListener(infoWindow, 'domready', () => {
+          const btn = document.getElementById(`nav-btn-${fac.id}`);
+          if (btn) {
+            btn.onclick = () => {
+              handleNavigateTo(fac);
+              infoWindow.close();
+            };
+          }
+        });
+      });
+
+      markersRef.current.push(marker);
     });
-  }, [facilities, selectedCategory, searchQuery]);
 
-  const cardinalDirection = polylineData ? getCardinalDirection(polylineData.bearing) : null;
-  const travelTimeText = dynamicNavigationStats?.walkingTimeFormatted || selectedFacility?.walkingTimeFormatted;
-  const distanceText = dynamicNavigationStats?.distanceFormatted || selectedFacility?.distanceFormatted;
+    // Auto-fit bounds if we have points and no active navigation path
+    if (filteredFacilities.length > 0 && !selectedFacility) {
+      const bounds = new window.google.maps.LatLngBounds();
+      if (activeOrigin) {
+        bounds.extend({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
+      }
+      filteredFacilities.forEach((fac) => {
+        bounds.extend({ lat: fac.latitude, lng: fac.longitude });
+      });
+      map.fitBounds(bounds, 50);
+    }
+  }, [scriptLoaded, filteredFacilities, selectedFacility, activeOrigin, categories]);
 
-  const handleRecenter = () => {
-    if (!activeOrigin) return;
-  };
+  // 9. Calculate Walking Directions
+  useEffect(() => {
+    if (!scriptLoaded || !directionsRendererRef.current || !directionsServiceRef.current || !activeOrigin || !selectedFacility) {
+      if (directionsRendererRef.current) {
+        directionsRendererRef.current.setDirections({ routes: [] });
+      }
+      return;
+    }
 
-  const handleNavigateTo = (facility) => {
+    directionsServiceRef.current.route(
+      {
+        origin: { lat: activeOrigin.latitude, lng: activeOrigin.longitude },
+        destination: { lat: selectedFacility.latitude, lng: selectedFacility.longitude },
+        travelMode: window.google.maps.TravelMode.WALKING,
+      },
+      (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          directionsRendererRef.current.setDirections(result);
+          
+          const leg = result.routes[0].legs[0];
+          setDistanceText(leg.distance.text);
+          setDurationText(leg.duration.text);
+          setNavigationSteps(leg.steps);
+        } else {
+          console.error('Directions request failed:', status);
+        }
+      }
+    );
+  }, [scriptLoaded, activeOrigin, selectedFacility]);
+
+  // Navigation click handler
+  const handleNavigateTo = async (facility) => {
     setSelectedFacility(facility);
     setSearchParams({ destination: facility.name });
+
+    // Log telemetry click count to backend
+    try {
+      await api.post('/analytics/click', { category: facility.type });
+    } catch (err) {
+      console.warn('Failed to log click telemetry:', err);
+    }
   };
 
+  // Recenter map to origin
+  const handleRecenter = () => {
+    if (mapInstanceRef.current && activeOrigin) {
+      mapInstanceRef.current.setCenter({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
+      mapInstanceRef.current.setZoom(17);
+    }
+  };
+
+  // Missing API Key warning UI
+  if (!googleMapsKey) {
+    return (
+      <div className="max-w-md mx-auto my-12 bg-slate-900 border border-amber-500/20 rounded-2xl p-8 text-center shadow-xl">
+        <h2 className="text-xl font-bold text-white mb-2">Google Maps API Key Missing</h2>
+        <p className="text-slate-400 text-sm mb-6">
+          To run this dynamic real-time map, configure <code className="bg-slate-950 px-1 py-0.5 rounded text-amber-400">VITE_GOOGLE_MAPS_API_KEY</code> in your client's environment variables.
+        </p>
+      </div>
+    );
+  }
+
   /* ── Loading ── */
-  if (loading) {
+  if (loading || !scriptLoaded) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
-        <Loading message="Loading interactive venue map..." />
+        <Loading message="Fetching live GPS location & nearby Map..." />
       </div>
     );
   }
 
   /* ── Error ── */
-  if (error || !location) {
+  if (error && !activeOrigin) {
     return (
       <div className="max-w-md mx-auto my-12 bg-slate-900 border border-red-500/20 rounded-2xl p-8 text-center shadow-xl">
         <h2 className="text-xl font-bold text-white mb-2">Map Error</h2>
-        <p className="text-slate-400 text-sm mb-6">{error || 'Location data unavailable.'}</p>
-        <Link
-          to={`/location/${locationId}`}
-          className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
-        >
-          Back to Location
-        </Link>
+        <p className="text-slate-400 text-sm mb-6">{error}</p>
       </div>
     );
   }
@@ -381,21 +464,21 @@ export default function NavigationMap() {
   return (
     <div className="relative h-[88vh] md:h-[90vh] min-h-[550px] w-full rounded-2xl overflow-hidden flex flex-col animate-fade-in" style={{ boxShadow: '0 0 0 1px rgba(30,41,59,0.6), 0 30px 80px rgba(0,0,0,0.6)' }}>
       
-      {/* ── Top Google Maps Turn-by-Turn Header Banner (When Navigating) ── */}
+      {/* ── Top Turn-by-Turn Header (When Navigating) ── */}
       {selectedFacility && (
         <div className="absolute top-0 left-0 right-0 z-40 text-white px-4 py-3 shadow-2xl backdrop-blur-xl flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', borderBottom: '1px solid rgba(52,211,153,0.3)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-white/12 border border-white/15 flex items-center justify-center text-xl shrink-0">
-              {cardinalDirection ? cardinalDirection.icon : '⬆️'}
+              🚶
             </div>
             <div className="min-w-0">
               <p className="text-[10px] uppercase font-black tracking-widest text-emerald-100/80 flex items-center gap-1.5">
-                <span>Navigation</span>
+                <span>Navigation Mode</span>
                 <span className="opacity-40">·</span>
-                <span>{travelTimeText} walk</span>
+                <span>{durationText} walk</span>
               </p>
               <h3 className="text-sm font-black text-white truncate leading-tight">
-                Head {cardinalDirection ? cardinalDirection.label : ''} → {selectedFacility.name}
+                Walking Route to {selectedFacility.name}
               </h3>
             </div>
           </div>
@@ -412,6 +495,8 @@ export default function NavigationMap() {
               onClick={() => {
                 setSelectedFacility(null);
                 setSearchParams({});
+                setNavigationSteps([]);
+                setShowSteps(false);
               }}
               className="w-8 h-8 rounded-xl bg-slate-950/40 hover:bg-slate-950/70 text-white font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
               title="Exit Navigation"
@@ -422,43 +507,25 @@ export default function NavigationMap() {
         </div>
       )}
 
-      {/* ── Top Control Bar — compact unified pill ── */}
+      {/* ── Control Bar — compact unified pill ── */}
       <div className={`absolute ${selectedFacility ? 'top-16' : 'top-3'} left-3 z-30 flex items-center gap-1.5 transition-all duration-200`}>
-        {/* Back pill */}
-        <Link
-          to={`/location/${locationId}`}
-          className="inline-flex items-center gap-1.5 py-2 px-3 rounded-2xl text-xs font-bold text-white transition-all active:scale-95 border border-slate-800/80"
-          style={{ background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(16px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
-        </Link>
-
-        {/* GPS toggle */}
         <button
-          onClick={() => setUseLiveGps(!useLiveGps)}
-          className={`inline-flex items-center gap-1.5 py-2 px-3 rounded-2xl font-bold text-xs transition-all border cursor-pointer active:scale-95 ${
-            useLiveGps
-              ? 'bg-blue-600 border-blue-400/50 text-white'
-              : 'border-slate-800/80 text-slate-300 hover:text-white'
-          }`}
-          style={!useLiveGps ? { background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(16px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' } : {}}
+          onClick={handleRecenter}
+          className="inline-flex items-center gap-1.5 py-2 px-3 rounded-2xl font-bold text-xs border cursor-pointer active:scale-95 bg-slate-950/90 text-emerald-400 border-slate-800/80"
+          style={{ backdropFilter: 'blur(16px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${useLiveGps ? 'bg-white animate-ping' : 'bg-blue-400'}`} />
-          {useLiveGps ? 'GPS On' : 'GPS'}
+          🎯 Recenter
         </button>
       </div>
 
-      {/* ── Search collapsible chip (overview mode only) ── */}
+      {/* ── Search & Category Filters (Overview mode only) ── */}
       {!selectedFacility && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2">
-          {/* Search trigger chip */}
+          {/* Search Input */}
           <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5" style={{ background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(16px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
             <input
               type="text"
-              placeholder="Search facilities..."
+              placeholder="Search nearby..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-36 sm:w-48"
@@ -466,36 +533,36 @@ export default function NavigationMap() {
             {searchQuery ? (
               <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white transition-colors text-[10px] cursor-pointer">✕</button>
             ) : (
-              <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <span className="text-slate-500 text-xs">🔍</span>
             )}
           </div>
 
-          {/* Category filter pills */}
-          <div className="flex items-center gap-1 no-scrollbar overflow-x-auto max-w-xs sm:max-w-sm">
+          {/* Dynamic Category Filter Pills from DB */}
+          <div className="flex items-center gap-1.5 no-scrollbar overflow-x-auto max-w-xs sm:max-w-sm">
             <button
               onClick={() => setSelectedCategory('All')}
-              className={`px-2.5 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${
+              className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${
                 selectedCategory === 'All'
-                  ? 'bg-emerald-500 text-slate-950 border-emerald-400'
-                  : 'border-slate-800/80 text-slate-400 hover:text-white'
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold'
+                  : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/80 backdrop-blur-md'
               }`}
-              style={selectedCategory !== 'All' ? { background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(12px)' } : {}}
-            >All {facilities.length}</button>
-            {Object.entries(TYPE_CONFIG).map(([key, cfg]) => {
-              const count = facilities.filter((f) => f.type === key).length;
-              const isSel = selectedCategory === key;
+            >
+              🌐 All
+            </button>
+            {categories.map((cat) => {
+              const isSel = selectedCategory === cat.name;
               return (
                 <button
-                  key={key}
-                  onClick={() => setSelectedCategory(key)}
-                  className={`px-2.5 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${
-                    isSel ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'border-slate-800/80 text-slate-400 hover:text-white'
+                  key={cat._id || cat.id}
+                  onClick={() => setSelectedCategory(cat.name)}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${
+                    isSel
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold'
+                      : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/80 backdrop-blur-md'
                   }`}
-                  style={!isSel ? { background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(12px)' } : {}}
                 >
-                  <span>{cfg.emoji}</span>{count}
+                  <span>{cat.emoji}</span>
+                  <span>{cat.name}</span>
                 </button>
               );
             })}
@@ -504,7 +571,7 @@ export default function NavigationMap() {
       )}
 
       {/* ── Step-by-Step Navigation Instructions Drawer ── */}
-      {showSteps && selectedFacility && (
+      {showSteps && selectedFacility && navigationSteps.length > 0 && (
         <div className="absolute inset-x-3 bottom-28 z-50 max-w-sm mx-auto rounded-3xl p-5 shadow-2xl space-y-4" style={{ background: 'rgba(2,6,23,0.96)', border: '1px solid rgba(30,41,59,0.8)', backdropFilter: 'blur(20px)' }}>
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <h4 className="text-sm font-black text-white flex items-center gap-2">
@@ -512,190 +579,65 @@ export default function NavigationMap() {
             </h4>
             <button
               onClick={() => setShowSteps(false)}
-              className="text-xs text-slate-400 hover:text-white"
+              className="text-xs text-slate-400 hover:text-white cursor-pointer"
             >
               ✕
             </button>
           </div>
 
-          <div className="space-y-3 max-h-60 overflow-y-auto">
-            {/* Step 1 */}
-            <div className="flex items-start gap-3 text-xs text-slate-300">
-              <span className="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 font-bold flex items-center justify-center text-[10px] shrink-0">
-                1
-              </span>
-              <div>
-                <p className="font-bold text-white">Start at {activeOrigin?.name || location.name}</p>
-                <p className="text-[10px] text-slate-500">Scan Point / Device GPS Location</p>
+          <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+            {navigationSteps.map((step, index) => (
+              <div key={index} className="flex items-start gap-3 text-xs text-slate-300">
+                <span className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                  {index + 1}
+                </span>
+                <div className="flex-1">
+                  <p className="font-semibold text-slate-200" dangerouslySetInnerHTML={{ __html: step.instructions }} />
+                  <p className="text-[10px] text-slate-500 mt-0.5">{step.distance.text} · {step.duration.text}</p>
+                </div>
               </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="flex items-start gap-3 text-xs text-slate-300">
-              <span className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold flex items-center justify-center text-[10px] shrink-0">
-                2
-              </span>
-              <div>
-                <p className="font-bold text-white">
-                  Head {cardinalDirection ? cardinalDirection.label : ''} for {distanceText}
-                </p>
-                <p className="text-[10px] text-slate-500">
-                  Follow green dashed navigation line on map (~{travelTimeText} walk)
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="flex items-start gap-3 text-xs text-slate-300">
-              <span className="w-6 h-6 rounded-full bg-teal-500/20 border border-teal-500/40 text-teal-400 font-bold flex items-center justify-center text-[10px] shrink-0">
-                3
-              </span>
-              <div>
-                <p className="font-bold text-white">Arrive at {selectedFacility.name}</p>
-                <p className="text-[10px] text-slate-500">{selectedFacility.description || 'Target Facility'}</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* ── Leaflet Map ── */}
-      <div className="flex-1 w-full h-full relative z-10">
-        <MapContainer
-          center={[activeOrigin.latitude, activeOrigin.longitude]}
-          zoom={18}
-          maxZoom={20}
-          zoomControl={false}
-          scrollWheelZoom={true}
-          className="w-full h-full"
-          style={{ background: '#e8e0d8' }}
-        >
-          <TileLayer
-            attribution={activeMapStyle.attribution}
-            url={activeMapStyle.url}
-            maxZoom={20}
-            maxNativeZoom={activeMapStyle.maxNativeZoom}
-          />
+      {/* ── Google Map Container ── */}
+      <div ref={mapRef} className="flex-1 w-full h-full relative z-10" />
 
-          {/* Custom Floating Zoom/Recenter + Map Style Switcher */}
-          <MapControlsWidget onRecenter={handleRecenter} mapStyleKey={mapStyleKey} setMapStyleKey={setMapStyleKey} />
-
-          {/* Auto-fit bounds */}
-          {mapBounds && <FitBounds bounds={mapBounds} selectedFacility={selectedFacility} />}
-
-          {/* Scanned Gate Origin Marker */}
-          {location && (
-            <Marker
-              position={[location.latitude, location.longitude]}
-              icon={createLocationIcon(false, !useLiveGps ? polylineData?.bearing : null)}
+      {/* ── Map Type Switcher Buttons (Bottom Right) ── */}
+      <div className="absolute bottom-28 right-3 z-30 flex flex-col gap-1.5">
+        {MAP_TYPES.map((type) => {
+          const isSelected = mapType === type.key;
+          return (
+            <button
+              key={type.key}
+              onClick={() => setMapType(type.key)}
+              className={`w-10 h-10 rounded-xl text-sm flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95 border ${
+                isSelected
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-emerald-500/30'
+                  : 'bg-slate-950/92 text-slate-300 border-slate-800/80 hover:bg-slate-900'
+              }`}
+              title={type.label}
             >
-              <Popup>
-                <div className="text-slate-900 font-sans p-1">
-                  <h4 className="font-bold text-xs">📍 Scanned Location</h4>
-                  <p className="text-[10px] text-slate-500 mt-0.5">{location.name}</p>
-                </div>
-              </Popup>
-            </Marker>
-          )}
-
-          {/* Live Device GPS Marker */}
-          {useLiveGps && gpsPosition && (
-            <Marker
-              position={[gpsPosition.latitude, gpsPosition.longitude]}
-              icon={createLocationIcon(true, polylineData?.bearing)}
-            >
-              <Popup>
-                <div className="text-slate-900 font-sans p-1">
-                  <h4 className="font-bold text-xs">💙 Your Live GPS Location</h4>
-                  <p className="text-[10px] text-blue-600 mt-0.5">Accuracy: ~{Math.round(gpsPosition.accuracy)}m</p>
-                </div>
-              </Popup>
-            </Marker>
-          )}
-
-          {/* Facility Markers */}
-          {filteredFacilities.map((f) => {
-            const isSelected = selectedFacility && selectedFacility.id === f.id;
-            return (
-              <Marker
-                key={f.id}
-                position={[f.latitude, f.longitude]}
-                icon={createFacilityIcon(f.type, isSelected)}
-              >
-                <Popup>
-                  <div className="font-sans p-1 min-w-[160px]">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-sm">{TYPE_CONFIG[f.type]?.emoji || '📍'}</span>
-                      <span
-                        className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                        style={{
-                          backgroundColor: `${TYPE_CONFIG[f.type]?.color || '#6366f1'}22`,
-                          color: TYPE_CONFIG[f.type]?.color || '#6366f1',
-                        }}
-                      >
-                        {f.type}
-                      </span>
-                    </div>
-                    <h4 className="font-bold text-xs text-slate-900">{f.name}</h4>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      {f.distanceFormatted} · {f.walkingTimeFormatted} walk
-                    </p>
-                    {!isSelected && (
-                      <button
-                        onClick={() => handleNavigateTo(f)}
-                        className="mt-2 w-full text-[10px] font-bold uppercase tracking-wider py-1.5 rounded-lg text-white cursor-pointer"
-                        style={{ backgroundColor: TYPE_CONFIG[f.type]?.color || '#6366f1' }}
-                      >
-                        Navigate Here →
-                      </button>
-                    )}
-                    {isSelected && (
-                      <p className="mt-1.5 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
-                        ✓ Current Destination
-                      </p>
-                    )}
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-
-          {/* Directional Route Polyline */}
-          {polylineData && (
-            <Polyline
-              positions={polylineData.path}
-              pathOptions={{
-                color: TYPE_CONFIG[selectedFacility?.type]?.color || '#10b981',
-                weight: 6,
-                dashArray: '8, 10',
-                lineCap: 'round',
-                opacity: 0.95,
-              }}
-            />
-          )}
-        </MapContainer>
+              {type.icon}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Bottom Info Bar ── */}
       <div className="absolute bottom-3 left-3 right-3 z-30 max-w-xl mx-auto">
         {selectedFacility ? (
-          /* Selected destination info */
+          /* Selected destination metrics */
           <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 md:p-4 shadow-2xl backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
             
-            {/* Navigating to section */}
             <div className="flex items-center gap-2.5 pb-2 sm:pb-0 border-b border-slate-800/80 sm:border-none min-w-0 flex-1">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
-                style={{
-                  backgroundColor: `${TYPE_CONFIG[selectedFacility.type]?.color || '#6366f1'}15`,
-                  border: `1px solid ${TYPE_CONFIG[selectedFacility.type]?.color || '#6366f1'}33`,
-                }}
-              >
-                {TYPE_CONFIG[selectedFacility.type]?.emoji || '📍'}
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                🚶
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 truncate">
-                  Navigating To ({activeOrigin?.isGps ? 'Live GPS' : 'QR Gate'})
+                  Navigating To Google Map Listing
                 </p>
                 <h4 className="text-xs md:text-sm font-black text-white leading-tight truncate">
                   {selectedFacility.name}
@@ -703,35 +645,25 @@ export default function NavigationMap() {
               </div>
             </div>
 
-            {/* Middle separator for desktop */}
             <div className="hidden sm:block h-8 w-px bg-slate-800 shrink-0" />
 
-            {/* Travel and Distance metrics side-by-side */}
             <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-4 shrink-0">
-              {/* Metric 1: Travel */}
               <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
                 <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  🕒
                 </div>
                 <div>
-                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Travel</p>
-                  <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{travelTimeText}</h4>
+                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Walk Time</p>
+                  <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{durationText}</h4>
                 </div>
               </div>
 
-              {/* Metric 2: Distance */}
               <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
                 <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                  </svg>
+                  🗺️
                 </div>
                 <div>
-                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">
-                    Dist ({cardinalDirection?.short || 'N'})
-                  </p>
+                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Distance</p>
                   <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{distanceText}</h4>
                 </div>
               </div>
@@ -739,12 +671,16 @@ export default function NavigationMap() {
 
           </div>
         ) : (
-          /* No destination selected — prompt */
+          /* No destination selected - show status */
           <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 shadow-2xl backdrop-blur-md text-center">
             <p className="text-xs text-slate-400">
-              <span className="text-white font-bold">📍 {activeOrigin?.name || location.name}</span>
+              <span className="text-white font-bold">📍 {activeOrigin?.name || 'Loading Location...'}</span>
               <span className="mx-2 text-slate-700">·</span>
-              Tap any facility marker to navigate
+              {gpsError ? (
+                <span className="text-amber-400">{gpsError}</span>
+              ) : (
+                <span>Tap any marker to calculate walking path</span>
+              )}
             </p>
           </div>
         )}
@@ -762,4 +698,3 @@ export default function NavigationMap() {
     </div>
   );
 }
-

@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
 
 @layer base {
   body {
@@ -46,23 +45,7 @@
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Leaflet Map ────────────────────────────────── */
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-  z-index: 10;
-}
 
-/* Override Leaflet popup styling */
-.leaflet-popup-content-wrapper {
-  background: #0f172a !important;
-  border: 1px solid #1e293b !important;
-  border-radius: 16px !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
-  padding: 0 !important;
-}
-.leaflet-popup-content { margin: 0 !important; }
-.leaflet-popup-tip { background: #0f172a !important; }
 
 /* ── Premium Card Glow ──────────────────────────── */
 .card-glow {
