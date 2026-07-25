@@ -38,6 +38,8 @@ export default function NavigationMap() {
   // Geolocation & Map State
   const [gpsPosition, setGpsPosition] = useState(null);
   const [gpsError, setGpsError] = useState(null);
+  const [heading, setHeading] = useState(0);
+  const prevGpsPositionRef = useRef(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [mapType, setMapType] = useState('roadmap');
@@ -126,11 +128,39 @@ export default function NavigationMap() {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         if (gpsTimeout) clearTimeout(gpsTimeout);
+        const newLat = pos.coords.latitude;
+        const newLng = pos.coords.longitude;
+
         setGpsPosition({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
+          latitude: newLat,
+          longitude: newLng,
           accuracy: pos.coords.accuracy,
         });
+
+        // Compute heading
+        if (pos.coords.heading !== null && pos.coords.heading !== undefined) {
+          setHeading(pos.coords.heading);
+        } else if (prevGpsPositionRef.current) {
+          const from = prevGpsPositionRef.current;
+          const to = { latitude: newLat, longitude: newLng };
+          const dLat = to.latitude - from.latitude;
+          const dLng = to.longitude - from.longitude;
+          
+          // Distance threshold to avoid tiny coordinate jitter/compass noise
+          if (Math.abs(dLat) > 0.00001 || Math.abs(dLng) > 0.00001) {
+            const lat1 = (from.latitude * Math.PI) / 180;
+            const lon1 = (from.longitude * Math.PI) / 180;
+            const lat2 = (to.latitude * Math.PI) / 180;
+            const lon2 = (to.longitude * Math.PI) / 180;
+            const dLon = lon2 - lon1;
+            const y = Math.sin(dLon) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            let brng = Math.atan2(y, x);
+            brng = (brng * 180) / Math.PI;
+            setHeading((brng + 360) % 360);
+          }
+        }
+        prevGpsPositionRef.current = { latitude: newLat, longitude: newLng };
         setGpsError(null);
       },
       (err) => {
@@ -145,6 +175,21 @@ export default function NavigationMap() {
       navigator.geolocation.clearWatch(watchId);
       if (gpsTimeout) clearTimeout(gpsTimeout);
     };
+  }, []);
+
+  // 3a. Device orientation listener to rotate compass arrow on compatible phones
+  useEffect(() => {
+    const handleOrientation = (e) => {
+      // webkitCompassHeading is supported on iOS Safari.
+      // e.alpha with absolute orientation is supported on Android Chrome.
+      const compassHeading = e.webkitCompassHeading || (e.alpha ? 360 - e.alpha : null);
+      if (compassHeading !== null && compassHeading !== undefined) {
+        setHeading(compassHeading);
+      }
+    };
+    
+    window.addEventListener('deviceorientation', handleOrientation);
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, []);
 
   // 4. Load Google Maps script dynamically
@@ -306,7 +351,7 @@ export default function NavigationMap() {
     );
   }, [facilities, searchQuery]);
 
-  // 8a. Draw & Update User Location Marker (Blue Dot)
+  // 8a. Draw & Update User Location Marker (Navigation Arrow)
   useEffect(() => {
     if (!scriptLoaded || !mapInstanceRef.current || !activeOrigin) {
       if (userMarkerRef.current) {
@@ -317,22 +362,26 @@ export default function NavigationMap() {
     }
 
     const map = mapInstanceRef.current;
-    const pinColor = '#3b82f6';
     const position = { lat: activeOrigin.latitude, lng: activeOrigin.longitude };
+
+    // Beautiful navigation wedge SVG pointing UP
+    const arrowIcon = {
+      path: 'M 0,-12 L 8,8 L 3,5 L -3,5 L -8,8 Z',
+      fillColor: '#3b82f6',
+      fillOpacity: 1,
+      strokeColor: '#ffffff',
+      strokeWeight: 2,
+      scale: 1.4,
+      rotation: heading || 0,
+      anchor: new window.google.maps.Point(0, 0),
+    };
 
     if (!userMarkerRef.current) {
       userMarkerRef.current = new window.google.maps.Marker({
         position,
         map,
         title: activeOrigin.name,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 10,
-          fillColor: pinColor,
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
-        },
+        icon: arrowIcon,
       });
 
       const userInfoWindow = new window.google.maps.InfoWindow({
@@ -347,8 +396,14 @@ export default function NavigationMap() {
       });
     } else {
       userMarkerRef.current.setPosition(position);
+      userMarkerRef.current.setIcon(arrowIcon);
     }
-  }, [scriptLoaded, activeOrigin, gpsPosition?.accuracy]);
+
+    // Auto-Follow Mode: Center the map on the user if they are actively navigating
+    if (selectedFacility) {
+      map.setCenter(position);
+    }
+  }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, selectedFacility]);
 
   // 8b. Draw Facilities Markers
   useEffect(() => {
