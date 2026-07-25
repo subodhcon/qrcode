@@ -581,30 +581,30 @@ export default function NavigationMap() {
 
       {/* ── Top Turn-by-Turn Header (When Navigating) ── */}
       {selectedFacility && (
-        <div className="absolute top-0 left-0 right-0 z-40 text-white px-4 py-3 shadow-2xl backdrop-blur-xl flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', borderBottom: '1px solid rgba(52,211,153,0.3)' }}>
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-white/12 border border-white/15 flex items-center justify-center text-xl shrink-0">
+        <div className="absolute top-0 left-0 right-0 z-40 text-white px-3 py-2.5 sm:px-4 sm:py-3 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', borderBottom: '1px solid rgba(52,211,153,0.3)' }}>
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/12 border border-white/15 flex items-center justify-center text-base sm:text-xl shrink-0">
               🚶
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase font-black tracking-widest text-emerald-100/80 flex items-center gap-1.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-widest text-emerald-100/80 flex items-center gap-1 sm:gap-1.5 flex-wrap">
                 <span>Navigation Mode</span>
                 <span className="opacity-40">·</span>
-                <span>{durationText} walk</span>
+                <span>{durationText || 'Calculating'} walk</span>
               </p>
-              <h3 className="text-sm font-black text-white truncate leading-tight">
-                Walking Route to {selectedFacility.name}
+              <h3 className="text-xs sm:text-sm font-black text-white truncate leading-tight mt-0.5">
+                Route to {selectedFacility.name}
               </h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => setShowSteps(!showSteps)}
-              className="py-1.5 px-3 rounded-xl bg-slate-950/40 hover:bg-slate-950/60 text-white font-bold text-xs shadow transition-all border border-white/20 cursor-pointer flex items-center gap-1"
+              className="py-1 px-2.5 sm:py-1.5 sm:px-3 rounded-lg sm:rounded-xl bg-slate-950/40 hover:bg-slate-950/60 text-white font-bold text-[10px] sm:text-xs shadow transition-all border border-white/20 cursor-pointer flex items-center gap-1"
             >
               <span>📋</span>
-              <span className="hidden sm:inline">Steps</span>
+              <span className="hidden xs:inline">Steps</span>
             </button>
             <button
               onClick={() => {
@@ -613,7 +613,7 @@ export default function NavigationMap() {
                 setNavigationSteps([]);
                 setShowSteps(false);
               }}
-              className="w-8 h-8 rounded-xl bg-slate-950/40 hover:bg-slate-950/70 text-white font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-950/40 hover:bg-slate-950/70 text-white font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
               title="Exit Navigation"
             >
               ✕
@@ -622,30 +622,18 @@ export default function NavigationMap() {
         </div>
       )}
 
-      {/* ── Top Controls Panel (Unified and fully responsive) ── */}
-      <div className={`absolute ${selectedFacility ? 'top-16' : 'top-3'} inset-x-3 z-30 flex flex-col md:flex-row md:items-center justify-between gap-3 pointer-events-none`}>
-        
-        {/* Recenter Button */}
-        <div className="flex items-center gap-2 pointer-events-auto self-start">
-          <button
-            onClick={handleRecenter}
-            className="inline-flex items-center gap-1.5 py-2 px-3 md:py-2.5 md:px-4 rounded-2xl font-bold text-xs border cursor-pointer active:scale-95 bg-slate-950/90 text-emerald-400 border-slate-800/80 shadow-xl backdrop-blur-md"
-          >
-            🎯 Recenter
-          </button>
-        </div>
-
-        {/* Search & Categories (Overview mode only) */}
-        {!selectedFacility && (
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pointer-events-auto w-full md:w-auto">
+      {/* ── Top Controls Panel (Search & Categories - Overview mode only) ── */}
+      {!selectedFacility && (
+        <div className="absolute top-3 inset-x-3 z-30 flex flex-col items-center gap-2 pointer-events-none">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pointer-events-auto w-full max-w-xl">
             {/* Search Input */}
-            <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5 shadow-xl bg-slate-950/90 backdrop-blur-md">
+            <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5 shadow-xl bg-slate-950/90 backdrop-blur-md flex-1">
               <input
                 type="text"
                 placeholder="Search nearby..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-full sm:w-48"
+                className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-full"
               />
               {searchQuery ? (
                 <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white transition-colors text-[10px] cursor-pointer">✕</button>
@@ -655,7 +643,7 @@ export default function NavigationMap() {
             </div>
 
             {/* Dynamic Category Filter Pills */}
-            <div className="flex items-center gap-1.5 no-scrollbar overflow-x-auto w-full max-w-[90vw] md:max-w-md py-0.5">
+            <div className="flex items-center gap-1.5 no-scrollbar overflow-x-auto w-full max-w-[90vw] sm:max-w-md py-0.5">
               <button
                 onClick={() => setSelectedCategory('All')}
                 className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${
@@ -686,9 +674,8 @@ export default function NavigationMap() {
             </div>
 
           </div>
-        )}
-
-      </div>
+        </div>
+      )}
 
       {/* ── Step-by-Step Navigation Instructions Drawer ── */}
       {showSteps && selectedFacility && navigationSteps.length > 0 && (
@@ -724,8 +711,21 @@ export default function NavigationMap() {
       {/* ── Google Map Container ── */}
       <div ref={mapRef} className="flex-1 w-full h-full relative z-10" />
 
-      {/* ── Map Type Switcher Buttons (Bottom Right) ── */}
-      <div className="absolute bottom-28 right-3 z-30 flex flex-col gap-1.5">
+      {/* ── Floating Map Control Stack (Bottom Right) ── */}
+      <div className="absolute bottom-28 right-3 z-30 flex flex-col gap-2">
+        {/* Recenter Floating Button */}
+        <button
+          onClick={handleRecenter}
+          className="w-10 h-10 rounded-xl text-lg flex items-center justify-center shadow-xl bg-slate-950/92 border border-slate-800/80 text-emerald-400 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-slate-900"
+          title="Recenter Map"
+        >
+          🎯
+        </button>
+
+        {/* Divider */}
+        <div className="h-px bg-slate-800/60 mx-1.5" />
+
+        {/* Map Types */}
         {MAP_TYPES.map((type) => {
           const isSelected = mapType === type.key;
           return (
