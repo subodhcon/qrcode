@@ -9,6 +9,19 @@ const MAP_TYPES = [
   { key: 'satellite', label: 'Satellite', icon: '🛰️' },
   { key: 'hybrid', label: 'Hybrid', icon: '🌲' },
 ];
+// Haversine distance helper in meters
+const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371e3; // Earth radius in meters
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+            Math.cos(phi1) * Math.cos(phi2) *
+            Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 export default function NavigationMap() {
   const { locationId } = useParams();
@@ -27,6 +40,8 @@ export default function NavigationMap() {
   const lastFetchedCoordsRef = useRef(null);
   const directionsRendererRef = useRef(null);
   const directionsServiceRef = useRef(null);
+  const lastRoutedCoordsRef = useRef(null);
+  const lastRouteTimeRef = useRef(0);
 
   // State
   const [categories, setCategories] = useState([]);
@@ -476,12 +491,40 @@ export default function NavigationMap() {
     }
   }, [scriptLoaded, filteredFacilities, selectedFacility, categories]);
 
-  // 9. Calculate Walking Directions
+  // 9. Calculate Walking Directions (Optimized)
   useEffect(() => {
     if (!scriptLoaded || !directionsRendererRef.current || !directionsServiceRef.current || !activeOrigin || !selectedFacility) {
       if (directionsRendererRef.current) {
         directionsRendererRef.current.setDirections({ routes: [] });
       }
+      return;
+    }
+
+    const now = Date.now();
+    const timeElapsed = now - lastRouteTimeRef.current;
+
+    let isFarEnough = true;
+    if (lastRoutedCoordsRef.current) {
+      const distance = getHaversineDistance(
+        activeOrigin.latitude,
+        activeOrigin.longitude,
+        lastRoutedCoordsRef.current.latitude,
+        lastRoutedCoordsRef.current.longitude
+      );
+      // Skip updates if user has moved less than 8 meters
+      if (distance < 8) {
+        isFarEnough = false;
+      }
+    }
+
+    // Force call if the selected facility has changed
+    const hasDestinationChanged =
+      !lastRoutedCoordsRef.current ||
+      lastRoutedCoordsRef.current.destinationId !== (selectedFacility._id || selectedFacility.id) ||
+      lastRoutedCoordsRef.current.destinationName !== selectedFacility.name;
+
+    // Only skip if the destination is the same, user hasn't moved far enough, AND it's been less than 10 seconds
+    if (!hasDestinationChanged && !isFarEnough && timeElapsed < 10000) {
       return;
     }
 
@@ -500,6 +543,15 @@ export default function NavigationMap() {
           setDurationText(leg.duration.text);
           setNavigationSteps(leg.steps);
           setRouteError(null);
+
+          // Update tracking refs on successful route calculation
+          lastRoutedCoordsRef.current = {
+            latitude: activeOrigin.latitude,
+            longitude: activeOrigin.longitude,
+            destinationId: selectedFacility._id || selectedFacility.id,
+            destinationName: selectedFacility.name,
+          };
+          lastRouteTimeRef.current = Date.now();
         } else {
           console.error('Directions request failed:', status);
           setRouteError('Could not calculate walking path to this destination.');
