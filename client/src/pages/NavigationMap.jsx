@@ -22,6 +22,9 @@ export default function NavigationMap() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
+  const userMarkerRef = useRef(null);
+  const hasCenteredRef = useRef(false);
+  const lastFetchedCoordsRef = useRef(null);
   const directionsRendererRef = useRef(null);
   const directionsServiceRef = useRef(null);
 
@@ -184,6 +187,24 @@ export default function NavigationMap() {
         return;
       }
 
+      // Check if coordinates have changed significantly, or if category changed, to avoid redundant fetches.
+      const hasCategoryChanged = lastFetchedCoordsRef.current?.category !== selectedCategory;
+      const isInitialFetch = !lastFetchedCoordsRef.current;
+      
+      let isFarEnough = false;
+      if (lastFetchedCoordsRef.current) {
+        const dLat = gpsPosition.latitude - lastFetchedCoordsRef.current.latitude;
+        const dLng = gpsPosition.longitude - lastFetchedCoordsRef.current.longitude;
+        // 0.0005 degrees is approx 50 meters
+        if (Math.abs(dLat) > 0.0005 || Math.abs(dLng) > 0.0005) {
+          isFarEnough = true;
+        }
+      }
+
+      if (!isInitialFetch && !hasCategoryChanged && !isFarEnough) {
+        return;
+      }
+
       try {
         const params = { 
           category: selectedCategory,
@@ -193,6 +214,12 @@ export default function NavigationMap() {
 
         const res = await api.get('/facilities/near', { params });
         setFacilities(res.facilities || []);
+
+        lastFetchedCoordsRef.current = {
+          latitude: gpsPosition.latitude,
+          longitude: gpsPosition.longitude,
+          category: selectedCategory
+        };
 
         // Auto-select destination from query parameter if matches
         if (destinationParam && res.facilities) {
@@ -258,13 +285,12 @@ export default function NavigationMap() {
           strokeOpacity: 0.85,
         },
       });
-    } else {
-      // Re-center map if origin changes but no destination is selected
-      if (!selectedFacility) {
-        mapInstanceRef.current.setCenter({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
-      }
+      hasCenteredRef.current = true;
+    } else if (!hasCenteredRef.current) {
+      mapInstanceRef.current.setCenter({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
+      hasCenteredRef.current = true;
     }
-  }, [scriptLoaded, activeOrigin, selectedFacility]);
+  }, [scriptLoaded, activeOrigin]);
 
   // 7. Update Map Type
   useEffect(() => {
@@ -280,21 +306,23 @@ export default function NavigationMap() {
     );
   }, [facilities, searchQuery]);
 
-  // 8. Draw Markers and Popups
+  // 8a. Draw & Update User Location Marker (Blue Dot)
   useEffect(() => {
-    if (!scriptLoaded || !mapInstanceRef.current) return;
-
-    // Clear existing markers
-    markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = [];
+    if (!scriptLoaded || !mapInstanceRef.current || !activeOrigin) {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setMap(null);
+        userMarkerRef.current = null;
+      }
+      return;
+    }
 
     const map = mapInstanceRef.current;
+    const pinColor = '#3b82f6';
+    const position = { lat: activeOrigin.latitude, lng: activeOrigin.longitude };
 
-    // A. Current Location Marker
-    if (activeOrigin) {
-      const pinColor = '#3b82f6';
-      const userMarker = new window.google.maps.Marker({
-        position: { lat: activeOrigin.latitude, lng: activeOrigin.longitude },
+    if (!userMarkerRef.current) {
+      userMarkerRef.current = new window.google.maps.Marker({
+        position,
         map,
         title: activeOrigin.name,
         icon: {
@@ -310,18 +338,28 @@ export default function NavigationMap() {
       const userInfoWindow = new window.google.maps.InfoWindow({
         content: `<div style="color:#0f172a;font-family:sans-serif;font-size:12px;padding:4px;">
           <strong>📍 ${activeOrigin.name}</strong>
-          <p style="margin:2px 0 0 0;font-size:10px;color:#3b82f6;">Live GPS accuracy: ~${Math.round(gpsPosition.accuracy)}m</p>
+          <p style="margin:2px 0 0 0;font-size:10px;color:#3b82f6;">Live GPS accuracy: ~${Math.round(gpsPosition?.accuracy || 0)}m</p>
         </div>`,
       });
 
-      userMarker.addListener('click', () => {
-        userInfoWindow.open(map, userMarker);
+      userMarkerRef.current.addListener('click', () => {
+        userInfoWindow.open(map, userMarkerRef.current);
       });
-
-      markersRef.current.push(userMarker);
+    } else {
+      userMarkerRef.current.setPosition(position);
     }
+  }, [scriptLoaded, activeOrigin, gpsPosition?.accuracy]);
 
-    // B. Facilities Markers
+  // 8b. Draw Facilities Markers
+  useEffect(() => {
+    if (!scriptLoaded || !mapInstanceRef.current) return;
+
+    // Clear existing markers
+    markersRef.current.forEach((marker) => marker.setMap(null));
+    markersRef.current = [];
+
+    const map = mapInstanceRef.current;
+
     filteredFacilities.forEach((fac) => {
       // Find emoji/color config from category records
       const catConfig = categories.find(c => c.name === fac.type);
@@ -397,7 +435,7 @@ export default function NavigationMap() {
       });
       map.fitBounds(bounds, 50);
     }
-  }, [scriptLoaded, filteredFacilities, selectedFacility, activeOrigin, categories]);
+  }, [scriptLoaded, filteredFacilities, selectedFacility, categories]);
 
   // 9. Calculate Walking Directions
   useEffect(() => {
@@ -442,11 +480,15 @@ export default function NavigationMap() {
     }
   };
 
-  // Recenter map to origin
+  // Recenter map to origin and force fetch facilities around current coordinates
   const handleRecenter = () => {
     if (mapInstanceRef.current && activeOrigin) {
       mapInstanceRef.current.setCenter({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
       mapInstanceRef.current.setZoom(17);
+      
+      // Clear cache to force a fresh fetch call in useEffect
+      lastFetchedCoordsRef.current = null;
+      setGpsPosition({ ...gpsPosition });
     }
   };
 
