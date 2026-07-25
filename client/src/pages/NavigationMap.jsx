@@ -462,15 +462,6 @@ export default function NavigationMap() {
     );
   }
 
-  /* ── Loading ── */
-  if (loading || !scriptLoaded) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <Loading message="Fetching live GPS location & nearby Map..." />
-      </div>
-    );
-  }
-
   /* ── Error ── */
   if (error && !activeOrigin) {
     return (
@@ -484,6 +475,13 @@ export default function NavigationMap() {
   return (
     <div className="relative h-[88vh] md:h-[90vh] min-h-[550px] w-full rounded-2xl overflow-hidden flex flex-col animate-fade-in" style={{ boxShadow: '0 0 0 1px rgba(30,41,59,0.6), 0 30px 80px rgba(0,0,0,0.6)' }}>
       
+      {/* ── Loading Overlay ── */}
+      {(loading || !scriptLoaded) && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md">
+          <Loading message="Fetching live GPS location & nearby Map..." />
+        </div>
+      )}
+
       {/* ── Top Turn-by-Turn Header (When Navigating) ── */}
       {selectedFacility && (
         <div className="absolute top-0 left-0 right-0 z-40 text-white px-4 py-3 shadow-2xl backdrop-blur-xl flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', borderBottom: '1px solid rgba(52,211,153,0.3)' }}>
@@ -527,68 +525,73 @@ export default function NavigationMap() {
         </div>
       )}
 
-      {/* ── Control Bar — compact unified pill ── */}
-      <div className={`absolute ${selectedFacility ? 'top-16' : 'top-3'} left-3 z-30 flex items-center gap-1.5 transition-all duration-200`}>
-        <button
-          onClick={handleRecenter}
-          className="inline-flex items-center gap-1.5 py-2 px-3 rounded-2xl font-bold text-xs border cursor-pointer active:scale-95 bg-slate-950/90 text-emerald-400 border-slate-800/80"
-          style={{ backdropFilter: 'blur(16px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
-        >
-          🎯 Recenter
-        </button>
-      </div>
-
-      {/* ── Search & Category Filters (Overview mode only) ── */}
-      {!selectedFacility && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2">
-          {/* Search Input */}
-          <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5" style={{ background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(16px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
-            <input
-              type="text"
-              placeholder="Search nearby..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-36 sm:w-48"
-            />
-            {searchQuery ? (
-              <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white transition-colors text-[10px] cursor-pointer">✕</button>
-            ) : (
-              <span className="text-slate-500 text-xs">🔍</span>
-            )}
-          </div>
-
-          {/* Dynamic Category Filter Pills from DB */}
-          <div className="flex items-center gap-1.5 no-scrollbar overflow-x-auto max-w-xs sm:max-w-sm">
-            <button
-              onClick={() => setSelectedCategory('All')}
-              className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${
-                selectedCategory === 'All'
-                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold'
-                  : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/80 backdrop-blur-md'
-              }`}
-            >
-              🌐 All
-            </button>
-            {categories.map((cat) => {
-              const isSel = selectedCategory === cat.name;
-              return (
-                <button
-                  key={cat._id || cat.id}
-                  onClick={() => setSelectedCategory(cat.name)}
-                  className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${
-                    isSel
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold'
-                      : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/80 backdrop-blur-md'
-                  }`}
-                >
-                  <span>{cat.emoji}</span>
-                  <span>{cat.name}</span>
-                </button>
-              );
-            })}
-          </div>
+      {/* ── Top Controls Panel (Unified and fully responsive) ── */}
+      <div className={`absolute ${selectedFacility ? 'top-16' : 'top-3'} inset-x-3 z-30 flex flex-col md:flex-row md:items-center justify-between gap-3 pointer-events-none`}>
+        
+        {/* Recenter Button */}
+        <div className="flex items-center gap-2 pointer-events-auto self-start">
+          <button
+            onClick={handleRecenter}
+            className="inline-flex items-center gap-1.5 py-2 px-3 md:py-2.5 md:px-4 rounded-2xl font-bold text-xs border cursor-pointer active:scale-95 bg-slate-950/90 text-emerald-400 border-slate-800/80 shadow-xl backdrop-blur-md"
+          >
+            🎯 Recenter
+          </button>
         </div>
-      )}
+
+        {/* Search & Categories (Overview mode only) */}
+        {!selectedFacility && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pointer-events-auto w-full md:w-auto">
+            {/* Search Input */}
+            <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5 shadow-xl bg-slate-950/90 backdrop-blur-md">
+              <input
+                type="text"
+                placeholder="Search nearby..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-full sm:w-48"
+              />
+              {searchQuery ? (
+                <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white transition-colors text-[10px] cursor-pointer">✕</button>
+              ) : (
+                <span className="text-slate-500 text-xs">🔍</span>
+              )}
+            </div>
+
+            {/* Dynamic Category Filter Pills */}
+            <div className="flex items-center gap-1.5 no-scrollbar overflow-x-auto w-full max-w-[90vw] md:max-w-md py-0.5">
+              <button
+                onClick={() => setSelectedCategory('All')}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${
+                  selectedCategory === 'All'
+                    ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
+                    : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/90 backdrop-blur-md'
+                }`}
+              >
+                🌐 All
+              </button>
+              {categories.map((cat) => {
+                const isSel = selectedCategory === cat.name;
+                return (
+                  <button
+                    key={cat._id || cat.id}
+                    onClick={() => setSelectedCategory(cat.name)}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${
+                      isSel
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
+                        : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/90 backdrop-blur-md'
+                    }`}
+                  >
+                    <span>{cat.emoji}</span>
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+          </div>
+        )}
+
+      </div>
 
       {/* ── Step-by-Step Navigation Instructions Drawer ── */}
       {showSteps && selectedFacility && navigationSteps.length > 0 && (
