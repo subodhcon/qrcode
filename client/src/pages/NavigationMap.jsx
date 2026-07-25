@@ -34,6 +34,7 @@ export default function NavigationMap() {
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [routeError, setRouteError] = useState(null);
   
   // Geolocation & Map State
   const [gpsPosition, setGpsPosition] = useState(null);
@@ -96,38 +97,17 @@ export default function NavigationMap() {
     fetchCategories();
   }, []);
 
-  // 3. Check Geolocation on Mount with Fallback
+  // 3. Check Geolocation on Mount
   useEffect(() => {
-    let gpsTimeout = null;
-
-    // Default Fallback coordinates (Delhi center)
-    const setFallbackLocation = () => {
-      setGpsPosition((current) => {
-        if (current) return current; // Keep actual GPS if already set
-        console.log('Using fallback coordinates');
-        return {
-          latitude: 28.6139,
-          longitude: 77.2090,
-          accuracy: 100,
-        };
-      });
-      setGpsError('Using default location (GPS blocked or timed out).');
-    };
-
     if (!navigator.geolocation) {
       setGpsError('Geolocation is not supported by your browser.');
-      setFallbackLocation();
+      setError('Geolocation is not supported by your browser.');
+      setLoading(false);
       return;
     }
 
-    // Set a 5-second timeout to fall back if user ignores the permission prompt
-    gpsTimeout = setTimeout(() => {
-      setFallbackLocation();
-    }, 5000);
-
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        if (gpsTimeout) clearTimeout(gpsTimeout);
         const newLat = pos.coords.latitude;
         const newLng = pos.coords.longitude;
 
@@ -162,18 +142,19 @@ export default function NavigationMap() {
         }
         prevGpsPositionRef.current = { latitude: newLat, longitude: newLng };
         setGpsError(null);
+        setError(null);
       },
       (err) => {
-        if (gpsTimeout) clearTimeout(gpsTimeout);
         console.warn('GPS Error:', err);
-        setFallbackLocation();
+        setGpsError('GPS access is blocked or timed out.');
+        setError('Geolocation access is required to use this map. Please enable location permissions in your browser or device settings.');
+        setLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 
     return () => {
       navigator.geolocation.clearWatch(watchId);
-      if (gpsTimeout) clearTimeout(gpsTimeout);
     };
   }, []);
 
@@ -399,9 +380,12 @@ export default function NavigationMap() {
       userMarkerRef.current.setIcon(arrowIcon);
     }
 
-    // Auto-Follow Mode: Center the map on the user if they are actively navigating
+    // Auto-Follow Mode: Center the map on the user if they are actively navigating.
+    // Shift map center slightly south so the user marker stays visible above the bottom details card.
     if (selectedFacility) {
-      map.setCenter(position);
+      const zoom = map.getZoom() || 17;
+      const latOffset = 0.08 / Math.pow(2, zoom - 10);
+      map.setCenter({ lat: position.lat - latOffset, lng: position.lng });
     }
   }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, selectedFacility]);
 
@@ -515,8 +499,10 @@ export default function NavigationMap() {
           setDistanceText(leg.distance.text);
           setDurationText(leg.duration.text);
           setNavigationSteps(leg.steps);
+          setRouteError(null);
         } else {
           console.error('Directions request failed:', status);
+          setRouteError('Could not calculate walking path to this destination.');
         }
       }
     );
@@ -538,8 +524,12 @@ export default function NavigationMap() {
   // Recenter map to origin and force fetch facilities around current coordinates
   const handleRecenter = () => {
     if (mapInstanceRef.current && activeOrigin) {
-      mapInstanceRef.current.setCenter({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
-      mapInstanceRef.current.setZoom(17);
+      const map = mapInstanceRef.current;
+      const zoom = 17;
+      map.setZoom(zoom);
+      
+      const latOffset = selectedFacility ? 0.08 / Math.pow(2, zoom - 10) : 0;
+      map.setCenter({ lat: activeOrigin.latitude - latOffset, lng: activeOrigin.longitude });
       
       // Clear cache to force a fresh fetch call in useEffect
       lastFetchedCoordsRef.current = null;
@@ -548,7 +538,7 @@ export default function NavigationMap() {
   };
 
   // Missing API Key warning UI
-  if (!googleMapsKey) {
+  if (!googleMapsKey && !loading) {
     return (
       <div className="max-w-md mx-auto my-12 bg-slate-900 border border-amber-500/20 rounded-2xl p-8 text-center shadow-xl">
         <h2 className="text-xl font-bold text-white mb-2">Google Maps API Key Missing</h2>
@@ -612,6 +602,7 @@ export default function NavigationMap() {
                 setSearchParams({});
                 setNavigationSteps([]);
                 setShowSteps(false);
+                setRouteError(null);
               }}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-950/40 hover:bg-slate-950/70 text-white font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
               title="Exit Navigation"
@@ -712,7 +703,7 @@ export default function NavigationMap() {
       <div ref={mapRef} className="flex-1 w-full h-full relative z-10" />
 
       {/* ── Floating Map Control Stack (Bottom Right) ── */}
-      <div className="absolute bottom-28 right-3 z-30 flex flex-col gap-2">
+      <div className={`absolute ${selectedFacility ? 'bottom-52' : 'bottom-20'} right-3 z-30 flex flex-col gap-2 transition-all duration-300`}>
         {/* Recenter Floating Button */}
         <button
           onClick={handleRecenter}
@@ -768,25 +759,33 @@ export default function NavigationMap() {
             <div className="hidden sm:block h-8 w-px bg-slate-800 shrink-0" />
 
             <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-4 shrink-0">
-              <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-                  🕒
+              {routeError ? (
+                <div className="col-span-2 text-[10px] md:text-xs font-semibold text-rose-400 py-1 px-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-1.5">
+                  <span>⚠️</span> {routeError}
                 </div>
-                <div>
-                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Walk Time</p>
-                  <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{durationText}</h4>
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                      🕒
+                    </div>
+                    <div>
+                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Walk Time</p>
+                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{durationText || 'Calculating'}</h4>
+                    </div>
+                  </div>
 
-              <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                  🗺️
-                </div>
-                <div>
-                  <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Distance</p>
-                  <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{distanceText}</h4>
-                </div>
-              </div>
+                  <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                      🗺️
+                    </div>
+                    <div>
+                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Distance</p>
+                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{distanceText || 'Calculating'}</h4>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
           </div>
@@ -796,7 +795,9 @@ export default function NavigationMap() {
             <p className="text-xs text-slate-400">
               <span className="text-white font-bold">📍 {activeOrigin?.name || 'Loading Location...'}</span>
               <span className="mx-2 text-slate-700">·</span>
-              {gpsError ? (
+              {error ? (
+                <span className="text-rose-400 font-semibold">⚠️ {error}</span>
+              ) : gpsError ? (
                 <span className="text-amber-400">{gpsError}</span>
               ) : (
                 <span>Tap any marker to calculate walking path</span>
