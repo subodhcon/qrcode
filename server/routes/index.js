@@ -32,6 +32,12 @@ router.post('/analytics/click', trackNavigationClick);
 router.get('/analytics/telemetry', requireAuth, getTelemetryStats);
 
 // Google Maps live search API proxy
+router.get('/config/maps-key', (req, res) => {
+  return res.status(200).json({ 
+    success: true, 
+    key: process.env.GOOGLE_PLACES_API_KEY 
+  });
+});
 router.get('/facilities/near', getAllFacilitiesNear);
 router.get('/facilities/near/:locationSlug', getAllFacilitiesNear);
 

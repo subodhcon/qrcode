@@ -15,8 +15,8 @@ export default function NavigationMap() {
   const [searchParams, setSearchParams] = useSearchParams();
   const destinationParam = searchParams.get('destination');
 
-  // API Key check
-  const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  // API Key state
+  const [googleMapsKey, setGoogleMapsKey] = useState(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || null);
 
   // Refs for Google Map instances
   const mapRef = useRef(null);
@@ -42,6 +42,27 @@ export default function NavigationMap() {
   const [navigationSteps, setNavigationSteps] = useState([]);
   const [distanceText, setDistanceText] = useState('');
   const [durationText, setDurationText] = useState('');
+
+  // Fetch Google Maps API Key from backend if not set in client env
+  useEffect(() => {
+    if (googleMapsKey) return;
+    const fetchMapsKey = async () => {
+      try {
+        const res = await api.get('/config/maps-key');
+        if (res.key) {
+          setGoogleMapsKey(res.key);
+        } else {
+          setError('Google Maps API key is missing on the server.');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Failed to load Google Maps key:', err);
+        setError('Failed to fetch Google Maps configuration from server.');
+        setLoading(false);
+      }
+    };
+    fetchMapsKey();
+  }, [googleMapsKey]);
 
   // 1. Log QR scan event on mount
   useEffect(() => {
@@ -127,7 +148,6 @@ export default function NavigationMap() {
   const [scriptLoaded, setScriptLoaded] = useState(false);
   useEffect(() => {
     if (!googleMapsKey) {
-      setLoading(false);
       return;
     }
 
