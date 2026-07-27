@@ -5,11 +5,11 @@ export default function Welcome() {
   const [sosActive, setSosActive] = useState(false);
 
   return (
-    <div className="max-w-md mx-auto min-h-[85vh] flex flex-col justify-between py-8 px-4 animate-fade-in text-white">
+    <div className="max-w-md mx-auto min-h-[90vh] flex flex-col justify-between py-6 px-4 animate-fade-in text-white">
       
       {/* ── SOS Modal ── */}
       {sosActive && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-fade-in">
           <div className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl" style={{
             background: 'linear-gradient(160deg, #1a0a0a 0%, #0f172a 100%)',
             border: '1px solid rgba(239,68,68,0.3)'
@@ -18,18 +18,20 @@ export default function Welcome() {
             <div className="p-6 space-y-5 text-center">
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-3xl animate-bounce">🚨</div>
               <div>
-                <h3 className="text-xl font-black text-white">Emergency Helpline</h3>
-                <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                <h3 className="text-xl font-black text-white">आपातकालीन हेल्पलाइन</h3>
+                <h3 className="text-sm font-bold text-slate-300">Emergency Helpline</h3>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  गया में तत्काल सहायता के लिए आपातकालीन संपर्कों पर कॉल करें।<br/>
                   Call emergency contacts directly for immediate assistance in Gaya.
                 </p>
               </div>
-              <div className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 space-y-2 text-left">
+              <div className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 space-y-2.5 text-left">
                 <a href="tel:112" className="flex justify-between items-center text-xs py-1 hover:text-red-400 transition-colors">
-                  <span className="text-slate-400">Emergency Helpline</span>
+                  <span className="text-slate-400 font-semibold">आपातकालीन सेवा (Emergency)</span>
                   <span className="text-red-400 font-bold bg-red-500/10 px-2 py-0.5 rounded-lg border border-red-500/20">📞 112</span>
                 </a>
                 <a href="tel:100" className="flex justify-between items-center text-xs py-1 hover:text-red-400 transition-colors">
-                  <span className="text-slate-400">Police Dispatch</span>
+                  <span className="text-slate-400 font-semibold">पुलिस कंट्रोल (Police)</span>
                   <span className="text-red-400 font-bold bg-red-500/10 px-2 py-0.5 rounded-lg border border-red-500/20">📞 100</span>
                 </a>
               </div>
@@ -37,7 +39,7 @@ export default function Welcome() {
                 onClick={() => setSosActive(false)}
                 className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-colors cursor-pointer"
               >
-                Dismiss Alert
+                बंद करें / Dismiss
               </button>
             </div>
           </div>
@@ -45,24 +47,25 @@ export default function Welcome() {
       )}
 
       {/* ── Top Section (Welcome & Logo) ── */}
-      <div className="text-center space-y-4 pt-4">
+      <div className="text-center space-y-3 pt-2">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          Gaya Digital Guide
+          गया डिजिटल गाइड / Gaya Digital Guide
         </div>
-        <h1 className="text-3xl font-black text-transparent bg-gradient-to-b from-white to-slate-300 bg-clip-text leading-tight">
+        <h1 className="text-3xl font-black text-transparent bg-gradient-to-b from-white to-slate-300 bg-clip-text leading-tight pt-1">
           Welcome to Gaya
         </h1>
-        <p className="text-sm text-slate-400 max-w-xs mx-auto leading-relaxed">
-          Your digital assistant for real-time information, safety assistance, and navigation during events.
+        <p className="text-xs sm:text-sm text-slate-400 max-w-xs mx-auto leading-relaxed">
+          पर्यटकों और तीर्थयात्रियों के लिए वास्तविक समय की जानकारी, सुरक्षा सहायता और लाइव नेविगेशन मार्गदर्शक।<br/>
+          Your digital assistant for real-time information, safety assistance, and navigation in Gaya.
         </p>
       </div>
 
       {/* ── Center Section (Primary Action) ── */}
-      <div className="my-8 space-y-4">
+      <div className="my-6 space-y-4">
         {/* Main Interactive Map Card */}
         <div 
-          className="rounded-3xl p-6 relative overflow-hidden group"
+          className="rounded-3xl p-5 sm:p-6 relative overflow-hidden group"
           style={{
             background: 'linear-gradient(160deg, #0f172a 0%, #050d1a 100%)',
             border: '1px solid rgba(30,41,59,0.8)',
@@ -81,9 +84,11 @@ export default function Welcome() {
             </div>
 
             <div>
-              <h2 className="text-xl font-black text-white">Interactive Navigation Map</h2>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Find the nearest toilets, help desks, medical centers, parking, and get walking directions.
+              <h2 className="text-lg sm:text-xl font-black text-white">डिजिटल नेविगेशन नक्शा</h2>
+              <h3 className="text-xs font-semibold text-slate-400">Interactive Navigation Map</h3>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                नजदीकी शौचालय, हेल्प डेस्क, चिकित्सा केंद्र, मंदिर, पार्किंग स्थल ढूंढें और चलने के रास्ते की दिशा प्राप्त करें।<br/>
+                Find nearest toilets, help desks, medical centers, temples, parking, and get walking directions.
               </p>
             </div>
 
@@ -95,7 +100,7 @@ export default function Welcome() {
                 boxShadow: '0 8px 24px rgba(16,185,129,0.2)'
               }}
             >
-              Open Navigation Map
+              नक्शा खोलें / Open Map
             </Link>
           </div>
         </div>
@@ -103,20 +108,21 @@ export default function Welcome() {
         {/* Emergency SOS Quick Launch */}
         <button
           onClick={() => setSosActive(true)}
-          className="w-full py-4 px-5 rounded-2xl bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold flex items-center justify-between transition-all active:scale-[0.98] cursor-pointer"
+          className="w-full py-3.5 px-5 rounded-2xl bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold flex items-center justify-between transition-all active:scale-[0.98] cursor-pointer"
         >
           <div className="flex items-center gap-2">
             <span>🚨</span>
-            <span>Emergency SOS Help</span>
+            <span>आपातकालीन सहायता / SOS Help</span>
           </div>
-          <span className="text-xs">Call Helpline →</span>
+          <span className="text-xs">क्लिक करें / Click →</span>
         </button>
       </div>
 
       {/* ── Bottom Section (Footer) ── */}
-      <div className="text-center space-y-4 pt-4 border-t border-slate-900/60">
+      <div className="text-center space-y-3 pt-3 border-t border-slate-900/60">
         <p className="text-[10px] text-slate-500 leading-relaxed max-w-xs mx-auto">
-          Authorized by District Administration Gaya. For updates or feedback, visit information booths.
+          जिला प्रशासन गया द्वारा अधिकृत। किसी भी सहायता हेतु हमारे हेल्प डेस्क काउंटर पर संपर्क करें।<br/>
+          Authorized by District Administration Gaya.
         </p>
         <div className="text-[10px] text-slate-700 font-medium">
           Powered by{' '}
