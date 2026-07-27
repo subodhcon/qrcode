@@ -39,7 +39,20 @@ export const translations = {
     nearbyFacilities: "Nearby Facilities",
     tapToNavigate: "Tap to navigate",
     youAreHere: "You are here",
-    navigate: "Navigate"
+    navigate: "Navigate",
+
+    // Categories
+    "Security": "Security",
+    "Restrooms": "Restrooms",
+    "Medical": "Medical",
+    "Help": "Help Desk",
+    "Toilet": "Restrooms",
+    "Toilets": "Restrooms",
+    "Parking": "Parking",
+    "Drinking Water": "Drinking Water",
+    "Temple": "Temple",
+    "Ghat": "Ghat",
+    "Food": "Food"
   },
   hi: {
     // Hindi
@@ -79,7 +92,20 @@ export const translations = {
     nearbyFacilities: "आस-पास की सुविधाएं",
     tapToNavigate: "नेविगेट करने के लिए टैप करें",
     youAreHere: "आप यहाँ हैं",
-    navigate: "नेविगेट"
+    navigate: "नेविगेट",
+
+    // Categories
+    "Security": "सुरक्षा",
+    "Restrooms": "शौचालय",
+    "Medical": "चिकित्सा",
+    "Help": "सहायता डेस्क",
+    "Toilet": "शौचालय",
+    "Toilets": "शौचालय",
+    "Parking": "पार्किंग",
+    "Drinking Water": "पेयजल",
+    "Temple": "मंदिर",
+    "Ghat": "घाट",
+    "Food": "भोजन"
   },
   bn: {
     // Bengali
@@ -105,7 +131,7 @@ export const translations = {
     steps: "ধাপ সমূহ",
     exitNav: "নেভিগেশন বন্ধ করুন",
     stepByStepDirections: "ধাপে ধাপে নির্দেশাবলী",
-    recenterMap: "ম্যাপ পুনরায় কেন্দ্র করুন",
+    recenterMap: "م্যাপ পুনরায় কেন্দ্র করুন",
     walkTime: "হাঁটার সময়",
     distance: "দূরত্ব",
     start: "শুরু করুন",
@@ -119,7 +145,20 @@ export const translations = {
     nearbyFacilities: "কাছাকাছি সুবিধাসমূহ",
     tapToNavigate: "নেভিগেট করতে আলতো চাপুন",
     youAreHere: "আপনি এখানে আছেন",
-    navigate: "নেভিগেট"
+    navigate: "নেভিগেট",
+
+    // Categories
+    "Security": "নিরাপত্তা",
+    "Restrooms": "শৌচাগার",
+    "Medical": "চিকিৎসা",
+    "Help": "সহায়তা ডেস্ক",
+    "Toilet": "শৌচাগার",
+    "Toilets": "শৌচাগার",
+    "Parking": "পার্কিং",
+    "Drinking Water": "বিশুদ্ধ জল",
+    "Temple": "মন্দির",
+    "Ghat": "ঘাট",
+    "Food": "খাবার"
   },
   te: {
     // Telugu
@@ -135,7 +174,7 @@ export const translations = {
     emergencyServices: "అత్యవసర సేవలు",
     policeControl: "పోలీస్ కంట్రోల్",
     dismiss: "మూసివేయి",
-    authorizedBy: "జిల్లా పరిపాలన గయా వారిచే ఆమోదించబడింది.",
+    authorizedBy: "జિલ્లా పరిపాలన గయా వారిచే ఆమోదించబడింది.",
     
     searchPlaceholder: "సమీపంలో శోధించండి...",
     navMode: "నావిగేషన్ మోడ్",
@@ -159,7 +198,20 @@ export const translations = {
     nearbyFacilities: "సమీప సౌకర్యాలు",
     tapToNavigate: "నావిగేట్ చేయడానికి నొక్కండి",
     youAreHere: "మీరు ఇక్కడ ఉన్నారు",
-    navigate: "నావిగేట్"
+    navigate: "నావిగేట్",
+
+    // Categories
+    "Security": "భద్రత",
+    "Restrooms": "శౌచాలయాలు",
+    "Medical": "వైద్యం",
+    "Help": "సహాయ కేంద్రం",
+    "Toilet": "శౌచాలయాలు",
+    "Toilets": "శౌచాలయాలు",
+    "Parking": "పార్కింగ్",
+    "Drinking Water": "త్రాగునీరు",
+    "Temple": "દેవాలయం",
+    "Ghat": "ఘాట్",
+    "Food": "ఆహారం"
   },
   mr: {
     // Marathi
@@ -167,7 +219,7 @@ export const translations = {
     welcomeTitle: "गया मध्ये आपले स्वागत आहे",
     welcomeSubtitle: "गया मध्ये थेट माहिती, सुरक्षा सहाय्य आणि थेट नेव्हिगेशनसाठी आपला डिजिटल सहाय्यक.",
     mapCardTitle: "डिजिटल नेव्हिगेशन नकाशा",
-    mapCardDesc: "जवळपासचे शौचालय, मदत कक्ष, वैद्यकीय केंद्र, मंदिर, पार्किंग शोधा आणि चालण्याचे मार्ग मिळवा.",
+    mapCardDesc: "जवळपासचे शौचालय, मदत कक्ष, वैद्यकीय केंद्र, मंदिर, parking शोधा आणि चालण्याचे मार्ग मिळवा.",
     openMapBtn: "नकाशा उघडा",
     sosBtn: "तातडीची मदत",
     sosHelplineTitle: "आपत्कालीन हेल्पलाइन",
@@ -199,7 +251,20 @@ export const translations = {
     nearbyFacilities: "जवळपासच्या सोयी",
     tapToNavigate: "नेव्हिगेट करण्यासाठी टॅप करा",
     youAreHere: "तुम्ही येथे आहात",
-    navigate: "नेव्हिगेट"
+    navigate: "नेव्हिगेट",
+
+    // Categories
+    "Security": "सुरक्षा",
+    "Restrooms": "शौचालय",
+    "Medical": "वैद्यकीय",
+    "Help": "मदत कक्ष",
+    "Toilet": "शौचालय",
+    "Toilets": "शौचालय",
+    "Parking": "पार्किंग",
+    "Drinking Water": "पिण्याचे पाणी",
+    "Temple": "मंदिर",
+    "Ghat": "घाट",
+    "Food": "जेवण"
   },
   ta: {
     // Tamil
@@ -239,7 +304,20 @@ export const translations = {
     nearbyFacilities: "அருகிலுள்ள வசதிகள்",
     tapToNavigate: "செல்ல தட்டவும்",
     youAreHere: "நீங்கள் இங்கே இருக்கிறீர்கள்",
-    navigate: "வழிசெலுத்து"
+    navigate: "வழிசெலுத்து",
+
+    // Categories
+    "Security": "பாதுகாப்பு",
+    "Restrooms": "கழிப்பறைகள்",
+    "Medical": "மருத்துவம்",
+    "Help": "உதவி மையம்",
+    "Toilet": "கழிப்பறைகள்",
+    "Toilets": "கழிப்பறைகள்",
+    "Parking": "பார்க்கிங்",
+    "Drinking Water": "குடிநீர்",
+    "Temple": "கோவில்",
+    "Ghat": "படித்துறை",
+    "Food": "உணவு"
   },
   gu: {
     // Gujarati
@@ -258,7 +336,7 @@ export const translations = {
     authorizedBy: "ગયા જિલ્લા વહીવટીતંત્ર દ્વારા અધિકૃત.",
     
     searchPlaceholder: "નજીકમાં શોધો...",
-    navMode: "નેવિગેશન મોડ",
+    navMode: "नेविगेशन मोड",
     calculating: "ગણતરી ચાલુ છે...",
     walk: "ચાલવું",
     routeTo: "માર્ગ ગંતવ્ય",
@@ -279,7 +357,20 @@ export const translations = {
     nearbyFacilities: "નજીકની સુવિધાઓ",
     tapToNavigate: "નેવિગેટ કરવા ટેપ કરો",
     youAreHere: "તમે અહીં છો",
-    navigate: "નેવિગેટ"
+    navigate: "નેવિગેટ",
+
+    // Categories
+    "Security": "સુરક્ષા",
+    "Restrooms": "શૌચાલય",
+    "Medical": "તબીબી",
+    "Help": "હેલ્પ ડેસ્ક",
+    "Toilet": "શૌચાલય",
+    "Toilets": "શૌચાલય",
+    "Parking": "પાર્કિંગ",
+    "Drinking Water": "પીવાનું પાણી",
+    "Temple": "મંદિર",
+    "Ghat": "ઘાટ",
+    "Food": "ખોરાક"
   },
   kn: {
     // Kannada
@@ -319,7 +410,20 @@ export const translations = {
     nearbyFacilities: "ಹತ್ತಿರದ ಸೌಲಭ್ಯಗಳು",
     tapToNavigate: "ನ್ಯಾವಿಗೇಟ್ ಮಾಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ",
     youAreHere: "ನೀವು ಇಲ್ಲಿದ್ದೀರಿ",
-    navigate: "ನ್ಯಾವಿಗೇಟ್"
+    navigate: "ನ್ಯಾವಿಗೇಟ್",
+
+    // Categories
+    "Security": "ಭದ್ರತೆ",
+    "Restrooms": "ಶೌಚಾಲಯಗಳು",
+    "Medical": "ವೈದ್ಯಕೀಯ",
+    "Help": "ಸಹಾಯ ಕೇಂದ್ರ",
+    "Toilet": "ಶೌಚಾಲಯಗಳು",
+    "Toilets": "ಶೌಚಾಲಯಗಳು",
+    "Parking": "ಪಾರ್ಕಿಂಗ್",
+    "Drinking Water": "ಕುಡಿಯುವ ನೀರು",
+    "Temple": "ದೇವಾಲಯ",
+    "Ghat": "ಘಾಟ್",
+    "Food": "ಆಹಾರ"
   },
   ml: {
     // Malayalam
@@ -334,7 +438,7 @@ export const translations = {
     sosHelplineDesc: "ഉടൻ സഹായത്തിനായി ഗയയിലെ അടിയന്തിര നമ്പറുകളിലേക്ക് നേരിട്ട് വിളിക്കുക.",
     emergencyServices: "അടിയന്തിര സേവനം",
     policeControl: "പോലീസ് കൺട്രോൾ",
-    dismiss: "അടയ്ക്കുക",
+    dismiss: "അടയ്ക്കക്കുക",
     authorizedBy: "ഗയ ജില്ലാ ഭരണകൂടം അംഗീകരിച്ചത്.",
     
     searchPlaceholder: "സമീപത്ത് തിരയുക...",
@@ -359,7 +463,20 @@ export const translations = {
     nearbyFacilities: "സമീപത്തുള്ള സൗകര്യങ്ങൾ",
     tapToNavigate: "വഴി അറിയാൻ ടാപ്പ് ചെയ്യുക",
     youAreHere: "നിങ്ങൾ ഇവിടെയുണ്ട്",
-    navigate: "നാവിഗേറ്റ്"
+    navigate: "നാവിഗേറ്റ്",
+
+    // Categories
+    "Security": "സുരക്ഷ",
+    "Restrooms": "ശൗചാലയങ്ങൾ",
+    "Medical": "വൈദ്യസഹായം",
+    "Help": "സഹായ കേന്ദ്രം",
+    "Toilet": "ശൗചാലയങ്ങൾ",
+    "Toilets": "ശൗചാലയങ്ങൾ",
+    "Parking": "പാർക്കിംഗ്",
+    "Drinking Water": "കുടിവെള്ളം",
+    "Temple": "ക്ഷേത്രം",
+    "Ghat": "ഘട്ട്",
+    "Food": "ഭക്ഷണം"
   },
   pa: {
     // Punjabi
@@ -399,7 +516,20 @@ export const translations = {
     nearbyFacilities: "ਨੇੜਲੀਆਂ ਸਹੂਲਤਾਂ",
     tapToNavigate: "ਨੇਵੀਗੇਟ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ",
     youAreHere: "ਤੁਸੀਂ ਇੱਥੇ ਹੋ",
-    navigate: "ਨੇਵੀਗੇਟ"
+    navigate: "ਨੇਵੀਗੇਟ",
+
+    // Categories
+    "Security": "ਸੁਰੱਖਿਆ",
+    "Restrooms": "ਪਖਾਨੇ",
+    "Medical": "ਮੈਡੀਕਲ",
+    "Help": "ਮਦਦ ਡੈਸਕ",
+    "Toilet": "ਪਖਾਨੇ",
+    "Toilets": "ਪਖਾਨੇ",
+    "Parking": "ਪਾਰਕਿੰਗ",
+    "Drinking Water": "ਪੀਣ ਵਾਲਾ ਪਾਣੀ",
+    "Temple": "ਮੰਦਰ",
+    "Ghat": "ਘਾਟ",
+    "Food": "ਭੋਜਨ"
   },
   or: {
     // Odia
@@ -415,7 +545,7 @@ export const translations = {
     emergencyServices: "ଜରୁରୀକାଳୀନ ସେବା",
     policeControl: "ପୋଲିସ୍ କଣ୍ଟ୍ରୋଲ୍",
     dismiss: "ବନ୍ଦ କରନ୍ତୁ",
-    authorizedBy: "ଜିଲ୍ଲା ପ୍ରଶାସନ ଗୟା ଦ୍ଵାରା ଅନୁମୋଦିତ।",
+    authorizedBy: "ଜିଲ୍ଲା ପ୍ରଶାସନ ଗୟା ଦ୍ଵାରା ଅନୁମୋਦିତ।",
     
     searchPlaceholder: "ଆଖପାଖରେ ଖୋଜନ୍ତୁ...",
     navMode: "ନେଭିଗେସନ୍ ମୋଡ୍",
@@ -423,23 +553,36 @@ export const translations = {
     walk: "ପାଦଚଲା",
     routeTo: "ମାର୍ଗ ଗନ୍ତବ୍ୟ",
     steps: "ପଦକ୍ଷେପଗୁଡ଼ିକ",
-    exitNav: "ନେଭିଗେସନ୍ ବନ୍ଦ କରନ୍ତୁ",
-    stepByStepDirections: "ପର୍ଯ୍ୟାୟକ୍ରମିକ ନିର୍ଦ୍ଦେଶାବଳୀ",
-    recenterMap: "ମାନଚିତ୍ର କେନ୍ଦ୍ରୀଭୂତ କରନ୍ତୁ",
+    exitNav: "ନେଭିଗେସନ୍ ବନ୍ଦ କରନ୍ତು",
+    stepByStepDirections: "ପର୍ଯ୍ୟାಯକ୍ରମିକ ନିର୍ଦ୍ଦେଶାବଳୀ",
+    recenterMap: "ମାନଚିତ୍ର କେନ୍ଦ୍ରୀଭୂତ କରନ୍ତု",
     walkTime: "ଚାଲିବା ସମୟ",
     distance: "ଦୂରତା",
     start: "ଆରମ୍ଭ କରନ୍ତୁ",
     loadingLocation: "ଅବସ୍ଥାନ ଲୋଡ୍ ହେଉଛି...",
-    tapMarker: "ମାର୍ଗ ଖୋଜିବା ପାଇଁ ଯେକୌଣସି ମାର୍କର ଉପରେ ଟ୍ୟାପ୍ କରନ୍ତୁ",
+    tapMarker: "ମାର୍ଗ ଖୋଜିବା ପାଇଁ ଯେକୌଣସି ମାର୍କର ଉପରେ ଟ୍ୟାପ୍ କରନ୍ତು",
     navigatingTo: "ଗୁଗୁଲ୍ ମ୍ୟାପ୍ ତାଲିକାକୁ ଯାଉଛି",
     closePreview: "ପୂର୍ବାବଲୋକନ ବନ୍ଦ କରନ୍ତୁ",
     all: "ସମସ୍ତ",
 
     scanConfirmed: "QR ସ୍କෑନ୍ ନିଶ୍ଚିତ ହେଲା",
-    nearbyFacilities: "ଆଖପାଖ ସୁବିଧା",
-    tapToNavigate: "ନେଭିଗେଟ୍ କରିବାକୁ ଟ୍ୟାପ୍ କରନ୍ତୁ",
+    nearbyFacilities: "ଆଖପାଖ ସୁବିਧା",
+    tapToNavigate: "ନେଭିଗେଟ୍ କରିବାକୁ ଟ୍ୟାପ୍ କରନ୍ତು",
     youAreHere: "ଆପଣ ଏଠାରେ ଅଛନ୍ତି",
-    navigate: "ନେଭିଗେଟ୍"
+    navigate: "ନେଭିଗେଟ୍",
+
+    // Categories
+    "Security": "ସୁରକ୍ษา",
+    "Restrooms": "ଶୌଚାଳୟ",
+    "Medical": "ଚିକିତ୍ସା",
+    "Help": "ସହାୟତା ଡେସ୍କ",
+    "Toilet": "ଶୌଚାଳୟ",
+    "Toilets": "ଶୌଚାଳୟ",
+    "Parking": "ପାର୍କିଙ୍ଗ",
+    "Drinking Water": "ପିଇବା ପାଣି",
+    "Temple": "ମନ୍ଦିର",
+    "Ghat": "ଘାଟ",
+    "Food": "ଖାଦ୍ୟ"
   },
   ur: {
     // Urdu
@@ -447,7 +590,7 @@ export const translations = {
     welcomeTitle: "گیا میں آپ کا خیرمقدم ہے",
     welcomeSubtitle: "گیا میں لائیو معلومات، حفاظتی مدد اور لائیو نیویگیشن کے لیے آپ کا ڈیجیٹل اسسٹنٹ۔",
     mapCardTitle: "ڈیجیٹل نیویگیشن نقشہ",
-    mapCardDesc: "قریبی بیت الخلاء، ہیلپ ڈیسک، میڈیکل سینٹر، مندر، پارکنگ تلاش کریں اور پیدل چلنے کا راستہ حاصل کریں۔",
+    mapCardDesc: "قریبی بیت الخلا، ہیلپ ڈیسک، میڈیکل سینٹر، مندر، پارکنگ تلاش کریں اور پیدل چلنے کا راستہ حاصل کریں۔",
     openMapBtn: "نقشہ کھولیں",
     sosBtn: "ایمرجنسی مدد",
     sosHelplineTitle: "ایمرجنسی ہیلپ لائن",
@@ -479,6 +622,19 @@ export const translations = {
     nearbyFacilities: "قریبی سہولیات",
     tapToNavigate: "نیویگیٹ کرنے کے لیے ٹیپ کریں",
     youAreHere: "آپ یہاں ہیں",
-    navigate: "نیویگیٹ"
+    navigate: "نیویگیٹ",
+
+    // Categories
+    "Security": "سیکورٹی",
+    "Restrooms": "بیت الخلا",
+    "Medical": "طبی سہولت",
+    "Help": "ہیلپ ڈیسک",
+    "Toilet": "بیت الخلا",
+    "Toilets": "بیت الخلا",
+    "Parking": "پارکنگ",
+    "Drinking Water": "پینے کا پانی",
+    "Temple": "مندر",
+    "Ghat": "گھاٹ",
+    "Food": "کھانا"
   }
 };

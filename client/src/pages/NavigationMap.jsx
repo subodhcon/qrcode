@@ -739,7 +739,7 @@ export default function NavigationMap() {
                       }`}
                   >
                     <span>{cat.emoji}</span>
-                    <span>{cat.name}</span>
+                    <span>{t(cat.name) || cat.name}</span>
                   </button>
                 );
               })}
