@@ -17,8 +17,8 @@ const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
   const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
   const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
   const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-            Math.cos(phi1) * Math.cos(phi2) *
-            Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    Math.cos(phi1) * Math.cos(phi2) *
+    Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -50,7 +50,7 @@ export default function NavigationMap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [routeError, setRouteError] = useState(null);
-  
+
   // Geolocation & Map State
   const [gpsPosition, setGpsPosition] = useState(null);
   const [gpsError, setGpsError] = useState(null);
@@ -63,6 +63,25 @@ export default function NavigationMap() {
   const [navigationSteps, setNavigationSteps] = useState([]);
   const [distanceText, setDistanceText] = useState('');
   const [durationText, setDurationText] = useState('');
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [showStatus, setShowStatus] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  // Show status bar for 10 seconds whenever loading finishes or the selected category filter changes
+  useEffect(() => {
+    if (loading || !scriptLoaded) {
+      setShowStatus(false);
+      return;
+    }
+
+    setShowStatus(true);
+
+    const timer = setTimeout(() => {
+      setShowStatus(false);
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, [selectedCategory, loading, scriptLoaded]);
 
   // Fetch Google Maps API Key from backend if not set in client env
   useEffect(() => {
@@ -140,7 +159,7 @@ export default function NavigationMap() {
           const to = { latitude: newLat, longitude: newLng };
           const dLat = to.latitude - from.latitude;
           const dLng = to.longitude - from.longitude;
-          
+
           // Distance threshold to avoid tiny coordinate jitter/compass noise
           if (Math.abs(dLat) > 0.00001 || Math.abs(dLng) > 0.00001) {
             const lat1 = (from.latitude * Math.PI) / 180;
@@ -183,19 +202,18 @@ export default function NavigationMap() {
         setHeading(compassHeading);
       }
     };
-    
+
     window.addEventListener('deviceorientation', handleOrientation);
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, []);
 
   // 4. Load Google Maps script dynamically
-  const [scriptLoaded, setScriptLoaded] = useState(false);
   useEffect(() => {
     if (!googleMapsKey) {
       return;
     }
 
-    if (window.google && window.google.maps) {
+    if (window.google && window.google.maps && window.google.maps.Map) {
       setScriptLoaded(true);
       return;
     }
@@ -204,19 +222,28 @@ export default function NavigationMap() {
     const existingScript = document.getElementById(scriptId);
 
     if (!existingScript) {
+      window.initGoogleMaps = () => {
+        setScriptLoaded(true);
+      };
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places&loading=async&callback=initGoogleMaps`;
       script.id = scriptId;
       script.async = true;
       script.defer = true;
-      script.onload = () => setScriptLoaded(true);
       script.onerror = () => {
         setError('Failed to load Google Maps script. Check your API key.');
         setLoading(false);
       };
       document.body.appendChild(script);
     } else {
-      existingScript.addEventListener('load', () => setScriptLoaded(true));
+      // If script tag already exists, poll until window.google.maps.Map is fully loaded
+      const interval = setInterval(() => {
+        if (window.google && window.google.maps && window.google.maps.Map) {
+          setScriptLoaded(true);
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
     }
   }, [googleMapsKey]);
 
@@ -231,7 +258,7 @@ export default function NavigationMap() {
       // Check if coordinates have changed significantly, or if category changed, to avoid redundant fetches.
       const hasCategoryChanged = lastFetchedCoordsRef.current?.category !== selectedCategory;
       const isInitialFetch = !lastFetchedCoordsRef.current;
-      
+
       let isFarEnough = false;
       if (lastFetchedCoordsRef.current) {
         const dLat = gpsPosition.latitude - lastFetchedCoordsRef.current.latitude;
@@ -247,7 +274,7 @@ export default function NavigationMap() {
       }
 
       try {
-        const params = { 
+        const params = {
           category: selectedCategory,
           lat: gpsPosition.latitude,
           lng: gpsPosition.longitude
@@ -306,6 +333,7 @@ export default function NavigationMap() {
         disableDefaultUI: true,
         zoomControl: false,
         mapTypeControl: false,
+        gestureHandling: 'greedy',
         styles: [
           {
             featureType: 'poi',
@@ -395,14 +423,12 @@ export default function NavigationMap() {
       userMarkerRef.current.setIcon(arrowIcon);
     }
 
-    // Auto-Follow Mode: Center the map on the user if they are actively navigating.
-    // Shift map center slightly south so the user marker stays visible above the bottom details card.
-    if (selectedFacility) {
+    if (selectedFacility && isNavigating) {
       const zoom = map.getZoom() || 17;
       const latOffset = 0.08 / Math.pow(2, zoom - 10);
       map.setCenter({ lat: position.lat - latOffset, lng: position.lng });
     }
-  }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, selectedFacility]);
+  }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, selectedFacility, isNavigating]);
 
   // 8b. Draw Facilities Markers
   useEffect(() => {
@@ -427,15 +453,15 @@ export default function NavigationMap() {
         title: fac.name,
         label: {
           text: emoji,
-          fontSize: isSelected ? '15px' : '12px',
+          fontSize: isSelected ? '22px' : '18px',
         },
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
-          scale: isSelected ? 18 : 14,
+          scale: isSelected ? 20 : 16,
           fillColor: '#ffffff',
           fillOpacity: 0.95,
           strokeColor: color,
-          strokeWeight: 2,
+          strokeWeight: 3,
         },
       });
 
@@ -448,11 +474,10 @@ export default function NavigationMap() {
           <div style="font-size: 10px; color: #64748b; margin-bottom: 6px;">
             Distance: ${fac.distanceFormatted}
           </div>
-          ${
-            isSelected
-              ? '<span style="font-size:10px;font-weight:bold;color:#10b981;">✓ Selected Destination</span>'
-              : `<button id="nav-btn-${fac.id}" style="background-color:${color};color:#ffffff;border:none;padding:5px 10px;font-size:10px;font-weight:bold;border-radius:4px;cursor:pointer;width:100%;">Navigate Here</button>`
-          }
+          ${isSelected
+          ? '<span style="font-size:10px;font-weight:bold;color:#10b981;">✓ Selected Destination</span>'
+          : `<button id="nav-btn-${fac.id}" style="background-color:${color};color:#ffffff;border:none;padding:5px 10px;font-size:10px;font-weight:bold;border-radius:4px;cursor:pointer;width:100%;">Navigate Here</button>`
+        }
         </div>
       `;
 
@@ -537,7 +562,7 @@ export default function NavigationMap() {
       (result, status) => {
         if (status === window.google.maps.DirectionsStatus.OK) {
           directionsRendererRef.current.setDirections(result);
-          
+
           const leg = result.routes[0].legs[0];
           setDistanceText(leg.distance.text);
           setDurationText(leg.duration.text);
@@ -563,6 +588,7 @@ export default function NavigationMap() {
   // Navigation click handler
   const handleNavigateTo = async (facility) => {
     setSelectedFacility(facility);
+    setIsNavigating(false);
     setSearchParams({ destination: facility.name });
 
     // Log telemetry click count to backend
@@ -579,10 +605,10 @@ export default function NavigationMap() {
       const map = mapInstanceRef.current;
       const zoom = 17;
       map.setZoom(zoom);
-      
+
       const latOffset = selectedFacility ? 0.08 / Math.pow(2, zoom - 10) : 0;
       map.setCenter({ lat: activeOrigin.latitude - latOffset, lng: activeOrigin.longitude });
-      
+
       // Clear cache to force a fresh fetch call in useEffect
       lastFetchedCoordsRef.current = null;
       setGpsPosition({ ...gpsPosition });
@@ -613,7 +639,7 @@ export default function NavigationMap() {
 
   return (
     <div className="relative h-[88vh] md:h-[90vh] min-h-[550px] w-full rounded-2xl overflow-hidden flex flex-col animate-fade-in" style={{ boxShadow: '0 0 0 1px rgba(30,41,59,0.6), 0 30px 80px rgba(0,0,0,0.6)' }}>
-      
+
       {/* ── Loading Overlay ── */}
       {(loading || !scriptLoaded) && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md">
@@ -622,7 +648,7 @@ export default function NavigationMap() {
       )}
 
       {/* ── Top Turn-by-Turn Header (When Navigating) ── */}
-      {selectedFacility && (
+      {selectedFacility && isNavigating && (
         <div className="absolute top-0 left-0 right-0 z-40 text-white px-3 py-2.5 sm:px-4 sm:py-3 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', borderBottom: '1px solid rgba(52,211,153,0.3)' }}>
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/12 border border-white/15 flex items-center justify-center text-base sm:text-xl shrink-0">
@@ -655,6 +681,7 @@ export default function NavigationMap() {
                 setNavigationSteps([]);
                 setShowSteps(false);
                 setRouteError(null);
+                setIsNavigating(false);
               }}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-950/40 hover:bg-slate-950/70 text-white font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
               title="Exit Navigation"
@@ -672,6 +699,8 @@ export default function NavigationMap() {
             {/* Search Input */}
             <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5 shadow-xl bg-slate-950/90 backdrop-blur-md flex-1">
               <input
+                id="search-input"
+                name="search"
                 type="text"
                 placeholder="Search nearby..."
                 value={searchQuery}
@@ -689,11 +718,10 @@ export default function NavigationMap() {
             <div className="flex items-center gap-1.5 no-scrollbar overflow-x-auto w-full max-w-[90vw] sm:max-w-md py-0.5">
               <button
                 onClick={() => setSelectedCategory('All')}
-                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${
-                  selectedCategory === 'All'
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${selectedCategory === 'All'
                     ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
                     : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/90 backdrop-blur-md'
-                }`}
+                  }`}
               >
                 🌐 All
               </button>
@@ -703,11 +731,10 @@ export default function NavigationMap() {
                   <button
                     key={cat._id || cat.id}
                     onClick={() => setSelectedCategory(cat.name)}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${
-                      isSel
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${isSel
                         ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
                         : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/90 backdrop-blur-md'
-                    }`}
+                      }`}
                   >
                     <span>{cat.emoji}</span>
                     <span>{cat.name}</span>
@@ -775,11 +802,10 @@ export default function NavigationMap() {
             <button
               key={type.key}
               onClick={() => setMapType(type.key)}
-              className={`w-10 h-10 rounded-xl text-sm flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95 border ${
-                isSelected
+              className={`w-10 h-10 rounded-xl text-sm flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95 border ${isSelected
                   ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-emerald-500/30'
                   : 'bg-slate-950/92 text-slate-300 border-slate-800/80 hover:bg-slate-900'
-              }`}
+                }`}
               title={type.label}
             >
               {type.icon}
@@ -792,8 +818,26 @@ export default function NavigationMap() {
       <div className="absolute bottom-3 left-3 right-3 z-30 max-w-xl mx-auto">
         {selectedFacility ? (
           /* Selected destination metrics */
-          <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 md:p-4 shadow-2xl backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-            
+          <div className="relative bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 md:p-4 shadow-2xl backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+
+            {/* Close Button for Preview */}
+            {!isNavigating && (
+              <button
+                onClick={() => {
+                  setSelectedFacility(null);
+                  setSearchParams({});
+                  setNavigationSteps([]);
+                  setShowSteps(false);
+                  setRouteError(null);
+                  setIsNavigating(false);
+                }}
+                className="absolute top-2 right-2 text-slate-400 hover:text-white transition-colors cursor-pointer text-xs p-1"
+                title="Close Preview"
+              >
+                ✕
+              </button>
+            )}
+
             <div className="flex items-center gap-2.5 pb-2 sm:pb-0 border-b border-slate-800/80 sm:border-none min-w-0 flex-1">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                 🚶
@@ -836,14 +880,27 @@ export default function NavigationMap() {
                       <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{distanceText || 'Calculating'}</h4>
                     </div>
                   </div>
+
+                  {/* Start Navigation Button */}
+                  {!isNavigating && (
+                    <button
+                      onClick={() => setIsNavigating(true)}
+                      className="col-span-2 sm:col-span-1 bg-white hover:bg-slate-100 text-slate-800 font-extrabold py-2 px-4 rounded-full border border-slate-300 shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer shrink-0"
+                    >
+                      <svg className="w-4.5 h-4.5 text-blue-500 fill-none stroke-current" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                      <span>Start</span>
+                    </button>
+                  )}
                 </>
               )}
             </div>
 
           </div>
-        ) : (
+        ) : showStatus ? (
           /* No destination selected - show status */
-          <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 shadow-2xl backdrop-blur-md text-center">
+          <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 shadow-2xl backdrop-blur-md text-center transition-all duration-500">
             <p className="text-xs text-slate-400">
               <span className="text-white font-bold">📍 {activeOrigin?.name || 'Loading Location...'}</span>
               <span className="mx-2 text-slate-700">·</span>
@@ -856,14 +913,14 @@ export default function NavigationMap() {
               )}
             </p>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Powered by Confluxaa */}
       <div className="absolute bottom-24 left-0 right-0 z-20 text-center">
-        <span className="text-[9px] text-slate-600 font-medium bg-slate-950/60 px-2 py-0.5 rounded-full backdrop-blur-sm">
+        <span className="text-[10px] text-slate-300 font-semibold bg-slate-950/90 px-3 py-1 rounded-full border border-slate-800/85 shadow-xl backdrop-blur-md">
           Powered by{' '}
-          <span className="font-extrabold text-transparent bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text">
+          <span className="font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text ml-0.5">
             Confluxaa
           </span>
         </span>

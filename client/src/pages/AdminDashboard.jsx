@@ -366,8 +366,10 @@ export default function AdminDashboard() {
             <form onSubmit={handleFormSubmit} className="space-y-3">
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Category Name</label>
+                  <label htmlFor="category-name" className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Category Name</label>
                   <input
+                    id="category-name"
+                    name="categoryName"
                     type="text"
                     required
                     value={formName}
@@ -377,8 +379,10 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Emoji Icon</label>
+                  <label htmlFor="category-emoji" className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Emoji Icon</label>
                   <input
+                    id="category-emoji"
+                    name="categoryEmoji"
                     type="text"
                     required
                     value={formEmoji}
@@ -391,8 +395,10 @@ export default function AdminDashboard() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Google Search Keyword</label>
+                  <label htmlFor="google-keyword" className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Google Search Keyword</label>
                   <input
+                    id="google-keyword"
+                    name="googleKeyword"
                     type="text"
                     required
                     value={formKeyword}
@@ -402,8 +408,10 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Google Place Type (Optional)</label>
+                  <label htmlFor="google-type" className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Google Place Type (Optional)</label>
                   <input
+                    id="google-type"
+                    name="googleType"
                     type="text"
                     value={formGoogleType}
                     onChange={(e) => setFormGoogleType(e.target.value)}
