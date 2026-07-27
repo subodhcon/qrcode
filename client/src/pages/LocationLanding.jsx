@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
+import { useTranslation } from '../context/LanguageContext';
 
 /* ── Facility Config ─────────────────────────────── */
 const FACILITY_CONFIG = {
@@ -33,6 +34,7 @@ const FACILITY_CONFIG = {
 
 /* ── FacilityCard ────────────────────────────────── */
 function FacilityCard({ type, data, locationSlug }) {
+  const { t } = useTranslation();
   const cfg = FACILITY_CONFIG[type] || FACILITY_CONFIG.Medical;
   const name = data?.name || '—';
   const distance = data?.distanceFormatted || '—';
@@ -90,7 +92,7 @@ function FacilityCard({ type, data, locationSlug }) {
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
         </svg>
-        Navigate →
+        {t('navigate')} →
       </Link>
     </div>
   );
@@ -99,6 +101,7 @@ function FacilityCard({ type, data, locationSlug }) {
 /* ── Main Component ──────────────────────────────── */
 export default function LocationLanding() {
   const { locationId } = useParams();
+  const { t } = useTranslation();
   const [location, setLocation] = useState(null);
   const [medical, setMedical] = useState(null);
   const [toilet, setToilet] = useState(null);
@@ -179,7 +182,7 @@ export default function LocationLanding() {
             <div className="p-6 space-y-5 text-center">
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-3xl animate-bounce">🚨</div>
               <div>
-                <h3 className="text-xl font-black text-white">Emergency Triggered</h3>
+                <h3 className="text-xl font-black text-white">{t('sosHelplineTitle')}</h3>
                 <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
                   Security &amp; medical teams alerted at{' '}
                   <span className="text-emerald-400 font-bold">{location?.name}</span>.
@@ -187,11 +190,11 @@ export default function LocationLanding() {
               </div>
               <div className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 space-y-2 text-left">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Emergency Helpline</span>
+                  <span className="text-slate-400">{t('emergencyServices')}</span>
                   <span className="text-white font-bold">+91 112</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Security Dispatch</span>
+                  <span className="text-slate-400">{t('policeControl')}</span>
                   <span className="text-white font-bold">+91 100</span>
                 </div>
               </div>
@@ -199,7 +202,7 @@ export default function LocationLanding() {
                 onClick={() => setSosActive(false)}
                 className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-colors cursor-pointer"
               >
-                Dismiss Alert
+                {t('dismiss')}
               </button>
             </div>
           </div>
@@ -210,7 +213,7 @@ export default function LocationLanding() {
       <div className="flex items-center justify-between">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold uppercase tracking-wider">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          QR Scan Confirmed
+          {t('scanConfirmed')}
         </div>
         <button
           onClick={() => setSosActive(true)}
@@ -244,7 +247,7 @@ export default function LocationLanding() {
           </div>
 
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">You are here</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">{t('youAreHere')}</p>
             <h1 className="text-2xl md:text-3xl font-black text-white leading-tight">{location?.name}</h1>
             {location?.description && (
               <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{location.description}</p>
@@ -263,7 +266,7 @@ export default function LocationLanding() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
-            Open Navigation Map
+            {t('openMapBtn')}
           </Link>
         </div>
       </div>
@@ -272,8 +275,8 @@ export default function LocationLanding() {
       {(medical || help || toilet || police) && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-white">Nearby Facilities</h2>
-            <span className="text-[11px] text-slate-500 font-medium">Tap to navigate</span>
+            <h2 className="text-sm font-black text-white">{t('nearbyFacilities')}</h2>
+            <span className="text-[11px] text-slate-500 font-medium">{t('tapToNavigate')}</span>
           </div>
 
           {/* 2-column dynamic grid */}

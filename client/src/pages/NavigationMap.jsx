@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
+import { useTranslation } from '../context/LanguageContext';
 
 // Map Style Switcher options for Google Maps
 const MAP_TYPES = [
@@ -25,6 +26,7 @@ const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
 
 export default function NavigationMap() {
   const { locationId } = useParams();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const destinationParam = searchParams.get('destination');
 
@@ -643,7 +645,7 @@ export default function NavigationMap() {
       {/* ── Loading Overlay ── */}
       {(loading || !scriptLoaded) && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md">
-          <Loading message="Fetching live GPS location & nearby Map..." />
+          <Loading message={t('loadingLocation')} />
         </div>
       )}
 
@@ -656,12 +658,12 @@ export default function NavigationMap() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-widest text-emerald-100/80 flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                <span>Navigation Mode</span>
+                <span>{t('navMode')}</span>
                 <span className="opacity-40">·</span>
-                <span>{durationText || 'Calculating'} walk</span>
+                <span>{durationText || t('calculating')} {t('walk')}</span>
               </p>
               <h3 className="text-xs sm:text-sm font-black text-white truncate leading-tight mt-0.5">
-                Route to {selectedFacility.name}
+                {t('routeTo')} {selectedFacility.name}
               </h3>
             </div>
           </div>
@@ -672,7 +674,7 @@ export default function NavigationMap() {
               className="py-1 px-2.5 sm:py-1.5 sm:px-3 rounded-lg sm:rounded-xl bg-slate-950/40 hover:bg-slate-950/60 text-white font-bold text-[10px] sm:text-xs shadow transition-all border border-white/20 cursor-pointer flex items-center gap-1"
             >
               <span>📋</span>
-              <span className="hidden xs:inline">Steps</span>
+              <span className="hidden xs:inline">{t('steps')}</span>
             </button>
             <button
               onClick={() => {
@@ -684,7 +686,7 @@ export default function NavigationMap() {
                 setIsNavigating(false);
               }}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-950/40 hover:bg-slate-950/70 text-white font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
-              title="Exit Navigation"
+              title={t('exitNav')}
             >
               ✕
             </button>
@@ -702,7 +704,7 @@ export default function NavigationMap() {
                 id="search-input"
                 name="search"
                 type="text"
-                placeholder="Search nearby..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-full"
@@ -723,7 +725,7 @@ export default function NavigationMap() {
                     : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/90 backdrop-blur-md'
                   }`}
               >
-                🌐 All
+                🌐 {t('all')}
               </button>
               {categories.map((cat) => {
                 const isSel = selectedCategory === cat.name;
@@ -752,7 +754,7 @@ export default function NavigationMap() {
         <div className="absolute inset-x-3 bottom-28 z-50 max-w-sm mx-auto rounded-3xl p-5 shadow-2xl space-y-4" style={{ background: 'rgba(2,6,23,0.96)', border: '1px solid rgba(30,41,59,0.8)', backdropFilter: 'blur(20px)' }}>
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <h4 className="text-sm font-black text-white flex items-center gap-2">
-              <span>📋 Step-by-Step Directions</span>
+              <span>📋 {t('stepByStepDirections')}</span>
             </h4>
             <button
               onClick={() => setShowSteps(false)}
@@ -787,7 +789,7 @@ export default function NavigationMap() {
         <button
           onClick={handleRecenter}
           className="w-10 h-10 rounded-xl text-lg flex items-center justify-center shadow-xl bg-slate-950/92 border border-slate-800/80 text-emerald-400 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-slate-900"
-          title="Recenter Map"
+          title={t('recenterMap')}
         >
           🎯
         </button>
@@ -832,7 +834,7 @@ export default function NavigationMap() {
                   setIsNavigating(false);
                 }}
                 className="absolute top-2 right-2 text-slate-400 hover:text-white transition-colors cursor-pointer text-xs p-1"
-                title="Close Preview"
+                title={t('closePreview')}
               >
                 ✕
               </button>
@@ -844,7 +846,7 @@ export default function NavigationMap() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 truncate">
-                  Navigating To Google Map Listing
+                  {t('navigatingTo')}
                 </p>
                 <h4 className="text-xs md:text-sm font-black text-white leading-tight truncate">
                   {selectedFacility.name}
@@ -866,8 +868,8 @@ export default function NavigationMap() {
                       🕒
                     </div>
                     <div>
-                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Walk Time</p>
-                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{durationText || 'Calculating'}</h4>
+                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">{t('walkTime')}</p>
+                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{durationText || t('calculating')}</h4>
                     </div>
                   </div>
 
@@ -876,8 +878,8 @@ export default function NavigationMap() {
                       🗺️
                     </div>
                     <div>
-                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Distance</p>
-                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{distanceText || 'Calculating'}</h4>
+                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">{t('distance')}</p>
+                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{distanceText || t('calculating')}</h4>
                     </div>
                   </div>
 
@@ -890,7 +892,7 @@ export default function NavigationMap() {
                       <svg className="w-4.5 h-4.5 text-blue-500 fill-none stroke-current" strokeWidth="2.5" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
-                      <span>Start</span>
+                      <span>{t('start')}</span>
                     </button>
                   )}
                 </>
@@ -902,14 +904,14 @@ export default function NavigationMap() {
           /* No destination selected - show status */
           <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 shadow-2xl backdrop-blur-md text-center transition-all duration-500">
             <p className="text-xs text-slate-400">
-              <span className="text-white font-bold">📍 {activeOrigin?.name || 'Loading Location...'}</span>
+              <span className="text-white font-bold">📍 {activeOrigin?.name || t('loadingLocation')}</span>
               <span className="mx-2 text-slate-700">·</span>
               {error ? (
                 <span className="text-rose-400 font-semibold">⚠️ {error}</span>
               ) : gpsError ? (
                 <span className="text-amber-400">{gpsError}</span>
               ) : (
-                <span>Tap any marker to calculate walking path</span>
+                <span>{t('tapMarker')}</span>
               )}
             </p>
           </div>

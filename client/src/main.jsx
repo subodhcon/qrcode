@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import { LanguageProvider } from './context/LanguageContext.jsx'
 
 // Filter out Google Maps deprecation warnings from console
 const originalWarn = console.warn;
@@ -20,6 +21,8 @@ console.warn = (...args) => {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </StrictMode>,
 )
