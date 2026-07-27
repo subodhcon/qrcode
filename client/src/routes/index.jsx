@@ -5,6 +5,7 @@ import RootLayout from '../layouts/RootLayout';
 import Loading from '../components/Loading';
 
 // Lazy load pages for code splitting & better bundle size optimization
+const Welcome = lazy(() => import('../pages/Welcome'));
 const Home = lazy(() => import('../pages/Home'));
 const LocationLanding = lazy(() => import('../pages/LocationLanding'));
 const NavigationMap = lazy(() => import('../pages/NavigationMap'));
@@ -26,6 +27,10 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
+        element: withSuspense(Welcome),
+      },
+      {
+        path: 'placard',
         element: withSuspense(Home),
       },
       {
