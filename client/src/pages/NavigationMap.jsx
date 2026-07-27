@@ -38,6 +38,7 @@ export default function NavigationMap() {
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const userMarkerRef = useRef(null);
+  const userCircleRef = useRef(null);
   const hasCenteredRef = useRef(false);
   const lastFetchedCoordsRef = useRef(null);
   const directionsRendererRef = useRef(null);
@@ -384,6 +385,10 @@ export default function NavigationMap() {
         userMarkerRef.current.setMap(null);
         userMarkerRef.current = null;
       }
+      if (userCircleRef.current) {
+        userCircleRef.current.setMap(null);
+        userCircleRef.current = null;
+      }
       return;
     }
 
@@ -397,7 +402,7 @@ export default function NavigationMap() {
       fillOpacity: 1,
       strokeColor: '#ffffff',
       strokeWeight: 2,
-      scale: 1.4,
+      scale: 1.6, // slightly larger for visibility
       rotation: heading || 0,
       anchor: new window.google.maps.Point(0, 0),
     };
@@ -406,13 +411,13 @@ export default function NavigationMap() {
       userMarkerRef.current = new window.google.maps.Marker({
         position,
         map,
-        title: activeOrigin.name,
+        title: t('youAreHere'),
         icon: arrowIcon,
       });
 
       const userInfoWindow = new window.google.maps.InfoWindow({
         content: `<div style="color:#0f172a;font-family:sans-serif;font-size:12px;padding:4px;">
-          <strong>📍 ${activeOrigin.name}</strong>
+          <strong>📍 ${t('youAreHere')}</strong>
           <p style="margin:2px 0 0 0;font-size:10px;color:#3b82f6;">Live GPS accuracy: ~${Math.round(gpsPosition?.accuracy || 0)}m</p>
         </div>`,
       });
@@ -425,12 +430,31 @@ export default function NavigationMap() {
       userMarkerRef.current.setIcon(arrowIcon);
     }
 
+    // Dynamic accuracy circle (representing the blue halo in Google Maps)
+    const accuracyRadius = gpsPosition?.accuracy || 15;
+    if (!userCircleRef.current) {
+      userCircleRef.current = new window.google.maps.Circle({
+        map,
+        center: position,
+        radius: accuracyRadius,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.15,
+        strokeColor: '#3b82f6',
+        strokeOpacity: 0.35,
+        strokeWeight: 1.5,
+        clickable: false
+      });
+    } else {
+      userCircleRef.current.setCenter(position);
+      userCircleRef.current.setRadius(accuracyRadius);
+    }
+
     if (selectedFacility && isNavigating) {
       const zoom = map.getZoom() || 17;
       const latOffset = 0.08 / Math.pow(2, zoom - 10);
       map.setCenter({ lat: position.lat - latOffset, lng: position.lng });
     }
-  }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, selectedFacility, isNavigating]);
+  }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, selectedFacility, isNavigating, t]);
 
   // 8b. Draw Facilities Markers
   useEffect(() => {
