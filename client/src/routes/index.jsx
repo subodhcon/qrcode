@@ -27,11 +27,11 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: withSuspense(Welcome),
+        element: withSuspense(Home),
       },
       {
-        path: 'placard',
-        element: withSuspense(Home),
+        path: 'welcome',
+        element: withSuspense(Welcome),
       },
       {
         path: 'location/:locationId',

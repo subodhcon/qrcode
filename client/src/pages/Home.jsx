@@ -11,7 +11,7 @@ export default function Home() {
     try {
       const slug = 'event-map';
       const name = 'Event Navigator';
-      const qrTargetUrl = `${window.location.origin}/`;
+      const qrTargetUrl = `${window.location.origin}/welcome`;
       const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrTargetUrl)}`;
 
       // Fetch QR as blob to avoid canvas taint
@@ -118,7 +118,7 @@ export default function Home() {
     }
   };
 
-  const qrTargetUrl = `${window.location.origin}/`;
+  const qrTargetUrl = `${window.location.origin}/welcome`;
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center py-10 px-4 animate-fade-slide-up">
