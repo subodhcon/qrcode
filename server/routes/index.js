@@ -16,6 +16,7 @@ import {
 import { login, logout, getProfile } from '../controllers/authController.js';
 import { requireAuth } from '../middlewares/auth.js';
 import Announcement from '../models/Announcement.js';
+import { Feedback } from '../models/Feedback.js';
 
 const router = Router();
 
@@ -71,5 +72,57 @@ router.post('/announcement', requireAuth, async (req, res) => {
 router.post('/auth/login', login);
 router.post('/auth/logout', logout);
 router.get('/auth/profile', requireAuth, getProfile);
+
+// Feedback submission & retrieval APIs
+router.post('/feedback', async (req, res) => {
+  try {
+    const { name, phone, category, locationContext, message } = req.body;
+    if (!category || !message) {
+      return res.status(400).json({ success: false, message: 'Category and Message are required.' });
+    }
+    const newFeedback = new Feedback({ name, phone, category, locationContext, message });
+    await newFeedback.save();
+    return res.status(201).json({ success: true, data: newFeedback });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get('/feedback', requireAuth, async (req, res) => {
+  try {
+    const reports = await Feedback.find().sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, data: reports });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/feedback/:id/resolve', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const report = await Feedback.findById(id);
+    if (!report) {
+      return res.status(404).json({ success: false, message: 'Report not found.' });
+    }
+    report.status = report.status === 'Resolved' ? 'New' : 'Resolved';
+    await report.save();
+    return res.status(200).json({ success: true, data: report });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.delete('/feedback/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const report = await Feedback.findByIdAndDelete(id);
+    if (!report) {
+      return res.status(404).json({ success: false, message: 'Report not found.' });
+    }
+    return res.status(200).json({ success: true, message: 'Report deleted successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 export default router;

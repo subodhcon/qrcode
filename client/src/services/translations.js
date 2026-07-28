@@ -59,7 +59,25 @@ export const translations = {
     "Drinking Water": "Drinking Water",
     "Temple": "Temple",
     "Ghat": "Ghat",
-    "Food": "Food"
+    "Food": "Food",
+    
+    // Feedback
+    feedbackTitle: "Report Issue / Suggestion",
+    feedbackSubtitle: "Report incorrect maps info, damaged signboards, or submit ideas to improve visitor experience.",
+    feedbackBtn: "Report / Feedback",
+    nameLabel: "Your Name (Optional)",
+    phoneLabel: "Phone Number (Optional)",
+    categoryLabel: "Category",
+    messageLabel: "Message / Report Details",
+    categoryIncorrectInfo: "Incorrect Info / Landmark",
+    categoryDamagedSign: "Damaged Signboard",
+    categorySuggestion: "Suggestion",
+    categoryOther: "Other / General",
+    submitFeedback: "Send Feedback",
+    submitting: "Submitting...",
+    feedbackSuccess: "Thank you! Your feedback has been recorded successfully.",
+    feedbackError: "Failed to submit. Please try again.",
+    close: "Close"
   },
   hi: {
     // Hindi
@@ -119,7 +137,25 @@ export const translations = {
     "Drinking Water": "पेयजल",
     "Temple": "मंदिर",
     "Ghat": "घाट",
-    "Food": "भोजन"
+    "Food": "भोजन",
+
+    // Feedback
+    feedbackTitle: "शिकायत / सुझाव दर्ज करें",
+    feedbackSubtitle: "गलत जानकारी, टूटे हुए साइनबोर्ड की रिपोर्ट करें या यात्रियों की सुविधा के लिए अपने सुझाव भेजें।",
+    feedbackBtn: "रिपोर्ट / सुझाव",
+    nameLabel: "आपका नाम (वैकल्पिक)",
+    phoneLabel: "मोबाइल नंबर (वैकल्पिक)",
+    categoryLabel: "श्रेणी",
+    messageLabel: "संदेश / शिकायत का विवरण",
+    categoryIncorrectInfo: "गलत नक्शा जानकारी / स्थान",
+    categoryDamagedSign: "क्षतिग्रस्त साइनबोर्ड (टूटा बोर्ड)",
+    categorySuggestion: "सुझाव",
+    categoryOther: "अन्य / सामान्य",
+    submitFeedback: "फीडबैक भेजें",
+    submitting: "भेजा जा रहा है...",
+    feedbackSuccess: "धन्यवाद! आपका सुझाव/शिकायत सफलतापूर्वक दर्ज कर ली गई है।",
+    feedbackError: "भेजने में असमर्थ। कृपया पुनः प्रयास करें।",
+    close: "बंद करें"
   },
   bn: {
     // Bengali

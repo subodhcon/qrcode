@@ -20,6 +20,10 @@ export default function AdminDashboard() {
   const [announcementLoading, setAnnouncementLoading] = useState(false);
   const [announcementSuccess, setAnnouncementSuccess] = useState(false);
 
+  // Feedback States
+  const [feedbacks, setFeedbacks] = useState([]);
+
+
   // Form State
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null); // holds category object
@@ -99,6 +103,42 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchFeedbacks = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/feedback');
+      setFeedbacks(response.data || []);
+    } catch (err) {
+      setError(err.message || 'Failed to load feedbacks.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResolveFeedback = async (id) => {
+    try {
+      const response = await api.put(`/feedback/${id}/resolve`);
+      if (response && response.success) {
+        setFeedbacks(prev => prev.map(item => item._id === id ? { ...item, status: item.status === 'Resolved' ? 'New' : 'Resolved' } : item));
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to update feedback status.');
+    }
+  };
+
+  const handleDeleteFeedback = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this report?')) return;
+    try {
+      const response = await api.delete(`/feedback/${id}`);
+      if (response && response.success) {
+        setFeedbacks(prev => prev.filter(item => item._id !== id));
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to delete report.');
+    }
+  };
+
   const handleAnnouncementSubmit = async (e) => {
     e.preventDefault();
     setAnnouncementLoading(true);
@@ -121,6 +161,8 @@ export default function AdminDashboard() {
       fetchTelemetry();
     } else if (activeTab === 'announcements') {
       fetchAnnouncement();
+    } else if (activeTab === 'feedback') {
+      fetchFeedbacks();
     }
   }, [activeTab]);
 
@@ -272,6 +314,14 @@ export default function AdminDashboard() {
         >
           Official Announcements
         </button>
+        <button
+          onClick={() => setActiveTab('feedback')}
+          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer ${
+            activeTab === 'feedback' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-white'
+          }`}
+        >
+          User Reports & Feedback
+        </button>
       </div>
 
       {/* Dynamic Content Views */}
@@ -387,7 +437,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'announcements' ? (
         /* Tab: Announcements */
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl text-left">
           <div>
@@ -441,6 +491,87 @@ export default function AdminDashboard() {
                 {announcementText || 'No active announcement. Default advisories will display.'}
               </p>
             </div>
+          </div>
+        </div>
+      ) : (
+        /* Tab: Feedback & Reports */
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl text-left animate-fade-in">
+          <div>
+            <h2 className="text-xl font-black text-white">Visitor Reports & Suggestions</h2>
+            <p className="text-slate-400 text-xs mt-1">Review feedback, suggestions, and signboards/info reports submitted by visitors.</p>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-800">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-950/40">
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Date</th>
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Visitor Info</th>
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Category</th>
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Report Details / Message</th>
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {feedbacks.map((report) => (
+                  <tr key={report._id} className="hover:bg-slate-800/20 transition-colors">
+                    <td className="py-4 px-6 text-xs text-slate-400 font-mono">
+                      {new Date(report.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-4 px-6 text-xs text-white">
+                      <div className="font-bold">{report.name || 'Anonymous'}</div>
+                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">{report.phone || 'No Phone'}</div>
+                    </td>
+                    <td className="py-4 px-6 text-xs">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        report.category === 'Incorrect Info' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                        report.category === 'Damaged Signboard' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
+                        report.category === 'Suggestion' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                        'bg-slate-500/10 border-slate-500/20 text-slate-400'
+                      }`}>
+                        {report.category}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-xs text-slate-300 leading-relaxed max-w-xs">
+                      {report.message}
+                    </td>
+                    <td className="py-4 px-6 text-xs">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        report.status === 'Resolved' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400 animate-pulse'
+                      }`}>
+                        {report.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-xs text-right space-x-2 whitespace-nowrap">
+                      <button
+                        onClick={() => handleResolveFeedback(report._id)}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer border ${
+                          report.status === 'Resolved' 
+                            ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white' 
+                            : 'bg-emerald-600 border-emerald-500 hover:bg-emerald-500 text-white shadow-md'
+                        }`}
+                      >
+                        {report.status === 'Resolved' ? 'Reopen' : 'Resolve'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteFeedback(report._id)}
+                        className="w-8/12 px-3 py-1.5 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-[10px] font-bold transition-all cursor-pointer inline-block text-center mt-1"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {feedbacks.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="py-8 text-center text-xs text-slate-500 font-bold">
+                      No reports or suggestions submitted yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
