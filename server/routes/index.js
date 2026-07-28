@@ -1,4 +1,5 @@
 import { Router } from 'express';
+// Trigger nodemon reload after background task kill
 import { getHealth } from '../controllers/healthController.js';
 import { getAllFacilitiesNear } from '../controllers/mapController.js';
 import { 
@@ -14,6 +15,7 @@ import {
 } from '../controllers/categoryController.js';
 import { login, logout, getProfile } from '../controllers/authController.js';
 import { requireAuth } from '../middlewares/auth.js';
+import Announcement from '../models/Announcement.js';
 
 const router = Router();
 
@@ -40,6 +42,30 @@ router.get('/config/maps-key', (req, res) => {
 });
 router.get('/facilities/near', getAllFacilitiesNear);
 router.get('/facilities/near/:locationSlug', getAllFacilitiesNear);
+
+// Announcement & Alert Broadcast APIs
+router.get('/announcement', async (req, res) => {
+  try {
+    const latest = await Announcement.findOne().sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, data: latest });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/announcement', requireAuth, async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ success: false, message: 'Announcement text is required.' });
+    }
+    const newAnnouncement = new Announcement({ text });
+    await newAnnouncement.save();
+    return res.status(201).json({ success: true, data: newAnnouncement });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // Admin Authentication APIs
 router.post('/auth/login', login);

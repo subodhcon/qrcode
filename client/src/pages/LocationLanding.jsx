@@ -173,38 +173,97 @@ export default function LocationLanding() {
 
       {/* ── SOS Modal ── */}
       {sosActive && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-fade-in">
-          <div className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl" style={{
-            background: 'linear-gradient(160deg, #1a0a0a 0%, #0f172a 100%)',
-            border: '1px solid rgba(239,68,68,0.3)'
-          }}>
-            <div className="h-1 bg-gradient-to-r from-red-600 to-red-400" />
-            <div className="p-6 space-y-5 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-3xl animate-bounce">🚨</div>
-              <div>
-                <h3 className="text-xl font-black text-white">{t('sosHelplineTitle')}</h3>
-                <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                  Security &amp; medical teams alerted at{' '}
-                  <span className="text-emerald-400 font-bold">{location?.name}</span>.
-                </p>
-              </div>
-              <div className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 space-y-2 text-left">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">{t('emergencyServices')}</span>
-                  <span className="text-white font-bold">+91 112</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">{t('policeControl')}</span>
-                  <span className="text-white font-bold">+91 100</span>
-                </div>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fade-in text-slate-800">
+          <div className="w-full max-w-sm rounded-[24px] overflow-hidden shadow-2xl bg-white p-5 border border-slate-100 relative">
+            
+            {/* Header: Title & Close Button */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-extrabold text-[#1e293b] tracking-tight font-sans">
+                One Tap Call
+              </h3>
               <button
                 onClick={() => setSosActive(false)}
-                className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors cursor-pointer text-xs font-bold"
               >
-                {t('dismiss')}
+                ✕
               </button>
             </div>
+
+            {/* List Container */}
+            <div className="space-y-0.5 max-h-[340px] overflow-y-auto no-scrollbar pr-0.5">
+              
+              {/* Police Control Room */}
+              <a href="tel:100" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Police Control Room
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Ambulance Service */}
+              <a href="tel:102" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Ambulance Service
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Fire Brigade */}
+              <a href="tel:101" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Fire Brigade
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Women Helpline */}
+              <a href="tel:1091" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Women Helpline
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Child Helpline */}
+              <a href="tel:1098" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Child Helpline
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Disaster Management */}
+              <a href="tel:1070" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Disaster Management
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Medical Emergency */}
+              <a href="tel:112" className="flex justify-between items-center py-3 text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Medical Emergency
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+            </div>
+
           </div>
         </div>
       )}

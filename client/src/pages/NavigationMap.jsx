@@ -69,22 +69,30 @@ export default function NavigationMap() {
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [showStatus, setShowStatus] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [showMapTypes, setShowMapTypes] = useState(false);
+  const [sosActive, setSosActive] = useState(false);
+  const [liveAddress, setLiveAddress] = useState('Gaya, Bihar, India');
 
-  // Show status bar for 10 seconds whenever loading finishes or the selected category filter changes
+  // Active Origin coordinate
+  const activeOrigin = useMemo(() => {
+    if (gpsPosition) {
+      return {
+        latitude: gpsPosition.latitude,
+        longitude: gpsPosition.longitude,
+        name: 'My Live GPS Location',
+      };
+    }
+    return null;
+  }, [gpsPosition]);
+
+  // Show status bar permanently when no destination is selected
   useEffect(() => {
     if (loading || !scriptLoaded) {
       setShowStatus(false);
       return;
     }
-
     setShowStatus(true);
-
-    const timer = setTimeout(() => {
-      setShowStatus(false);
-    }, 10000);
-
-    return () => clearTimeout(timer);
-  }, [selectedCategory, loading, scriptLoaded]);
+  }, [loading, scriptLoaded]);
 
   // Fetch Google Maps API Key from backend if not set in client env
   useEffect(() => {
@@ -250,6 +258,21 @@ export default function NavigationMap() {
     }
   }, [googleMapsKey]);
 
+  // 4b. Reverse Geocode active GPS coordinates into physical address
+  useEffect(() => {
+    if (!scriptLoaded || !activeOrigin) return;
+    const lat = activeOrigin.latitude;
+    const lng = activeOrigin.longitude;
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        setLiveAddress(results[0].formatted_address);
+      } else {
+        console.warn('Geocoder failed due to:', status);
+      }
+    });
+  }, [scriptLoaded, activeOrigin]);
+
   // 5. Fetch facilities near User's GPS or Scanned Location Slug
   useEffect(() => {
     const fetchFacilities = async () => {
@@ -312,17 +335,6 @@ export default function NavigationMap() {
     fetchFacilities();
   }, [gpsPosition, selectedCategory, destinationParam]);
 
-  // Active Origin coordinate
-  const activeOrigin = useMemo(() => {
-    if (gpsPosition) {
-      return {
-        latitude: gpsPosition.latitude,
-        longitude: gpsPosition.longitude,
-        name: 'My Live GPS Location',
-      };
-    }
-    return null;
-  }, [gpsPosition]);
 
   // 6. Initialize Google Map Instance
   useEffect(() => {
@@ -371,6 +383,21 @@ export default function NavigationMap() {
     }
   }, [mapType]);
 
+  // Compute nearest services dynamically from local facilities array
+  const nearestServices = useMemo(() => {
+    const getNearest = (type) => {
+      const filtered = facilities.filter(f => f.type === type);
+      if (filtered.length === 0) return null;
+      return filtered[0]; // Facilities list is already sorted by proximity from backend
+    };
+    return {
+      Police: getNearest('Police'),
+      Medical: getNearest('Medical'),
+      Toilet: getNearest('Toilet'),
+      Help: getNearest('Help')
+    };
+  }, [facilities]);
+
   // Filter facilities by search query locally
   const filteredFacilities = useMemo(() => {
     return facilities.filter((f) =>
@@ -416,9 +443,14 @@ export default function NavigationMap() {
       });
 
       const userInfoWindow = new window.google.maps.InfoWindow({
-        content: `<div style="color:#0f172a;font-family:sans-serif;font-size:12px;padding:4px;">
-          <strong>📍 ${t('youAreHere')}</strong>
-          <p style="margin:2px 0 0 0;font-size:10px;color:#3b82f6;">Live GPS accuracy: ~${Math.round(gpsPosition?.accuracy || 0)}m</p>
+        content: `<div style="font-family: system-ui, -apple-system, sans-serif; padding: 2px 4px; min-width: 100px; text-align: left;">
+          <div style="font-size: 11px; font-weight: 850; color: #0f172a; display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <span style="font-size: 12px;">📍</span> ${t('youAreHere')}
+          </div>
+          <div style="font-size: 8px; font-weight: 700; color: #2563eb; background: #eff6ff; padding: 2px 6px; border-radius: 5px; display: inline-flex; align-items: center; gap: 3px;">
+            <span style="width: 4px; height: 4px; background: #3b82f6; border-radius: 50%;"></span>
+            Accuracy: ±${Math.round(gpsPosition?.accuracy || 0)}m
+          </div>
         </div>`,
       });
 
@@ -430,8 +462,8 @@ export default function NavigationMap() {
       userMarkerRef.current.setIcon(arrowIcon);
     }
 
-    // Dynamic accuracy circle (representing the blue halo in Google Maps)
-    const accuracyRadius = gpsPosition?.accuracy || 15;
+    // Dynamic accuracy circle (representing the blue halo in Google Maps) - capped to max 30m for visual neatness
+    const accuracyRadius = Math.min(gpsPosition?.accuracy || 15, 30);
     if (!userCircleRef.current) {
       userCircleRef.current = new window.google.maps.Circle({
         map,
@@ -450,8 +482,9 @@ export default function NavigationMap() {
     }
 
     if (selectedFacility && isNavigating) {
-      const zoom = map.getZoom() || 17;
-      const latOffset = 0.08 / Math.pow(2, zoom - 10);
+      // Auto-zoom to highly detailed walking scale (19) and center-lock position with standard navigation offset
+      map.setZoom(19);
+      const latOffset = 0.08 / Math.pow(2, 19 - 10);
       map.setCenter({ lat: position.lat - latOffset, lng: position.lng });
     }
   }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, selectedFacility, isNavigating, t]);
@@ -808,36 +841,58 @@ export default function NavigationMap() {
       <div ref={mapRef} className="flex-1 w-full h-full relative z-10" />
 
       {/* ── Floating Map Control Stack (Bottom Right) ── */}
-      <div className={`absolute ${selectedFacility ? 'bottom-52' : 'bottom-20'} right-3 z-30 flex flex-col gap-2 transition-all duration-300`}>
+      <div className={`absolute ${selectedFacility ? 'bottom-52' : 'bottom-20'} right-3 z-30 flex flex-col gap-1.5 transition-all duration-300 items-end`}>
         {/* Recenter Floating Button */}
         <button
           onClick={handleRecenter}
-          className="w-10 h-10 rounded-xl text-lg flex items-center justify-center shadow-xl bg-slate-950/92 border border-slate-800/80 text-emerald-400 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-slate-900"
+          className="w-8 h-8 rounded-lg text-sm flex items-center justify-center shadow-lg bg-slate-950/92 border border-slate-800/80 text-emerald-400 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-slate-900"
           title={t('recenterMap')}
         >
           🎯
         </button>
 
-        {/* Divider */}
-        <div className="h-px bg-slate-800/60 mx-1.5" />
+        {/* Map Type Expansion Wrapper */}
+        <div className="flex items-center gap-1.5">
+          {/* Expanded Map Types Menu (Slides out to the left) */}
+          {showMapTypes && (
+            <div className="flex gap-1 bg-slate-950/92 border border-slate-800/80 p-1 rounded-lg shadow-xl backdrop-blur-md animate-fade-in mr-0.5">
+              {MAP_TYPES.map((type) => {
+                const isSelected = mapType === type.key;
+                const labelText = type.label === 'Standard Map' ? 'Map' : type.label; // Make it short
+                return (
+                  <button
+                    key={type.key}
+                    onClick={() => {
+                      setMapType(type.key);
+                      setShowMapTypes(false);
+                    }}
+                    className={`px-2 py-1 rounded-md text-[9px] font-black transition-all active:scale-95 border flex items-center gap-1 cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-emerald-500/20'
+                        : 'bg-slate-900 text-slate-300 border-slate-850 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="text-xs">{type.icon}</span>
+                    <span>{labelText}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-        {/* Map Types */}
-        {MAP_TYPES.map((type) => {
-          const isSelected = mapType === type.key;
-          return (
-            <button
-              key={type.key}
-              onClick={() => setMapType(type.key)}
-              className={`w-10 h-10 rounded-xl text-sm flex items-center justify-center shadow-xl backdrop-blur-md cursor-pointer transition-all active:scale-95 border ${isSelected
-                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-emerald-500/30'
-                  : 'bg-slate-950/92 text-slate-300 border-slate-800/80 hover:bg-slate-900'
-                }`}
-              title={type.label}
-            >
-              {type.icon}
-            </button>
-          );
-        })}
+          {/* Arrow Toggle Button */}
+          <button
+            onClick={() => setShowMapTypes(!showMapTypes)}
+            className={`w-8 h-8 rounded-lg text-xs font-black flex items-center justify-center shadow-lg border backdrop-blur-md cursor-pointer transition-all active:scale-95 ${
+              showMapTypes
+                ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                : 'bg-slate-950/92 text-slate-350 border-slate-800/80 hover:bg-slate-900'
+            }`}
+            title="Toggle Map Types"
+          >
+            {showMapTypes ? '❯' : '❮'}
+          </button>
+        </div>
       </div>
 
       {/* ── Bottom Info Bar ── */}
@@ -924,23 +979,206 @@ export default function NavigationMap() {
             </div>
 
           </div>
-        ) : showStatus ? (
-          /* No destination selected - show status */
-          <div className="bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 shadow-2xl backdrop-blur-md text-center transition-all duration-500">
-            <p className="text-xs text-slate-400">
-              <span className="text-white font-bold">📍 {activeOrigin?.name || t('loadingLocation')}</span>
-              <span className="mx-2 text-slate-700">·</span>
-              {error ? (
-                <span className="text-rose-400 font-semibold">⚠️ {error}</span>
-              ) : gpsError ? (
-                <span className="text-amber-400">{gpsError}</span>
-              ) : (
-                <span>{t('tapMarker')}</span>
-              )}
-            </p>
+        ) : showStatus && activeOrigin ? (
+          /* Scanned QR location details card */
+          <div className="bg-[#090f23]/96 border border-slate-800/80 rounded-2xl p-3 shadow-2xl backdrop-blur-md space-y-3 text-left relative transition-all duration-300">
+            {/* SOS Button & You Are Here */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {t('youAreHere')}
+              </div>
+              <button
+                onClick={() => setSosActive(true)}
+                className="px-2.5 py-0.5 rounded-full border border-red-500/30 bg-red-500/8 text-red-400 text-[9px] font-black transition-all hover:bg-red-500/15 cursor-pointer"
+              >
+                🚨 SOS
+              </button>
+            </div>
+
+            {/* Title & Address */}
+            <div className="space-y-0.5">
+              <h4 className="text-xs md:text-sm font-black text-white leading-tight">
+                {activeOrigin.name}
+              </h4>
+              <p className="text-[9px] text-slate-500 leading-none">{liveAddress}</p>
+            </div>
+
+            {/* Lat / Lng Grid */}
+            <div className="grid grid-cols-2 gap-2 bg-slate-950/40 border border-slate-900/60 p-2 rounded-xl">
+              <div className="space-y-0.5">
+                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Latitude</p>
+                <p className="text-[10px] text-white font-extrabold">{activeOrigin.latitude.toFixed(4)}° N</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Longitude</p>
+                <p className="text-[10px] text-white font-extrabold">{activeOrigin.longitude.toFixed(4)}° E</p>
+              </div>
+            </div>
+
+            {/* Nearest Services */}
+            {(nearestServices.Police || nearestServices.Medical || nearestServices.Toilet || nearestServices.Help) && (
+              <div className="space-y-1.5 pt-0.5">
+                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">
+                  {t('nearbyFacilities')}
+                </p>
+                
+                {/* Horizontal swipable badge list */}
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar whitespace-nowrap snap-x snap-mandatory">
+                  {nearestServices.Police && (
+                    <button
+                      onClick={() => handleNavigateTo(nearestServices.Police)}
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-emerald-500/5 border border-emerald-500/15 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-500/10 transition-all text-left"
+                    >
+                      <span className="text-xs">👮</span>
+                      <div>
+                        <p className="text-[7px] font-bold uppercase text-slate-400">Police</p>
+                        <p className="text-[9px] text-emerald-400 font-extrabold leading-none">{nearestServices.Police.distanceFormatted}</p>
+                      </div>
+                    </button>
+                  )}
+
+                  {nearestServices.Medical && (
+                    <button
+                      onClick={() => handleNavigateTo(nearestServices.Medical)}
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-red-500/5 border border-red-500/15 flex items-center gap-1.5 cursor-pointer hover:bg-red-500/10 transition-all text-left"
+                    >
+                      <span className="text-xs">🏥</span>
+                      <div>
+                        <p className="text-[7px] font-bold uppercase text-slate-400">Hospital</p>
+                        <p className="text-[9px] text-red-400 font-extrabold leading-none">{nearestServices.Medical.distanceFormatted}</p>
+                      </div>
+                    </button>
+                  )}
+
+                  {nearestServices.Toilet && (
+                    <button
+                      onClick={() => handleNavigateTo(nearestServices.Toilet)}
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-blue-500/5 border border-blue-500/15 flex items-center gap-1.5 cursor-pointer hover:bg-blue-500/10 transition-all text-left"
+                    >
+                      <span className="text-xs">🚻</span>
+                      <div>
+                        <p className="text-[7px] font-bold uppercase text-slate-400">Toilet</p>
+                        <p className="text-[9px] text-blue-400 font-extrabold leading-none">{nearestServices.Toilet.distanceFormatted}</p>
+                      </div>
+                    </button>
+                  )}
+
+                  {nearestServices.Help && (
+                    <button
+                      onClick={() => handleNavigateTo(nearestServices.Help)}
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-cyan-500/5 border border-cyan-500/15 flex items-center gap-1.5 cursor-pointer hover:bg-cyan-500/10 transition-all text-left"
+                    >
+                      <span className="text-xs">💧</span>
+                      <div>
+                        <p className="text-[7px] font-bold uppercase text-slate-400">Water</p>
+                        <p className="text-[9px] text-cyan-400 font-extrabold leading-none">{nearestServices.Help.distanceFormatted}</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
       </div>
+
+      {/* SOS Modal Overlay */}
+      {sosActive && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-[24px] overflow-hidden shadow-2xl bg-white p-5 border border-slate-100 relative">
+            
+            {/* Header: Title & Close Button */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-extrabold text-[#1e293b] tracking-tight font-sans">
+                One Tap Call
+              </h3>
+              <button
+                onClick={() => setSosActive(false)}
+                className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors cursor-pointer text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* List Container */}
+            <div className="space-y-0.5 max-h-[340px] overflow-y-auto no-scrollbar pr-0.5">
+              
+              {/* Police Control Room */}
+              <a href="tel:100" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Police Control Room
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Ambulance Service */}
+              <a href="tel:102" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Ambulance Service
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Fire Brigade */}
+              <a href="tel:101" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Fire Brigade
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Women Helpline */}
+              <a href="tel:1091" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Women Helpline
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Child Helpline */}
+              <a href="tel:1098" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Child Helpline
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Disaster Management */}
+              <a href="tel:1070" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Disaster Management
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+              {/* Medical Emergency */}
+              <a href="tel:112" className="flex justify-between items-center py-3 text-decoration-none group">
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Medical Emergency
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
+              </a>
+
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Powered by Confluxaa */}
       <div className="absolute bottom-24 left-0 right-0 z-20 text-center">

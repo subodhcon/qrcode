@@ -15,6 +15,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Announcement States
+  const [announcementText, setAnnouncementText] = useState('');
+  const [announcementLoading, setAnnouncementLoading] = useState(false);
+  const [announcementSuccess, setAnnouncementSuccess] = useState(false);
+
   // Form State
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null); // holds category object
@@ -79,11 +84,43 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchAnnouncement = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/announcement');
+      if (response && response.success && response.data) {
+        setAnnouncementText(response.data.text);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load announcement.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAnnouncementSubmit = async (e) => {
+    e.preventDefault();
+    setAnnouncementLoading(true);
+    setAnnouncementSuccess(false);
+    try {
+      await api.post('/announcement', { text: announcementText });
+      setAnnouncementSuccess(true);
+      setTimeout(() => setAnnouncementSuccess(false), 3000);
+    } catch (err) {
+      alert(err.message || 'Failed to update announcement.');
+    } finally {
+      setAnnouncementLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'categories') {
       fetchCategories();
     } else if (activeTab === 'analytics') {
       fetchTelemetry();
+    } else if (activeTab === 'announcements') {
+      fetchAnnouncement();
     }
   }, [activeTab]);
 
@@ -227,6 +264,14 @@ export default function AdminDashboard() {
         >
           Visitor Analytics
         </button>
+        <button
+          onClick={() => setActiveTab('announcements')}
+          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer ${
+            activeTab === 'announcements' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-white'
+          }`}
+        >
+          Official Announcements
+        </button>
       </div>
 
       {/* Dynamic Content Views */}
@@ -290,7 +335,7 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : activeTab === 'analytics' ? (
         /* Tab: Dashboard Analytics */
         <div className="space-y-6">
           {/* Key Metric Blocks */}
@@ -339,6 +384,62 @@ export default function AdminDashboard() {
                   <p className="text-xs text-slate-500">No clicks recorded yet.</p>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Tab: Announcements */
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl text-left">
+          <div>
+            <h2 className="text-xl font-black text-white">Broadcast Center & Alert System</h2>
+            <p className="text-slate-400 text-xs mt-1">Compose administrative announcements to overlay instantly on the visitor welcome page.</p>
+          </div>
+
+          <form onSubmit={handleAnnouncementSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Broadcast Notice Message</label>
+              <textarea
+                value={announcementText}
+                onChange={(e) => setAnnouncementText(e.target.value)}
+                placeholder="e.g. Traffic Route Update: Direct route to Vishnupad Temple is temporarily closed due to crowd management. Please follow police guidelines."
+                rows={4}
+                className="w-full rounded-2xl bg-slate-950 border border-slate-800 p-4 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder:text-slate-600"
+                required
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-xs">
+                ⚠️ Publishing this alert will immediately override or prepend to the slideshow of official guidelines shown to visitors.
+              </p>
+              
+              <button
+                type="submit"
+                disabled={announcementLoading}
+                className="py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] cursor-pointer disabled:opacity-50"
+              >
+                {announcementLoading ? 'Publishing...' : 'Publish Broadcast'}
+              </button>
+            </div>
+          </form>
+
+          {announcementSuccess && (
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs text-center font-bold animate-fade-in">
+              ✓ Broadcast published and live on visitor Welcome screen!
+            </div>
+          )}
+
+          {/* Live Preview block */}
+          <div className="bg-slate-950/40 border border-slate-800 rounded-2xl p-4 space-y-2">
+            <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Live Broadcast Preview</h4>
+            <div className="rounded-2xl p-4 bg-slate-950/60 border border-amber-500/20 text-left space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                <span>📢 Live Announcement</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                {announcementText || 'No active announcement. Default advisories will display.'}
+              </p>
             </div>
           </div>
         </div>
