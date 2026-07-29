@@ -35,7 +35,7 @@ export default function LanguageSelector() {
   const activeLang = LANGUAGES.find((l) => l.key === currentLanguage) || LANGUAGES[0];
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="relative z-50 inline-block text-left" ref={dropdownRef}>
       <div>
         <button
           type="button"
@@ -55,7 +55,7 @@ export default function LanguageSelector() {
 
       {isOpen && (
         <div
-          className="absolute right-0 mt-2 w-40 rounded-2xl shadow-2xl bg-slate-950 border border-slate-800/80 focus:outline-none z-50 overflow-hidden max-h-60 overflow-y-auto no-scrollbar animate-fade-in"
+          className="absolute right-0 mt-2 w-40 rounded-2xl shadow-2xl bg-slate-950 border border-slate-800/80 focus:outline-none z-[100] overflow-hidden max-h-60 overflow-y-auto no-scrollbar animate-fade-in"
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="menu-button"

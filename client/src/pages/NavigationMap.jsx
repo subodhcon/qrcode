@@ -71,7 +71,7 @@ export default function NavigationMap() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [showMapTypes, setShowMapTypes] = useState(false);
   const [sosActive, setSosActive] = useState(false);
-  const [liveAddress, setLiveAddress] = useState('Gaya, Bihar, India');
+  const [liveAddress, setLiveAddress] = useState('Gaya Ji, Bihar, India');
 
   // Active Origin coordinate
   const activeOrigin = useMemo(() => {
@@ -755,22 +755,37 @@ export default function NavigationMap() {
       {!selectedFacility && (
         <div className="absolute top-3 inset-x-3 z-30 flex flex-col items-center gap-2 pointer-events-none">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pointer-events-auto w-full max-w-xl">
-            {/* Search Input */}
-            <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5 shadow-xl bg-slate-950/90 backdrop-blur-md flex-1">
-              <input
-                id="search-input"
-                name="search"
-                type="text"
-                placeholder={t('searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-full"
-              />
-              {searchQuery ? (
-                <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white transition-colors text-[10px] cursor-pointer">✕</button>
-              ) : (
-                <span className="text-slate-500 text-xs">🔍</span>
-              )}
+            
+            {/* Top Bar with Back Button & Search Input */}
+            <div className="flex items-center gap-2 w-full">
+              {/* Back to Welcome Page Button */}
+              <Link
+                to="/welcome"
+                className="w-9 h-9 rounded-2xl border border-slate-800/80 bg-slate-950/90 hover:bg-slate-900 text-white flex items-center justify-center shadow-xl backdrop-blur-md transition-all active:scale-95 cursor-pointer shrink-0"
+                title="Back to Welcome Page"
+              >
+                <svg className="w-5 h-5 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+
+              {/* Search Input */}
+              <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5 shadow-xl bg-slate-950/90 backdrop-blur-md flex-1">
+                <input
+                  id="search-input"
+                  name="search"
+                  type="text"
+                  placeholder={t('searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-full"
+                />
+                {searchQuery ? (
+                  <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white transition-colors text-[10px] cursor-pointer">✕</button>
+                ) : (
+                  <span className="text-slate-500 text-xs">🔍</span>
+                )}
+              </div>
             </div>
 
             {/* Dynamic Category Filter Pills */}
@@ -841,7 +856,7 @@ export default function NavigationMap() {
       <div ref={mapRef} className="flex-1 w-full h-full relative z-10" />
 
       {/* ── Floating Map Control Stack (Bottom Right) ── */}
-      <div className={`absolute ${selectedFacility ? 'bottom-52' : 'bottom-20'} right-3 z-30 flex flex-col gap-1.5 transition-all duration-300 items-end`}>
+      <div className={`absolute ${(selectedFacility || (showStatus && activeOrigin)) ? 'bottom-[180px]' : 'bottom-4'} right-3 z-30 flex flex-col gap-1.5 transition-all duration-300 items-end`}>
         {/* Recenter Floating Button */}
         <button
           onClick={handleRecenter}
@@ -944,7 +959,7 @@ export default function NavigationMap() {
                 <>
                   <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
                     <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-                      🕒
+                      ⏱️
                     </div>
                     <div>
                       <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">{t('walkTime')}</p>
@@ -981,7 +996,7 @@ export default function NavigationMap() {
           </div>
         ) : showStatus && activeOrigin ? (
           /* Scanned QR location details card */
-          <div className="bg-[#090f23]/96 border border-slate-800/80 rounded-2xl p-3 shadow-2xl backdrop-blur-md space-y-3 text-left relative transition-all duration-300">
+          <div className="bg-[#090f23]/96 border border-slate-800/80 rounded-2xl p-3 shadow-2xl backdrop-blur-md space-y-2.5 text-left relative transition-all duration-300">
             {/* SOS Button & You Are Here */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
@@ -1002,18 +1017,6 @@ export default function NavigationMap() {
                 {activeOrigin.name}
               </h4>
               <p className="text-[9px] text-slate-500 leading-none">{liveAddress}</p>
-            </div>
-
-            {/* Lat / Lng Grid */}
-            <div className="grid grid-cols-2 gap-2 bg-slate-950/40 border border-slate-900/60 p-2 rounded-xl">
-              <div className="space-y-0.5">
-                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Latitude</p>
-                <p className="text-[10px] text-white font-extrabold">{activeOrigin.latitude.toFixed(4)}° N</p>
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Longitude</p>
-                <p className="text-[10px] text-white font-extrabold">{activeOrigin.longitude.toFixed(4)}° E</p>
-              </div>
             </div>
 
             {/* Nearest Services */}
@@ -1079,6 +1082,16 @@ export default function NavigationMap() {
                 </div>
               </div>
             )}
+            
+            {/* Footer Attribution inside card footer */}
+            <div className="text-center pt-1 border-t border-slate-800/60">
+              <span className="text-[9px] text-slate-400 font-semibold">
+                Powered by{' '}
+                <span className="font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text ml-0.5">
+                  Confluxaa
+                </span>
+              </span>
+            </div>
           </div>
         ) : null}
       </div>
@@ -1179,16 +1192,6 @@ export default function NavigationMap() {
           </div>
         </div>
       )}
-
-      {/* Powered by Confluxaa */}
-      <div className="absolute bottom-24 left-0 right-0 z-20 text-center">
-        <span className="text-[10px] text-slate-300 font-semibold bg-slate-950/90 px-3 py-1 rounded-full border border-slate-800/85 shadow-xl backdrop-blur-md">
-          Powered by{' '}
-          <span className="font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text ml-0.5">
-            Confluxaa
-          </span>
-        </span>
-      </div>
     </div>
   );
 }
