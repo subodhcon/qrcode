@@ -376,78 +376,78 @@ export default function Welcome() {
 
         {/* ── Emergency Helpline Banner (Bottom Action Card) ── */}
         <section className="pt-1">
-          <div className="w-full p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-red-50/95 via-rose-50/95 to-red-100/90 text-slate-900 border border-red-300/80 shadow-2xl flex items-center justify-between gap-1.5 sm:gap-2">
+          <div className="w-full p-2 rounded-2xl bg-gradient-to-r from-red-50/95 via-rose-50/95 to-red-100/90 text-slate-900 border border-red-300/80 shadow-2xl flex items-center justify-between gap-1 sm:gap-2">
             
             {/* Left Emergency Help Call Button & Label */}
             <button
               onClick={() => setSosActive(true)}
-              className="flex items-center gap-2 text-left cursor-pointer group shrink-0"
+              className="flex items-center gap-1.5 text-left cursor-pointer group shrink-0"
             >
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-red-600 flex items-center justify-center text-white shadow-md shadow-red-600/40 group-hover:scale-105 transition-transform shrink-0">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-600 flex items-center justify-center text-white shadow-md shadow-red-600/40 group-hover:scale-105 transition-transform shrink-0">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1.003 1.003 0 011.02-.24c1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
                 </svg>
               </div>
-              <div className="space-y-0.5">
-                <h4 className="text-xs sm:text-sm font-black text-red-800 leading-tight">
+              <div className="space-y-0">
+                <h4 className="text-[11px] sm:text-xs font-black text-red-800 leading-tight">
                   {t('emergencyServicesTitle') || "Emergency Help"}
                 </h4>
-                <p className="text-[10px] font-semibold text-slate-600">
+                <p className="text-[9px] font-semibold text-slate-600 whitespace-nowrap">
                   {t('oneTapToCall') || "One Tap to Call"}
                 </p>
               </div>
             </button>
 
             {/* Vertical Divider Line */}
-            <div className="w-px h-9 bg-red-200/90 shrink-0" />
+            <div className="w-px h-7 bg-red-200/90 shrink-0" />
 
             {/* Quick Dial Numbers Row */}
-            <div className="flex items-center justify-between gap-1.5 sm:gap-2 flex-1 min-w-0 overflow-x-auto no-scrollbar">
+            <div className="flex items-center justify-between gap-1 sm:gap-2 flex-1 min-w-0">
               {/* Police 100 */}
               <a
                 href="tel:100"
-                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
+                className="flex items-center gap-0.5 hover:opacity-80 transition-opacity text-left shrink-0"
               >
-                <span className="text-xs sm:text-sm">🛡️</span>
+                <span className="text-[11px] sm:text-xs">🛡️</span>
                 <div className="leading-none">
-                  <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">Police</p>
-                  <p className="text-[10px] sm:text-xs font-black text-slate-900">100</p>
+                  <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Police</p>
+                  <p className="text-[9px] sm:text-[11px] font-black text-slate-900">100</p>
                 </div>
               </a>
 
               {/* Ambulance 102 */}
               <a
                 href="tel:102"
-                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
+                className="flex items-center gap-0.5 hover:opacity-80 transition-opacity text-left shrink-0"
               >
-                <span className="text-xs sm:text-sm">🚑</span>
+                <span className="text-[11px] sm:text-xs">🚑</span>
                 <div className="leading-none">
-                  <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">Ambulance</p>
-                  <p className="text-[10px] sm:text-xs font-black text-slate-900">102</p>
+                  <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Ambulance</p>
+                  <p className="text-[9px] sm:text-[11px] font-black text-slate-900">102</p>
                 </div>
               </a>
 
               {/* Fire 101 */}
               <a
                 href="tel:101"
-                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
+                className="flex items-center gap-0.5 hover:opacity-80 transition-opacity text-left shrink-0"
               >
-                <span className="text-xs sm:text-sm">🔥</span>
+                <span className="text-[11px] sm:text-xs">🔥</span>
                 <div className="leading-none">
-                  <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">Fire</p>
-                  <p className="text-[10px] sm:text-xs font-black text-slate-900">101</p>
+                  <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Fire</p>
+                  <p className="text-[9px] sm:text-[11px] font-black text-slate-900">101</p>
                 </div>
               </a>
 
               {/* Women Helpline 181 */}
               <a
                 href="tel:181"
-                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
+                className="flex items-center gap-0.5 hover:opacity-80 transition-opacity text-left shrink-0"
               >
-                <span className="text-xs sm:text-sm">👩</span>
+                <span className="text-[11px] sm:text-xs">👩</span>
                 <div className="leading-none">
-                  <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">Women</p>
-                  <p className="text-[10px] sm:text-xs font-black text-slate-900">181</p>
+                  <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Women</p>
+                  <p className="text-[9px] sm:text-[11px] font-black text-slate-900">181</p>
                 </div>
               </a>
             </div>
@@ -455,10 +455,10 @@ export default function Welcome() {
             {/* Far Right Arrow Chevron */}
             <button
               onClick={() => setSosActive(true)}
-              className="text-red-600 hover:text-red-800 transition-colors p-1 cursor-pointer shrink-0"
+              className="text-red-600 hover:text-red-800 transition-colors p-0.5 cursor-pointer shrink-0"
               aria-label="View all emergency numbers"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>

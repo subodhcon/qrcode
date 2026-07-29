@@ -11,7 +11,7 @@ export const translations = {
     findCurrentLocation: "Find my current location",
     quickAccess: "Quick Access",
     nearbyPlaces: "Nearby Places",
-    emergencyServicesTitle: "Emergency Services",
+    emergencyServicesTitle: "Emergency Help",
     templesGhats: "Temples & Ghats",
     mapNav: "Map & Navigation",
     facilities: "Facilities",
