@@ -6,7 +6,7 @@ import React from 'react';
  */
 export default function Loading({ fullScreen = false, message = 'Loading...' }) {
   const containerClasses = fullScreen
-    ? 'fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md'
+    ? 'fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/85 backdrop-blur-md'
     : 'w-full min-h-[260px] flex flex-col items-center justify-center p-8';
 
   return (
@@ -14,7 +14,7 @@ export default function Loading({ fullScreen = false, message = 'Loading...' }) 
       <div className="relative flex items-center justify-center mb-5">
         {/* Outer arc ring */}
         <svg className="w-14 h-14 animate-spin" viewBox="0 0 56 56" fill="none">
-          <circle cx="28" cy="28" r="22" stroke="#1e293b" strokeWidth="4" />
+          <circle cx="28" cy="28" r="22" stroke="#e2e8f0" strokeWidth="4" />
           <path
             d="M28 6 A22 22 0 0 1 50 28"
             stroke="url(#spinGrad)"

@@ -677,10 +677,10 @@ export default function NavigationMap() {
   // Missing API Key warning UI
   if (!googleMapsKey && !loading) {
     return (
-      <div className="max-w-md mx-auto my-12 bg-slate-900 border border-amber-500/20 rounded-2xl p-8 text-center shadow-xl">
-        <h2 className="text-xl font-bold text-white mb-2">Google Maps API Key Missing</h2>
-        <p className="text-slate-400 text-sm mb-6">
-          To run this dynamic real-time map, configure <code className="bg-slate-950 px-1 py-0.5 rounded text-amber-400">VITE_GOOGLE_MAPS_API_KEY</code> in your client's environment variables.
+      <div className="max-w-md mx-auto my-12 bg-white border border-amber-300/40 rounded-2xl p-8 text-center shadow-xl">
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Google Maps API Key Missing</h2>
+        <p className="text-slate-600 text-sm mb-6">
+          To run this dynamic real-time map, configure <code className="bg-slate-100 px-1 py-0.5 rounded text-amber-600">VITE_GOOGLE_MAPS_API_KEY</code> in your client's environment variables.
         </p>
       </div>
     );
@@ -689,19 +689,19 @@ export default function NavigationMap() {
   /* ── Error ── */
   if (error && !activeOrigin) {
     return (
-      <div className="max-w-md mx-auto my-12 bg-slate-900 border border-red-500/20 rounded-2xl p-8 text-center shadow-xl">
-        <h2 className="text-xl font-bold text-white mb-2">Map Error</h2>
-        <p className="text-slate-400 text-sm mb-6">{error}</p>
+      <div className="max-w-md mx-auto my-12 bg-white border border-red-300/40 rounded-2xl p-8 text-center shadow-xl">
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Map Error</h2>
+        <p className="text-slate-600 text-sm mb-6">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="relative h-[88vh] md:h-[90vh] min-h-[550px] w-full rounded-2xl overflow-hidden flex flex-col animate-fade-in" style={{ boxShadow: '0 0 0 1px rgba(30,41,59,0.6), 0 30px 80px rgba(0,0,0,0.6)' }}>
+    <div className="relative h-screen w-full overflow-hidden flex flex-col animate-fade-in">
 
       {/* ── Loading Overlay ── */}
       {(loading || !scriptLoaded) && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/85 backdrop-blur-md">
           <Loading message={t('loadingLocation')} />
         </div>
       )}
@@ -761,16 +761,16 @@ export default function NavigationMap() {
               {/* Back to Welcome Page Button */}
               <Link
                 to="/welcome"
-                className="w-9 h-9 rounded-2xl border border-slate-800/80 bg-slate-950/90 hover:bg-slate-900 text-white flex items-center justify-center shadow-xl backdrop-blur-md transition-all active:scale-95 cursor-pointer shrink-0"
+                className="w-9 h-9 rounded-2xl border border-slate-200/80 bg-white/95 hover:bg-white text-slate-700 flex items-center justify-center shadow-md backdrop-blur-md transition-all active:scale-95 cursor-pointer shrink-0"
                 title="Back to Welcome Page"
               >
-                <svg className="w-5 h-5 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
               </Link>
 
               {/* Search Input */}
-              <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800/80 px-3 py-1.5 shadow-xl bg-slate-950/90 backdrop-blur-md flex-1">
+              <div className="flex items-center gap-1.5 rounded-2xl border border-slate-200/80 px-3 py-1.5 shadow-md bg-white/95 backdrop-blur-md flex-1">
                 <input
                   id="search-input"
                   name="search"
@@ -778,12 +778,12 @@ export default function NavigationMap() {
                   placeholder={t('searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-transparent text-white text-xs font-medium placeholder-slate-500 focus:outline-none w-full"
+                  className="bg-transparent text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none w-full"
                 />
                 {searchQuery ? (
-                  <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white transition-colors text-[10px] cursor-pointer">✕</button>
+                  <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-slate-700 transition-colors text-[10px] cursor-pointer">✕</button>
                 ) : (
-                  <span className="text-slate-500 text-xs">🔍</span>
+                  <span className="text-slate-400 text-xs">🔍</span>
                 )}
               </div>
             </div>
@@ -793,8 +793,8 @@ export default function NavigationMap() {
               <button
                 onClick={() => setSelectedCategory('All')}
                 className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${selectedCategory === 'All'
-                    ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
-                    : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/90 backdrop-blur-md'
+                    ? 'bg-emerald-500 text-white border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
+                    : 'border-slate-200 text-slate-600 hover:text-slate-900 bg-white/95 backdrop-blur-md'
                   }`}
               >
                 🌐 {t('all')}
@@ -806,8 +806,8 @@ export default function NavigationMap() {
                     key={cat._id || cat.id}
                     onClick={() => setSelectedCategory(cat.name)}
                     className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${isSel
-                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
-                        : 'border-slate-800/80 text-slate-400 hover:text-white bg-slate-950/90 backdrop-blur-md'
+                        ? 'bg-emerald-500 text-white border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
+                        : 'border-slate-200 text-slate-600 hover:text-slate-900 bg-white/95 backdrop-blur-md'
                       }`}
                   >
                     <span>{cat.emoji}</span>
@@ -823,14 +823,14 @@ export default function NavigationMap() {
 
       {/* ── Step-by-Step Navigation Instructions Drawer ── */}
       {showSteps && selectedFacility && navigationSteps.length > 0 && (
-        <div className="absolute inset-x-3 bottom-28 z-50 max-w-sm mx-auto rounded-3xl p-5 shadow-2xl space-y-4" style={{ background: 'rgba(2,6,23,0.96)', border: '1px solid rgba(30,41,59,0.8)', backdropFilter: 'blur(20px)' }}>
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h4 className="text-sm font-black text-white flex items-center gap-2">
+        <div className="absolute inset-x-3 bottom-28 z-50 max-w-sm mx-auto rounded-3xl p-5 shadow-2xl space-y-4" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(226,232,240,0.9)', backdropFilter: 'blur(20px)' }}>
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+            <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
               <span>📋 {t('stepByStepDirections')}</span>
             </h4>
             <button
               onClick={() => setShowSteps(false)}
-              className="text-xs text-slate-400 hover:text-white cursor-pointer"
+              className="text-xs text-slate-400 hover:text-slate-700 cursor-pointer"
             >
               ✕
             </button>
@@ -838,12 +838,12 @@ export default function NavigationMap() {
 
           <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
             {navigationSteps.map((step, index) => (
-              <div key={index} className="flex items-start gap-3 text-xs text-slate-300">
-                <span className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+              <div key={index} className="flex items-start gap-3 text-xs text-slate-600">
+                <span className="w-5 h-5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
                   {index + 1}
                 </span>
                 <div className="flex-1">
-                  <p className="font-semibold text-slate-200" dangerouslySetInnerHTML={{ __html: step.instructions }} />
+                  <p className="font-semibold text-slate-800" dangerouslySetInnerHTML={{ __html: step.instructions }} />
                   <p className="text-[10px] text-slate-500 mt-0.5">{step.distance.text} · {step.duration.text}</p>
                 </div>
               </div>
@@ -857,10 +857,20 @@ export default function NavigationMap() {
 
       {/* ── Floating Map Control Stack (Bottom Right) ── */}
       <div className={`absolute ${(selectedFacility || (showStatus && activeOrigin)) ? 'bottom-[180px]' : 'bottom-4'} right-3 z-30 flex flex-col gap-1.5 transition-all duration-300 items-end`}>
+        {/* Floating SOS Button */}
+        <button
+          onClick={() => setSosActive(true)}
+          className="h-8 px-2.5 rounded-lg text-xs font-black flex items-center gap-1 shadow-md bg-red-500 hover:bg-red-600 text-white backdrop-blur-md cursor-pointer transition-all active:scale-95 shadow-red-500/20"
+          title="Emergency SOS"
+        >
+          <span>🚨</span>
+          <span className="text-[10px]">SOS</span>
+        </button>
+
         {/* Recenter Floating Button */}
         <button
           onClick={handleRecenter}
-          className="w-8 h-8 rounded-lg text-sm flex items-center justify-center shadow-lg bg-slate-950/92 border border-slate-800/80 text-emerald-400 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-slate-900"
+          className="w-8 h-8 rounded-lg text-sm flex items-center justify-center shadow-md bg-white/95 border border-slate-200/80 text-emerald-600 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-white"
           title={t('recenterMap')}
         >
           🎯
@@ -870,10 +880,10 @@ export default function NavigationMap() {
         <div className="flex items-center gap-1.5">
           {/* Expanded Map Types Menu (Slides out to the left) */}
           {showMapTypes && (
-            <div className="flex gap-1 bg-slate-950/92 border border-slate-800/80 p-1 rounded-lg shadow-xl backdrop-blur-md animate-fade-in mr-0.5">
+            <div className="flex gap-1 bg-white/95 border border-slate-200/80 p-1 rounded-lg shadow-lg backdrop-blur-md animate-fade-in mr-0.5">
               {MAP_TYPES.map((type) => {
                 const isSelected = mapType === type.key;
-                const labelText = type.label === 'Standard Map' ? 'Map' : type.label; // Make it short
+                const labelText = type.label === 'Standard Map' ? 'Map' : type.label;
                 return (
                   <button
                     key={type.key}
@@ -883,8 +893,8 @@ export default function NavigationMap() {
                     }}
                     className={`px-2 py-1 rounded-md text-[9px] font-black transition-all active:scale-95 border flex items-center gap-1 cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-emerald-500/20'
-                        : 'bg-slate-900 text-slate-300 border-slate-850 hover:bg-slate-800'
+                        ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-500/20'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     <span className="text-xs">{type.icon}</span>
@@ -898,10 +908,10 @@ export default function NavigationMap() {
           {/* Arrow Toggle Button */}
           <button
             onClick={() => setShowMapTypes(!showMapTypes)}
-            className={`w-8 h-8 rounded-lg text-xs font-black flex items-center justify-center shadow-lg border backdrop-blur-md cursor-pointer transition-all active:scale-95 ${
+            className={`w-8 h-8 rounded-lg text-xs font-black flex items-center justify-center shadow-md border backdrop-blur-md cursor-pointer transition-all active:scale-95 ${
               showMapTypes
-                ? 'bg-emerald-500 text-slate-950 border-emerald-400'
-                : 'bg-slate-950/92 text-slate-350 border-slate-800/80 hover:bg-slate-900'
+                ? 'bg-emerald-500 text-white border-emerald-400'
+                : 'bg-white/95 text-slate-600 border-slate-200/80 hover:bg-white'
             }`}
             title="Toggle Map Types"
           >
@@ -914,7 +924,7 @@ export default function NavigationMap() {
       <div className="absolute bottom-3 left-3 right-3 z-30 max-w-xl mx-auto">
         {selectedFacility ? (
           /* Selected destination metrics */
-          <div className="relative bg-slate-950/95 border border-slate-800/90 rounded-2xl p-3 md:p-4 shadow-2xl backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="relative bg-white/97 border border-slate-200/90 rounded-2xl p-3 md:p-4 shadow-xl backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
 
             {/* Close Button for Preview */}
             {!isNavigating && (
@@ -927,53 +937,53 @@ export default function NavigationMap() {
                   setRouteError(null);
                   setIsNavigating(false);
                 }}
-                className="absolute top-2 right-2 text-slate-400 hover:text-white transition-colors cursor-pointer text-xs p-1"
+                className="absolute top-2 right-2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer text-xs p-1"
                 title={t('closePreview')}
               >
                 ✕
               </button>
             )}
 
-            <div className="flex items-center gap-2.5 pb-2 sm:pb-0 border-b border-slate-800/80 sm:border-none min-w-0 flex-1">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="flex items-center gap-2.5 pb-2 sm:pb-0 border-b border-slate-200/80 sm:border-none min-w-0 flex-1">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 bg-emerald-50 border border-emerald-200 text-emerald-600">
                 🚶
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 truncate">
                   {t('navigatingTo')}
                 </p>
-                <h4 className="text-xs md:text-sm font-black text-white leading-tight truncate">
+                <h4 className="text-xs md:text-sm font-black text-slate-900 leading-tight truncate">
                   {selectedFacility.name}
                 </h4>
               </div>
             </div>
 
-            <div className="hidden sm:block h-8 w-px bg-slate-800 shrink-0" />
+            <div className="hidden sm:block h-8 w-px bg-slate-200 shrink-0" />
 
             <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-4 shrink-0">
               {routeError ? (
-                <div className="col-span-2 text-[10px] md:text-xs font-semibold text-rose-400 py-1 px-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-1.5">
+                <div className="col-span-2 text-[10px] md:text-xs font-semibold text-rose-600 py-1 px-2.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-1.5">
                   <span>⚠️</span> {routeError}
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                  <div className="flex items-center gap-2 bg-slate-50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-200/40 sm:border-none">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0">
                       ⏱️
                     </div>
                     <div>
                       <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">{t('walkTime')}</p>
-                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{durationText || t('calculating')}</h4>
+                      <h4 className="text-xs md:text-sm font-black text-slate-900 whitespace-nowrap">{durationText || t('calculating')}</h4>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-slate-900/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800/40 sm:border-none">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="flex items-center gap-2 bg-slate-50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-200/40 sm:border-none">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0">
                       🗺️
                     </div>
                     <div>
                       <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">{t('distance')}</p>
-                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{distanceText || t('calculating')}</h4>
+                      <h4 className="text-xs md:text-sm font-black text-slate-900 whitespace-nowrap">{distanceText || t('calculating')}</h4>
                     </div>
                   </div>
 
@@ -996,24 +1006,18 @@ export default function NavigationMap() {
           </div>
         ) : showStatus && activeOrigin ? (
           /* Scanned QR location details card */
-          <div className="bg-[#090f23]/96 border border-slate-800/80 rounded-2xl p-3 shadow-2xl backdrop-blur-md space-y-2.5 text-left relative transition-all duration-300">
-            {/* SOS Button & You Are Here */}
+          <div className="bg-white/97 border border-slate-200/80 rounded-2xl p-3 shadow-xl backdrop-blur-md space-y-2.5 text-left relative transition-all duration-300">
+            {/* You Are Here */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 {t('youAreHere')}
               </div>
-              <button
-                onClick={() => setSosActive(true)}
-                className="px-2.5 py-0.5 rounded-full border border-red-500/30 bg-red-500/8 text-red-400 text-[9px] font-black transition-all hover:bg-red-500/15 cursor-pointer"
-              >
-                🚨 SOS
-              </button>
             </div>
 
             {/* Title & Address */}
             <div className="space-y-0.5">
-              <h4 className="text-xs md:text-sm font-black text-white leading-tight">
+              <h4 className="text-xs md:text-sm font-black text-slate-900 leading-tight">
                 {activeOrigin.name}
               </h4>
               <p className="text-[9px] text-slate-500 leading-none">{liveAddress}</p>
@@ -1022,7 +1026,7 @@ export default function NavigationMap() {
             {/* Nearest Services */}
             {(nearestServices.Police || nearestServices.Medical || nearestServices.Toilet || nearestServices.Help) && (
               <div className="space-y-1.5 pt-0.5">
-                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">
+                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
                   {t('nearbyFacilities')}
                 </p>
                 
@@ -1031,12 +1035,12 @@ export default function NavigationMap() {
                   {nearestServices.Police && (
                     <button
                       onClick={() => handleNavigateTo(nearestServices.Police)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-emerald-500/5 border border-emerald-500/15 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-500/10 transition-all text-left"
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-emerald-50 border border-emerald-200 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-100 transition-all text-left"
                     >
                       <span className="text-xs">👮</span>
                       <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-400">Police</p>
-                        <p className="text-[9px] text-emerald-400 font-extrabold leading-none">{nearestServices.Police.distanceFormatted}</p>
+                        <p className="text-[7px] font-bold uppercase text-slate-500">Police</p>
+                        <p className="text-[9px] text-emerald-700 font-extrabold leading-none">{nearestServices.Police.distanceFormatted}</p>
                       </div>
                     </button>
                   )}
@@ -1044,12 +1048,12 @@ export default function NavigationMap() {
                   {nearestServices.Medical && (
                     <button
                       onClick={() => handleNavigateTo(nearestServices.Medical)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-red-500/5 border border-red-500/15 flex items-center gap-1.5 cursor-pointer hover:bg-red-500/10 transition-all text-left"
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-red-50 border border-red-200 flex items-center gap-1.5 cursor-pointer hover:bg-red-100 transition-all text-left"
                     >
                       <span className="text-xs">🏥</span>
                       <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-400">Hospital</p>
-                        <p className="text-[9px] text-red-400 font-extrabold leading-none">{nearestServices.Medical.distanceFormatted}</p>
+                        <p className="text-[7px] font-bold uppercase text-slate-500">Hospital</p>
+                        <p className="text-[9px] text-red-700 font-extrabold leading-none">{nearestServices.Medical.distanceFormatted}</p>
                       </div>
                     </button>
                   )}
@@ -1057,12 +1061,12 @@ export default function NavigationMap() {
                   {nearestServices.Toilet && (
                     <button
                       onClick={() => handleNavigateTo(nearestServices.Toilet)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-blue-500/5 border border-blue-500/15 flex items-center gap-1.5 cursor-pointer hover:bg-blue-500/10 transition-all text-left"
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-blue-50 border border-blue-200 flex items-center gap-1.5 cursor-pointer hover:bg-blue-100 transition-all text-left"
                     >
                       <span className="text-xs">🚻</span>
                       <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-400">Toilet</p>
-                        <p className="text-[9px] text-blue-400 font-extrabold leading-none">{nearestServices.Toilet.distanceFormatted}</p>
+                        <p className="text-[7px] font-bold uppercase text-slate-500">Toilet</p>
+                        <p className="text-[9px] text-blue-700 font-extrabold leading-none">{nearestServices.Toilet.distanceFormatted}</p>
                       </div>
                     </button>
                   )}
@@ -1070,12 +1074,12 @@ export default function NavigationMap() {
                   {nearestServices.Help && (
                     <button
                       onClick={() => handleNavigateTo(nearestServices.Help)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-cyan-500/5 border border-cyan-500/15 flex items-center gap-1.5 cursor-pointer hover:bg-cyan-500/10 transition-all text-left"
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-cyan-50 border border-cyan-200 flex items-center gap-1.5 cursor-pointer hover:bg-cyan-100 transition-all text-left"
                     >
                       <span className="text-xs">💧</span>
                       <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-400">Water</p>
-                        <p className="text-[9px] text-cyan-400 font-extrabold leading-none">{nearestServices.Help.distanceFormatted}</p>
+                        <p className="text-[7px] font-bold uppercase text-slate-500">Water</p>
+                        <p className="text-[9px] text-cyan-700 font-extrabold leading-none">{nearestServices.Help.distanceFormatted}</p>
                       </div>
                     </button>
                   )}
@@ -1084,10 +1088,10 @@ export default function NavigationMap() {
             )}
             
             {/* Footer Attribution inside card footer */}
-            <div className="text-center pt-1 border-t border-slate-800/60">
+            <div className="text-center pt-1 border-t border-slate-200/60">
               <span className="text-[9px] text-slate-400 font-semibold">
                 Powered by{' '}
-                <span className="font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text ml-0.5">
+                <span className="font-black text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-600 bg-clip-text ml-0.5">
                   Confluxaa
                 </span>
               </span>
@@ -1098,7 +1102,7 @@ export default function NavigationMap() {
 
       {/* SOS Modal Overlay */}
       {sosActive && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in">
           <div className="w-full max-w-sm rounded-[24px] overflow-hidden shadow-2xl bg-white p-5 border border-slate-100 relative">
             
             {/* Header: Title & Close Button */}

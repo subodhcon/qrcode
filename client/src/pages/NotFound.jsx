@@ -20,10 +20,10 @@ export default function NotFound() {
       </div>
 
       <div className="space-y-4 max-w-md relative z-10">
-        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
           Page not found
         </h2>
-        <p className="text-slate-400 text-sm md:text-base leading-relaxed">
+        <p className="text-slate-500 text-sm md:text-base leading-relaxed">
           The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
         </p>
       </div>

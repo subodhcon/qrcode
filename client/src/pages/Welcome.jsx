@@ -117,24 +117,24 @@ export default function Welcome() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-slate-950 text-white flex flex-col items-center justify-between overflow-x-hidden font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="relative min-h-screen w-full bg-slate-50 text-slate-900 flex flex-col items-center justify-between overflow-x-hidden font-sans selection:bg-emerald-100 selection:text-emerald-800">
       
       {/* ── Background Image & Dark Overlay ── */}
       <div 
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 pointer-events-none opacity-85 scale-105"
         style={{ backgroundImage: `url('/gaya_hero.png')` }}
       />
-      <div className="fixed inset-0 z-0 bg-gradient-to-b from-slate-950/45 via-slate-950/55 to-slate-950/85 pointer-events-none" />
+
 
       {/* ── Main Mobile View Container ── */}
-      <div className="relative z-10 w-full max-w-md min-h-screen px-4 py-4 flex flex-col justify-between space-y-5">
+      <div className="relative z-10 w-full max-w-md min-h-screen px-4 py-1 flex flex-col justify-between space-y-3">
 
         {/* ── Top Header Navigation ── */}
         <header className="relative z-30 flex items-center justify-between pt-2">
           {/* Hamburger Menu Toggle Button */}
           <button
             onClick={() => setMenuOpen(true)}
-            className="w-10 h-10 rounded-2xl bg-slate-900/80 hover:bg-slate-800/90 border border-slate-700/50 flex items-center justify-center text-slate-200 transition-all active:scale-95 cursor-pointer backdrop-blur-md shadow-lg"
+            className="w-10 h-10 rounded-2xl bg-white/85 hover:bg-white/95 border border-slate-200/70 flex items-center justify-center text-slate-700 transition-all active:scale-95 cursor-pointer backdrop-blur-md shadow-md"
             aria-label="Open Navigation Menu"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -143,23 +143,28 @@ export default function Welcome() {
           </button>
 
           {/* Right Language Selector */}
-          <div className="relative z-40 backdrop-blur-md bg-slate-900/80 rounded-2xl p-0.5 border border-slate-700/50 shadow-lg">
+          <div className="relative z-40 backdrop-blur-md bg-white/85 rounded-2xl p-0.5 border border-slate-200/70 shadow-md">
             <LanguageSelector />
           </div>
         </header>
 
         {/* ── Hero Title Section ── */}
-        <section className="text-left space-y-1.5 pt-2">
-          <p className="text-sm font-medium text-slate-300 tracking-wide">
-            {t('welcomeTitle') || "Welcome to"}
-          </p>
-          <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none">
-            {t('welcomeCity') || "Gaya Ji"}
-          </h1>
-          <h2 className="text-lg font-bold text-amber-400/95 tracking-wide">
-            {t('welcomeSubHeader') || "Pitru Paksha Mela 2026"}
-          </h2>
-          <p className="text-xs text-slate-400 leading-relaxed pt-1 max-w-xs font-normal">
+        <section className="text-left space-y-2 pt-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-600/30 backdrop-blur-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
+            <span className="text-[11px] font-extrabold text-amber-800 tracking-wide uppercase">
+              {t('welcomeSubHeader') || "Pitru Paksha Mela 2026"}
+            </span>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-800 tracking-wide">
+              {t('welcomeTitle') || "Welcome to"}
+            </p>
+            <h1 className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight leading-none drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
+              {t('welcomeCity') || "Gaya Ji"}
+            </h1>
+          </div>
+          <p className="text-xs text-slate-800 leading-relaxed font-semibold max-w-xs drop-shadow-[0_1px_2px_rgba(255,255,255,0.6)]">
             {t('welcomeTagline') || "Your Digital Guide for a Safe & Convenient Visit"}
           </p>
         </section>
@@ -190,28 +195,28 @@ export default function Welcome() {
         <section>
           <div
             onClick={handleWhereAmI}
-            className="w-full p-4 rounded-2xl bg-gradient-to-r from-[#0a2540] via-[#0d345a] to-[#0f3d6b] border border-blue-500/40 shadow-2xl flex items-center justify-between cursor-pointer hover:border-blue-400 transition-all active:scale-[0.99] group relative overflow-hidden"
+            className="w-full p-4 rounded-2xl bg-gradient-to-r from-blue-50 via-blue-100/80 to-blue-50 border border-blue-200 shadow-lg flex items-center justify-between cursor-pointer hover:border-blue-300 hover:shadow-xl transition-all active:scale-[0.99] group relative overflow-hidden"
           >
             {/* Glow Accent */}
-            <div className="absolute -top-10 -right-10 w-28 h-28 bg-blue-500/20 rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-all" />
+            <div className="absolute -top-10 -right-10 w-28 h-28 bg-blue-200/40 rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-all" />
 
             <div className="flex items-center gap-3.5 relative z-10">
-              <div className="w-11 h-11 rounded-full bg-red-500 flex items-center justify-center shadow-lg shadow-red-500/40 text-white shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-11 h-11 rounded-full bg-red-500 flex items-center justify-center shadow-lg shadow-red-500/30 text-white shrink-0 group-hover:scale-105 transition-transform">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                 </svg>
               </div>
               <div className="text-left space-y-0.5">
-                <h3 className="text-base font-bold text-white leading-tight">
+                <h3 className="text-base font-bold text-slate-900 leading-tight">
                   {locating ? t('loadingLocation') || "Detecting GPS..." : t('whereAmI') || "Where Am I?"}
                 </h3>
-                <p className="text-xs text-blue-200/80 font-medium">
+                <p className="text-xs text-blue-600 font-medium">
                   {t('findCurrentLocation') || "Find my current location"}
                 </p>
               </div>
             </div>
 
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:translate-x-1 transition-transform shrink-0">
+            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 group-hover:translate-x-1 transition-transform shrink-0">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
@@ -219,155 +224,139 @@ export default function Welcome() {
           </div>
         </section>
 
-        {/* ── Quick Access Grid (8 Feature Icons) ── */}
+        {/* ── Quick Access Grid ── */}
         <section className="space-y-3">
-          <h3 className="text-base font-bold text-white text-left tracking-tight">
+          <h3 className="text-base font-black text-slate-900 tracking-tight text-left">
             {t('quickAccess') || "Quick Access"}
           </h3>
 
-          <div className="grid grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5">
             
-            {/* 1. Nearby Places */}
+            {/* 1. Temples & Ghats */}
             <Link
-              to="/map?category=All"
-              className="flex flex-col items-center justify-center text-center group cursor-pointer"
+              to="/map?category=Temple"
+              className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
             >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30 group-hover:scale-105 active:scale-95 transition-all mb-1.5">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0h4m-4 0H7m4 0v4m0 0h4m-4 0H7" />
-                </svg>
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                🏛️
               </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight group-hover:text-white transition-colors">
-                {t('nearbyPlaces') || "Nearby Places"}
+              <span className="text-[10px] font-bold text-slate-800 leading-tight">
+                {t('templesGhats') || "Temples & Ghats"}
               </span>
             </Link>
 
             {/* 2. Emergency Services */}
             <button
               onClick={() => setSosActive(true)}
-              className="flex flex-col items-center justify-center text-center group cursor-pointer"
+              className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group cursor-pointer"
             >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg shadow-red-600/30 group-hover:scale-105 active:scale-95 transition-all mb-1.5">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
+              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                🛡️
               </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight group-hover:text-white transition-colors">
-                {t('emergencyServicesTitle') || "Emergency Services"}
+              <span className="text-[10px] font-bold text-slate-800 leading-tight">
+                {t('emergencyServicesTitle') || "Police & Help"}
               </span>
             </button>
 
-            {/* 3. Temples & Ghats */}
+            {/* 3. Medical Camps */}
             <Link
-              to="/map?category=Temple"
-              className="flex flex-col items-center justify-center text-center group cursor-pointer"
+              to="/map?category=Medical"
+              className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
             >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/30 group-hover:scale-105 active:scale-95 transition-all mb-1.5">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                </svg>
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                🏥
               </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight group-hover:text-white transition-colors">
-                {t('templesGhats') || "Temples & Ghats"}
+              <span className="text-[10px] font-bold text-slate-800 leading-tight">
+                Hospitals & Medical
               </span>
             </Link>
 
-            {/* 4. Map & Navigation */}
-            <Link
-              to="/map"
-              className="flex flex-col items-center justify-center text-center group cursor-pointer"
-            >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 group-hover:scale-105 active:scale-95 transition-all mb-1.5">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-              </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight group-hover:text-white transition-colors">
-                {t('mapNav') || "Map & Navigation"}
-              </span>
-            </Link>
-
-            {/* 5. Facilities */}
+            {/* 4. Toilets */}
             <Link
               to="/map?category=Toilet"
-              className="flex flex-col items-center justify-center text-center group cursor-pointer"
+              className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
             >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 group-hover:scale-105 active:scale-95 transition-all mb-1.5">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                🚻
               </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight group-hover:text-white transition-colors">
-                {t('facilities') || "Facilities"}
+              <span className="text-[10px] font-bold text-slate-800 leading-tight">
+                Toilets
               </span>
             </Link>
 
-            {/* 6. Transport */}
+            {/* 5. Drinking Water */}
+            <Link
+              to="/map?category=Water"
+              className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                💧
+              </div>
+              <span className="text-[10px] font-bold text-slate-800 leading-tight">
+                Drinking Water
+              </span>
+            </Link>
+
+            {/* 6. Parking Areas */}
             <Link
               to="/map?category=Parking"
-              className="flex flex-col items-center justify-center text-center group cursor-pointer"
+              className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
             >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 group-hover:scale-105 active:scale-95 transition-all mb-1.5">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8m-8 4h8m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
-                </svg>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                🅿️
               </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight group-hover:text-white transition-colors">
-                {t('transport') || "Transport"}
+              <span className="text-[10px] font-bold text-slate-800 leading-tight">
+                Parking Areas
               </span>
             </Link>
 
-            {/* 7. Event Info */}
-            <button
-              onClick={() => setGuidelinesActive(true)}
-              className="flex flex-col items-center justify-center text-center group cursor-pointer"
+            {/* 7. Transport / Bus */}
+            <Link
+              to="/map?category=Transport"
+              className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
             >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 group-hover:scale-105 active:scale-95 transition-all mb-1.5">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                🚌
               </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight group-hover:text-white transition-colors">
-                {t('eventInfo') || "Event Info"}
+              <span className="text-[10px] font-bold text-slate-800 leading-tight">
+                Bus Stands
               </span>
-            </button>
+            </Link>
 
-            {/* 8. Lost & Found */}
-            <button
-              onClick={() => setFeedbackActive(true)}
-              className="flex flex-col items-center justify-center text-center group cursor-pointer"
+            {/* 8. Railway Station */}
+            <Link
+              to="/map?category=Railway"
+              className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
             >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white shadow-lg shadow-pink-600/30 group-hover:scale-105 active:scale-95 transition-all mb-1.5">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5z" />
-                </svg>
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                🚆
               </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight group-hover:text-white transition-colors">
-                {t('lostFound') || "Lost & Found"}
+              <span className="text-[10px] font-bold text-slate-800 leading-tight">
+                Railway Station
               </span>
-            </button>
+            </Link>
 
           </div>
         </section>
 
         {/* ── Official Advisories Ticker Block ── */}
         <section>
-          <div className="rounded-2xl p-3.5 bg-slate-900/80 border border-amber-500/20 shadow-xl text-left space-y-1.5 backdrop-blur-md">
+          <div className="rounded-2xl p-3.5 bg-amber-50/90 border border-amber-300/50 shadow-md text-left space-y-1.5 backdrop-blur-md">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
                 <span>📢 {t('advisoriesTitle')}</span>
               </div>
               <button
                 onClick={() => setGuidelinesActive(true)}
-                className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 hover:text-amber-300 transition-colors bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md cursor-pointer"
+                className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 hover:text-amber-800 transition-colors bg-amber-200/60 border border-amber-300/60 px-2 py-0.5 rounded-md cursor-pointer"
               >
                 {t('viewAllBtn')}
               </button>
             </div>
             
             <div className="min-h-[36px] flex items-center">
-              <p className="text-xs text-slate-300 leading-relaxed font-medium transition-all">
+              <p className="text-xs text-slate-700 leading-relaxed font-medium transition-all">
                 {slides[activeSlide]?.startsWith('advisory') ? t(slides[activeSlide]) : slides[activeSlide]}
               </p>
             </div>
@@ -467,8 +456,8 @@ export default function Welcome() {
         </section>
 
         {/* ── Footer ── */}
-        <footer className="text-center space-y-1.5 pt-2 pb-1 border-t border-slate-800/60">
-          <p className="text-[10px] text-slate-400 leading-relaxed max-w-xs mx-auto">
+        <footer className="text-center space-y-1.5 pt-2 pb-1 border-t border-slate-200/70">
+          <p className="text-[10px] text-slate-500 leading-relaxed max-w-xs mx-auto">
             {t('authorizedBy')}
           </p>
           <div className="text-[10px] text-slate-500 font-medium">
@@ -477,7 +466,7 @@ export default function Welcome() {
               href="https://confluxaa.com" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="font-extrabold text-transparent bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text hover:opacity-80 transition-opacity"
+              className="font-extrabold text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text hover:opacity-80 transition-opacity"
             >
               Confluxaa
             </a>
@@ -492,21 +481,21 @@ export default function Welcome() {
           {/* Backdrop */}
           <div 
             onClick={() => setMenuOpen(false)} 
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
           />
 
           {/* Side Drawer Content */}
-          <div className="relative z-10 w-4/5 max-w-xs h-full bg-slate-900 border-r border-slate-800 p-6 flex flex-col justify-between text-left shadow-2xl">
+          <div className="relative z-10 w-4/5 max-w-xs h-full bg-white border-r border-slate-200 p-6 flex flex-col justify-between text-left shadow-2xl">
             <div className="space-y-6">
               {/* Drawer Top Header */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div className="space-y-0.5">
-                  <h3 className="text-base font-black text-white">{t('welcomeCity') || "Gaya Ji"} Guide</h3>
-                  <p className="text-[10px] text-slate-400">{t('welcomeSubHeader') || "Pitru Paksha Mela 2026"}</p>
+                  <h3 className="text-base font-black text-slate-900">{t('welcomeCity') || "Gaya Ji"} Guide</h3>
+                  <p className="text-[10px] text-slate-500">{t('welcomeSubHeader') || "Pitru Paksha Mela 2026"}</p>
                 </div>
                 <button
                   onClick={() => setMenuOpen(false)}
-                  className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-900 cursor-pointer"
                 >
                   ✕
                 </button>
@@ -517,7 +506,7 @@ export default function Welcome() {
                 <Link
                   to="/map"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 text-slate-200 hover:text-white transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors"
                 >
                   <span>🗺️</span>
                   <span>{t('mapNav') || "Interactive Map"}</span>
@@ -525,7 +514,7 @@ export default function Welcome() {
 
                 <button
                   onClick={() => { setMenuOpen(false); setSosActive(true); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 text-red-400 hover:text-red-300 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors text-left cursor-pointer"
                 >
                   <span>🚨</span>
                   <span>{t('emergencyServicesTitle') || "Emergency Helpline"}</span>
@@ -533,7 +522,7 @@ export default function Welcome() {
 
                 <button
                   onClick={() => { setMenuOpen(false); setGuidelinesActive(true); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 text-amber-400 hover:text-amber-300 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-amber-50 text-amber-700 hover:text-amber-800 transition-colors text-left cursor-pointer"
                 >
                   <span>📢</span>
                   <span>{t('advisoriesTitle') || "Official Advisories"}</span>
@@ -541,7 +530,7 @@ export default function Welcome() {
 
                 <button
                   onClick={() => { setMenuOpen(false); setFeedbackActive(true); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 transition-colors text-left cursor-pointer"
                 >
                   <span>📝</span>
                   <span>{t('feedbackBtn') || "Feedback & Support"}</span>
@@ -551,7 +540,7 @@ export default function Welcome() {
                   href="http://www.pinddaangaya.bihar.gov.in/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-cyan-50 text-cyan-700 hover:text-cyan-800 transition-colors"
                 >
                   <span>🏛️</span>
                   <span>{t('officialWebsiteBtn') || "Government Portal"}</span>
@@ -560,11 +549,11 @@ export default function Welcome() {
             </div>
 
             {/* Admin Login Link */}
-            <div className="pt-4 border-t border-slate-800">
+            <div className="pt-4 border-t border-slate-200">
               <Link
                 to="/admin/login"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition-colors"
+                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-600 transition-colors"
               >
                 <span>🔐</span>
                 <span>Admin Login</span>
@@ -731,55 +720,55 @@ export default function Welcome() {
 
       {/* ── Guidelines Modal/Drawer ── */}
       {guidelinesActive && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-fade-in">
-          <div className="w-full max-w-sm rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 bg-slate-900 border border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-md p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 bg-white border border-slate-200">
             <div className="h-1 bg-gradient-to-r from-amber-500 to-amber-300" />
             <div className="p-6 space-y-5">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-white">{t('guidelinesModalTitle')}</h3>
-                <button onClick={() => setGuidelinesActive(false)} className="text-slate-400 hover:text-white transition-colors text-sm font-bold cursor-pointer">✕</button>
+                <h3 className="text-sm font-black text-slate-900">{t('guidelinesModalTitle')}</h3>
+                <button onClick={() => setGuidelinesActive(false)} className="text-slate-400 hover:text-slate-700 transition-colors text-sm font-bold cursor-pointer">✕</button>
               </div>
               
               <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1 text-left">
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-amber-700 flex items-center gap-1.5">
                     <span>🚶</span> {t('advisoriesTitle')}
                   </h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     {t('advisoryQueue')}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
                     <span>🧹</span> Cleanliness Guidelines
                   </h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     {t('advisoryCleanliness')}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-red-400 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-red-700 flex items-center gap-1.5">
                     <span>🛡️</span> Security & Safety
                   </h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     {t('advisorySecurity')}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2 border-t border-slate-800">
+              <div className="space-y-2 pt-2 border-t border-slate-200">
                 <a
                   href="http://www.pinddaangaya.bihar.gov.in/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition-all cursor-pointer shadow-lg shadow-amber-500/20"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition-all cursor-pointer shadow-lg shadow-amber-500/20"
                 >
                   🏛️ {t('officialWebsiteBtn')}
                 </a>
 
                 <button
                   onClick={() => setGuidelinesActive(false)}
-                  className="w-full py-3.5 rounded-2xl bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 text-xs font-bold transition-all cursor-pointer"
+                  className="w-full py-3.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 text-xs font-bold transition-all cursor-pointer"
                 >
                   {t('dismiss')}
                 </button>

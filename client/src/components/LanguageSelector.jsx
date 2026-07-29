@@ -40,7 +40,7 @@ export default function LanguageSelector() {
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-800 bg-slate-950/80 hover:bg-slate-900 text-slate-300 text-xs font-semibold shadow transition-all cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 bg-white/90 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-sm transition-all cursor-pointer"
           id="menu-button"
           aria-expanded={isOpen}
           aria-haspopup="true"
@@ -55,7 +55,7 @@ export default function LanguageSelector() {
 
       {isOpen && (
         <div
-          className="absolute right-0 mt-2 w-40 rounded-2xl shadow-2xl bg-slate-950 border border-slate-800/80 focus:outline-none z-[100] overflow-hidden max-h-60 overflow-y-auto no-scrollbar animate-fade-in"
+          className="absolute right-0 mt-2 w-40 rounded-2xl shadow-xl bg-white border border-slate-200/80 focus:outline-none z-[100] overflow-hidden max-h-60 overflow-y-auto no-scrollbar animate-fade-in"
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="menu-button"
@@ -73,8 +73,8 @@ export default function LanguageSelector() {
                   }}
                   className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors block cursor-pointer ${
                     isSelected
-                      ? 'bg-emerald-500 text-slate-950 font-black'
-                      : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                      ? 'bg-emerald-500 text-white font-black'
+                      : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                   role="menuitem"
                   tabIndex="-1"

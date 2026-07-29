@@ -42,11 +42,10 @@ function FacilityCard({ type, data, locationSlug }) {
 
   return (
     <div
-      className="relative rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200 group"
+      className="relative rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200 group bg-white"
       style={{
-        background: cfg.bg,
         border: `1px solid ${cfg.border}`,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.3)'
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06)'
       }}
     >
       {/* Left accent strip */}
@@ -60,7 +59,7 @@ function FacilityCard({ type, data, locationSlug }) {
             <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>
               {cfg.label}
             </p>
-            <h3 className="text-sm font-bold text-white leading-tight truncate">{name}</h3>
+            <h3 className="text-sm font-bold text-slate-900 leading-tight truncate">{name}</h3>
           </div>
         </div>
       </div>
@@ -74,8 +73,8 @@ function FacilityCard({ type, data, locationSlug }) {
           </svg>
           {distance}
         </span>
-        <span className="text-slate-600">·</span>
-        <span className="flex items-center gap-1 text-xs text-slate-400">
+        <span className="text-slate-400">·</span>
+        <span className="flex items-center gap-1 text-xs text-slate-500">
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -159,10 +158,10 @@ export default function LocationLanding() {
   /* ── Error ── */
   if (error || !location) return (
     <div className="max-w-sm mx-auto my-12 text-center space-y-4 animate-fade-slide-up">
-      <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-2xl">⚠️</div>
-      <h2 className="text-xl font-black text-white">Scan Failed</h2>
-      <p className="text-sm text-slate-400">{error || 'Location data unavailable.'}</p>
-      <Link to="/" className="inline-flex items-center gap-2 py-2.5 px-5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold transition-colors">
+      <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center mx-auto text-2xl">⚠️</div>
+      <h2 className="text-xl font-black text-slate-900">Scan Failed</h2>
+      <p className="text-sm text-slate-500">{error || 'Location data unavailable.'}</p>
+      <Link to="/" className="inline-flex items-center gap-2 py-2.5 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold transition-colors">
         ← Back to Home
       </Link>
     </div>
@@ -270,13 +269,13 @@ export default function LocationLanding() {
 
       {/* ── Top Status Bar ── */}
       <div className="flex items-center justify-between">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold uppercase tracking-wider">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold uppercase tracking-wider">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           {t('scanConfirmed')}
         </div>
         <button
           onClick={() => setSosActive(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-red-500/30 bg-red-500/8 text-red-400 text-[11px] font-bold transition-all hover:bg-red-500/15 cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-red-300/60 bg-red-50 text-red-600 text-[11px] font-bold transition-all hover:bg-red-100 cursor-pointer"
         >
           🚨 SOS
         </button>
@@ -284,21 +283,19 @@ export default function LocationLanding() {
 
       {/* ── Hero Location Card ── */}
       <div
-        className="rounded-3xl p-6 relative overflow-hidden"
+        className="rounded-3xl p-6 relative overflow-hidden bg-white border border-slate-200"
         style={{
-          background: 'linear-gradient(160deg, #0f172a 0%, #050d1a 100%)',
-          border: '1px solid rgba(30,41,59,0.8)',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 60px -20px rgba(16,185,129,0.08)'
+          boxShadow: '0 4px 24px rgba(0,0,0,0.08)'
         }}
       >
         {/* Background glow */}
-        <div className="absolute -top-16 -right-16 w-44 h-44 bg-indigo-500/6 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 -right-16 w-44 h-44 bg-indigo-100/60 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-emerald-100/60 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative space-y-4">
-          {/* Location pin icon — compact */}
+          {/* Location pin icon */}
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', boxShadow: '0 8px 20px rgba(99,102,241,0.3)' }}>
+            style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', boxShadow: '0 8px 20px rgba(99,102,241,0.25)' }}>
             <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -306,10 +303,10 @@ export default function LocationLanding() {
           </div>
 
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">{t('youAreHere')}</p>
-            <h1 className="text-2xl md:text-3xl font-black text-white leading-tight">{location?.name}</h1>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t('youAreHere')}</p>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight">{location?.name}</h1>
             {location?.description && (
-              <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{location.description}</p>
+              <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">{location.description}</p>
             )}
           </div>
 
@@ -334,7 +331,7 @@ export default function LocationLanding() {
       {(medical || help || toilet || police) && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-white">{t('nearbyFacilities')}</h2>
+            <h2 className="text-sm font-black text-slate-900">{t('nearbyFacilities')}</h2>
             <span className="text-[11px] text-slate-500 font-medium">{t('tapToNavigate')}</span>
           </div>
 
@@ -349,10 +346,10 @@ export default function LocationLanding() {
       )}
 
       {/* ── Powered by footer ── */}
-      <div className="text-center text-[10px] text-slate-700 font-medium pt-2">
+      <div className="text-center text-[10px] text-slate-500 font-medium pt-2">
         Powered by{' '}
         <a href="https://confluxaa.com" target="_blank" rel="noopener noreferrer"
-          className="font-extrabold text-transparent bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text hover:opacity-80 transition-opacity">
+          className="font-extrabold text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text hover:opacity-80 transition-opacity">
           Confluxaa
         </a>
       </div>
