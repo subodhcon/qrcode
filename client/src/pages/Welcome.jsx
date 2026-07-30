@@ -150,21 +150,21 @@ export default function Welcome() {
 
         {/* ── Hero Title Section ── */}
         <section className="text-left space-y-2 pt-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-amber-300/80 shadow-sm backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-[11px] font-black text-amber-700 tracking-wide uppercase">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-amber-400/80 shadow-md backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-[11px] font-black text-amber-300 tracking-wide uppercase">
               {t('welcomeSubHeader') || "Pitru Paksha Mela 2026"}
             </span>
           </div>
           <div className="space-y-0.5">
-            <p className="text-xs font-black text-slate-800 tracking-wide drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)]">
+            <p className="text-xs font-black text-white tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
               {t('welcomeTitle') || "Welcome to"}
             </p>
-            <h1 className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight leading-none drop-shadow-[0_2px_10px_rgba(255,255,255,0.85)]">
+            <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.95)]">
               {t('welcomeCity') || "Gaya Ji"}
             </h1>
           </div>
-          <p className="text-xs text-slate-900 leading-relaxed font-extrabold max-w-xs drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)]">
+          <p className="text-xs text-white leading-relaxed font-black max-w-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
             {t('welcomeTagline') || "Your Digital Guide for a Safe & Convenient Visit"}
           </p>
         </section>
@@ -226,7 +226,7 @@ export default function Welcome() {
 
         {/* ── Quick Access Grid ── */}
         <section className="space-y-3">
-          <h3 className="text-base font-black text-slate-900 tracking-tight text-left">
+          <h3 className="text-base font-black text-white tracking-tight text-left drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
             {t('quickAccess') || "Quick Access"}
           </h3>
 
@@ -455,17 +455,17 @@ export default function Welcome() {
         </section>
 
         {/* ── Footer ── */}
-        <footer className="text-center space-y-1 pt-2 pb-1 border-t border-slate-300/80">
-          <p className="text-[10px] text-slate-900 leading-relaxed max-w-xs mx-auto font-extrabold drop-shadow-[0_1px_3px_rgba(255,255,255,0.9)]">
+        <footer className="text-center space-y-1 pt-2 pb-1 border-t border-slate-300/40">
+          <p className="text-[10px] text-white leading-relaxed max-w-xs mx-auto font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
             {t('authorizedBy')}
           </p>
-          <div className="text-[10px] text-slate-900 font-black drop-shadow-[0_1px_3px_rgba(255,255,255,0.9)]">
+          <div className="text-[10px] text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
             Powered by{' '}
             <a 
               href="https://confluxaa.com" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="font-black text-emerald-700 hover:text-emerald-800 transition-colors underline decoration-emerald-500/40 decoration-1"
+              className="font-black text-amber-300 hover:text-amber-200 transition-colors underline decoration-amber-300/60 decoration-1"
             >
               Confluxaa
             </a>
