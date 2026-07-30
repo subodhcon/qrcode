@@ -471,6 +471,7 @@ export default function NavigationMap() {
       });
 
       const userInfoWindow = new window.google.maps.InfoWindow({
+        disableAutoPan: true,
         content: `<div style="font-family: system-ui, -apple-system, sans-serif; padding: 2px 4px; min-width: 100px; text-align: left;">
           <div style="font-size: 11px; font-weight: 850; color: #0f172a; display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
             <span style="font-size: 12px;">📍</span> ${t('youAreHere')}
