@@ -150,21 +150,21 @@ export default function Welcome() {
 
         {/* ── Hero Title Section ── */}
         <section className="text-left space-y-2 pt-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-600/30 backdrop-blur-md">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
-            <span className="text-[11px] font-extrabold text-amber-800 tracking-wide uppercase">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-amber-300/80 shadow-sm backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-[11px] font-black text-amber-700 tracking-wide uppercase">
               {t('welcomeSubHeader') || "Pitru Paksha Mela 2026"}
             </span>
           </div>
-          <div>
-            <p className="text-xs font-bold text-slate-800 tracking-wide">
+          <div className="space-y-0.5">
+            <p className="text-xs font-black text-slate-800 tracking-wide drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)]">
               {t('welcomeTitle') || "Welcome to"}
             </p>
-            <h1 className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight leading-none drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
+            <h1 className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight leading-none drop-shadow-[0_2px_10px_rgba(255,255,255,0.85)]">
               {t('welcomeCity') || "Gaya Ji"}
             </h1>
           </div>
-          <p className="text-xs text-slate-800 leading-relaxed font-semibold max-w-xs drop-shadow-[0_1px_2px_rgba(255,255,255,0.6)]">
+          <p className="text-xs text-slate-900 leading-relaxed font-extrabold max-w-xs drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)]">
             {t('welcomeTagline') || "Your Digital Guide for a Safe & Convenient Visit"}
           </p>
         </section>
@@ -323,16 +323,16 @@ export default function Welcome() {
               </span>
             </Link>
 
-            {/* 8. Railway Station */}
+            {/* 8. Food & Dining */}
             <Link
-              to="/map?category=Railway"
+              to="/map?q=food"
               className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
             >
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
-                🚆
+              <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                🍽️
               </div>
               <span className="text-[10px] font-bold text-slate-800 leading-tight">
-                Railway Station
+                Food & Dining
               </span>
             </Link>
 
@@ -443,7 +443,6 @@ export default function Welcome() {
 
             {/* Far Right Arrow Chevron */}
             <button
-              onClick={() => setSosActive(true)}
               className="text-red-600 hover:text-red-800 transition-colors p-0.5 cursor-pointer shrink-0"
               aria-label="View all emergency numbers"
             >
@@ -456,17 +455,17 @@ export default function Welcome() {
         </section>
 
         {/* ── Footer ── */}
-        <footer className="text-center space-y-1.5 pt-2 pb-1 border-t border-slate-200/70">
-          <p className="text-[10px] text-slate-500 leading-relaxed max-w-xs mx-auto">
+        <footer className="text-center space-y-1 pt-2 pb-1 border-t border-slate-300/80">
+          <p className="text-[10px] text-slate-900 leading-relaxed max-w-xs mx-auto font-extrabold drop-shadow-[0_1px_3px_rgba(255,255,255,0.9)]">
             {t('authorizedBy')}
           </p>
-          <div className="text-[10px] text-slate-500 font-medium">
+          <div className="text-[10px] text-slate-900 font-black drop-shadow-[0_1px_3px_rgba(255,255,255,0.9)]">
             Powered by{' '}
             <a 
               href="https://confluxaa.com" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="font-extrabold text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text hover:opacity-80 transition-opacity"
+              className="font-black text-emerald-700 hover:text-emerald-800 transition-colors underline decoration-emerald-500/40 decoration-1"
             >
               Confluxaa
             </a>

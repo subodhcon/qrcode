@@ -59,8 +59,12 @@ export default function NavigationMap() {
   const [gpsError, setGpsError] = useState(null);
   const [heading, setHeading] = useState(0);
   const prevGpsPositionRef = useRef(null);
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const categoryParam = searchParams.get('category');
+  const queryParam = searchParams.get('q');
+
+  // State
+  const [selectedCategory, setSelectedCategory] = useState(categoryParam || 'All');
+  const [searchQuery, setSearchQuery] = useState(queryParam || '');
   const [mapType, setMapType] = useState('roadmap');
   const [showSteps, setShowSteps] = useState(false);
   const [navigationSteps, setNavigationSteps] = useState([]);
@@ -84,6 +88,16 @@ export default function NavigationMap() {
     }
     return null;
   }, [gpsPosition]);
+
+  // Sync URL search parameters (category, q) to component state
+  useEffect(() => {
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+    if (queryParam !== null && queryParam !== undefined) {
+      setSearchQuery(queryParam);
+    }
+  }, [categoryParam, queryParam]);
 
   // Show status bar permanently when no destination is selected
   useEffect(() => {
@@ -281,8 +295,9 @@ export default function NavigationMap() {
         return;
       }
 
-      // Check if coordinates have changed significantly, or if category changed, to avoid redundant fetches.
+      // Check if coordinates, category, or search query changed to bypass cached fetch
       const hasCategoryChanged = lastFetchedCoordsRef.current?.category !== selectedCategory;
+      const hasSearchChanged = lastFetchedCoordsRef.current?.searchQuery !== searchQuery;
       const isInitialFetch = !lastFetchedCoordsRef.current;
 
       let isFarEnough = false;
@@ -295,13 +310,14 @@ export default function NavigationMap() {
         }
       }
 
-      if (!isInitialFetch && !hasCategoryChanged && !isFarEnough) {
+      if (!isInitialFetch && !hasCategoryChanged && !hasSearchChanged && !isFarEnough) {
         return;
       }
 
       try {
         const params = {
           category: selectedCategory,
+          q: searchQuery.trim() || undefined,
           lat: gpsPosition.latitude,
           lng: gpsPosition.longitude
         };
@@ -312,7 +328,8 @@ export default function NavigationMap() {
         lastFetchedCoordsRef.current = {
           latitude: gpsPosition.latitude,
           longitude: gpsPosition.longitude,
-          category: selectedCategory
+          category: selectedCategory,
+          searchQuery: searchQuery
         };
 
         // Auto-select destination from query parameter if matches
@@ -333,7 +350,7 @@ export default function NavigationMap() {
     };
 
     fetchFacilities();
-  }, [gpsPosition, selectedCategory, destinationParam]);
+  }, [gpsPosition, selectedCategory, searchQuery, destinationParam]);
 
 
   // 6. Initialize Google Map Instance
@@ -398,11 +415,22 @@ export default function NavigationMap() {
     };
   }, [facilities]);
 
-  // Filter facilities by search query locally
+  // Filter facilities by search query strictly (matches name, category type, address, or description)
   const filteredFacilities = useMemo(() => {
-    return facilities.filter((f) =>
-      f.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    if (!searchQuery.trim()) return facilities;
+    const q = searchQuery.toLowerCase().trim();
+    return facilities.filter((f) => {
+      const name = (f.name || '').toLowerCase();
+      const type = (f.type || '').toLowerCase();
+      const addr = (f.address || '').toLowerCase();
+      const desc = (f.description || '').toLowerCase();
+
+      if (name.includes(q) || type.includes(q) || addr.includes(q) || desc.includes(q)) return true;
+      if (q === 'temple' && (name.includes('mandir') || type === 'temple')) return true;
+      if (q === 'police' && (name.includes('thana') || name.includes('outpost') || type === 'police')) return true;
+      if (q === 'medical' && (name.includes('hospital') || name.includes('clinic') || type === 'medical')) return true;
+      return false;
+    });
   }, [facilities, searchQuery]);
 
   // 8a. Draw & Update User Location Marker (Navigation Arrow)
@@ -457,6 +485,9 @@ export default function NavigationMap() {
       userMarkerRef.current.addListener('click', () => {
         userInfoWindow.open(map, userMarkerRef.current);
       });
+
+      // Auto-open "You are here" InfoWindow popup by default on map load
+      userInfoWindow.open(map, userMarkerRef.current);
     } else {
       userMarkerRef.current.setPosition(position);
       userMarkerRef.current.setIcon(arrowIcon);
@@ -500,10 +531,38 @@ export default function NavigationMap() {
     const map = mapInstanceRef.current;
 
     filteredFacilities.forEach((fac) => {
-      // Find emoji/color config from category records
-      const catConfig = categories.find(c => c.name === fac.type);
+      const typeLower = (fac.type || '').toLowerCase();
+      const nameLower = (fac.name || '').toLowerCase();
+      const descLower = (fac.description || '').toLowerCase();
+      const combined = `${typeLower} ${nameLower} ${descLower}`;
+
+      let emoji = null;
+
+      // Helper regex check for whole word / clean matching
+      const hasWord = (term) => new RegExp(`\\b${term}\\b`, 'i').test(combined);
+
+      if (typeLower === 'police' || hasWord('police') || hasWord('thana') || hasWord('outpost') || hasWord('security')) {
+        emoji = '🛡️';
+      } else if (typeLower === 'medical' || typeLower === 'hospital' || hasWord('hospital') || hasWord('medical') || hasWord('clinic') || hasWord('doctor') || hasWord('pharmacy')) {
+        emoji = '🏥';
+      } else if (typeLower === 'toilet' || typeLower === 'restroom' || hasWord('toilet') || hasWord('restroom') || hasWord('washroom')) {
+        emoji = '🚻';
+      } else if (typeLower === 'water' || hasWord('water') || hasWord('drinking')) {
+        emoji = '💧';
+      } else if (typeLower === 'parking' || hasWord('parking')) {
+        emoji = '🅿️';
+      } else if (typeLower === 'temple' || hasWord('temple') || hasWord('mandir') || hasWord('ghat') || hasWord('worship')) {
+        emoji = '🛕';
+      } else if (typeLower === 'transport' || hasWord('bus') || hasWord('railway') || hasWord('station')) {
+        emoji = '🚌';
+      } else if (hasWord('restaurant') || hasWord('food') || hasWord('hotel') || hasWord('cafe') || hasWord('bhojanalaya')) {
+        emoji = '🍽️';
+      } else {
+        const catConfig = categories.find(c => c.name.toLowerCase() === typeLower);
+        emoji = catConfig?.emoji || '📍';
+      }
+
       const color = '#10b981';
-      const emoji = catConfig?.emoji || '📍';
       const isSelected = selectedFacility && selectedFacility.id === fac.id;
 
       const marker = new window.google.maps.Marker({
@@ -524,10 +583,12 @@ export default function NavigationMap() {
         },
       });
 
+      const displayCategory = fac.type && fac.type !== 'General' ? fac.type : 'Location';
+
       const infoContent = `
         <div style="font-family: sans-serif; padding: 6px; min-width: 140px; color: #0f172a;">
           <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: ${color}; margin-bottom: 2px;">
-            ${emoji} ${fac.type} (Google Map Listing)
+            ${emoji} ${displayCategory}
           </div>
           <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">${fac.name}</div>
           <div style="font-size: 10px; color: #64748b; margin-bottom: 6px;">
@@ -781,7 +842,16 @@ export default function NavigationMap() {
                   className="bg-transparent text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none w-full"
                 />
                 {searchQuery ? (
-                  <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-slate-700 transition-colors text-[10px] cursor-pointer">✕</button>
+                  <button 
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchParams({});
+                    }} 
+                    className="w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-all text-[11px] font-bold flex items-center justify-center cursor-pointer shrink-0"
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
                 ) : (
                   <span className="text-slate-400 text-xs">🔍</span>
                 )}
@@ -791,8 +861,8 @@ export default function NavigationMap() {
             {/* Dynamic Category Filter Pills */}
             <div className="flex items-center gap-1.5 no-scrollbar overflow-x-auto w-full max-w-[90vw] sm:max-w-md py-0.5">
               <button
-                onClick={() => setSelectedCategory('All')}
-                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${selectedCategory === 'All'
+                onClick={() => { setSelectedCategory('All'); setSearchQuery(''); setSearchParams({}); }}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${ (selectedCategory === 'All' && !searchQuery)
                     ? 'bg-emerald-500 text-white border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
                     : 'border-slate-200 text-slate-600 hover:text-slate-900 bg-white/95 backdrop-blur-md'
                   }`}
@@ -800,11 +870,11 @@ export default function NavigationMap() {
                 🌐 {t('all')}
               </button>
               {categories.map((cat) => {
-                const isSel = selectedCategory === cat.name;
+                const isSel = selectedCategory === cat.name || searchQuery.toLowerCase().trim() === cat.name.toLowerCase();
                 return (
                   <button
                     key={cat._id || cat.id}
-                    onClick={() => setSelectedCategory(cat.name)}
+                    onClick={() => { setSelectedCategory(cat.name); setSearchQuery(''); setSearchParams({ category: cat.name }); }}
                     className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${isSel
                         ? 'bg-emerald-500 text-white border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
                         : 'border-slate-200 text-slate-600 hover:text-slate-900 bg-white/95 backdrop-blur-md'
@@ -818,6 +888,25 @@ export default function NavigationMap() {
             </div>
 
           </div>
+
+          {/* Empty Search Results Soft Toast Banner */}
+          {!loading && searchQuery.trim() && filteredFacilities.length === 0 && (
+            <div className="pointer-events-auto mt-2 bg-white/95 border border-amber-300/80 rounded-2xl p-3 shadow-xl backdrop-blur-md text-center max-w-md w-full animate-fade-in flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800 text-left">
+                <span className="text-base">⚠️</span>
+                <span>No places found for "{searchQuery}"</span>
+              </div>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSearchParams({});
+                }}
+                className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-extrabold cursor-pointer transition-all active:scale-95 shrink-0"
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
         </div>
       )}
 

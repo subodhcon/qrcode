@@ -121,7 +121,7 @@ export const getNavigationDetails = async (req, res, next) => {
  */
 export const getAllFacilitiesNear = async (req, res, next) => {
   const { locationSlug } = req.params;
-  const { lat, lng, category } = req.query;
+  const { lat, lng, category, q } = req.query;
 
   try {
     let origin = null;
@@ -156,14 +156,32 @@ export const getAllFacilitiesNear = async (req, res, next) => {
       });
     }
 
-    // 2. Fetch active facilities from DB
+    // 2. Fetch active facilities from DB & Locations
     const dbQuery = { deletedAt: null, status: 'Active' };
     if (category && category !== 'All') {
       dbQuery.type = category;
     }
+    if (q && q.trim()) {
+      const regex = new RegExp(q.trim(), 'i');
+      dbQuery.$or = [
+        { name: regex },
+        { type: regex },
+        { description: regex },
+        { address: regex }
+      ];
+    }
     const dbFacilities = await Facility.find(dbQuery);
 
-    const enrichedDb = dbFacilities.map((f) => {
+    // Also fetch matching registered Location landmarks
+    let dbLocations = [];
+    if (q && q.trim()) {
+      const locRegex = new RegExp(q.trim(), 'i');
+      dbLocations = await Location.find({
+        $or: [{ name: locRegex }, { description: locRegex }, { type: locRegex }]
+      });
+    }
+
+    const enrichedDbFacilities = dbFacilities.map((f) => {
       const distanceMeters = getHaversineDistance(
         origin.latitude,
         origin.longitude,
@@ -190,6 +208,35 @@ export const getAllFacilitiesNear = async (req, res, next) => {
       };
     });
 
+    const enrichedDbLocations = dbLocations.map((l) => {
+      const distanceMeters = getHaversineDistance(
+        origin.latitude,
+        origin.longitude,
+        l.latitude,
+        l.longitude
+      );
+      const walkingTimeMinutes = Math.max(1, Math.round(distanceMeters / 80));
+
+      return {
+        id: `loc-${l._id.toString()}`,
+        name: l.name,
+        type: l.type || 'Temple',
+        latitude: l.latitude,
+        longitude: l.longitude,
+        description: l.description || '',
+        distance: distanceMeters,
+        distanceFormatted:
+          distanceMeters < 1000
+            ? `${Math.round(distanceMeters)}m`
+            : `${(distanceMeters / 1000).toFixed(1)}km`,
+        walkingTime: walkingTimeMinutes,
+        walkingTimeFormatted: `${walkingTimeMinutes} min${walkingTimeMinutes > 1 ? 's' : ''}`,
+        source: 'db_location',
+      };
+    });
+
+    const enrichedDb = [...enrichedDbFacilities, ...enrichedDbLocations];
+
     // 3. Fetch facilities from Google Places API (if key available)
     let enrichedGoogle = [];
     const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
@@ -199,7 +246,17 @@ export const getAllFacilitiesNear = async (req, res, next) => {
         let typeParam = '';
         let keywordParam = '';
 
-        if (category && category !== 'All') {
+        if (q && q.trim()) {
+          const qLower = q.toLowerCase().trim();
+          keywordParam = q.trim();
+          if (qLower.includes('temple') || qLower.includes('mandir')) {
+            typeParam = 'place_of_worship';
+          } else if (qLower.includes('medical') || qLower.includes('hospital') || qLower.includes('clinic')) {
+            typeParam = 'hospital';
+          } else if (qLower.includes('police') || qLower.includes('security')) {
+            typeParam = 'police';
+          }
+        } else if (category && category !== 'All') {
           const dbCat = await Category.findOne({ name: category, status: 'Active' });
           if (dbCat) {
             typeParam = dbCat.googleType || '';
@@ -209,11 +266,10 @@ export const getAllFacilitiesNear = async (req, res, next) => {
           }
         } else {
           // General search
-          keywordParam = 'landmark|restaurant|hospital|toilet';
+          keywordParam = 'temple|landmark|restaurant|hospital|toilet';
         }
 
-
-        let googleUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${origin.latitude},${origin.longitude}&radius=2000&key=${googleApiKey}`;
+        let googleUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${origin.latitude},${origin.longitude}&radius=5000&key=${googleApiKey}`;
         if (typeParam) googleUrl += `&type=${typeParam}`;
         if (keywordParam) googleUrl += `&keyword=${encodeURIComponent(keywordParam)}`;
 
@@ -230,10 +286,31 @@ export const getAllFacilitiesNear = async (req, res, next) => {
             );
             const walkingTimeMinutes = Math.max(1, Math.round(distanceMeters / 80));
 
+            // Determine accurate facility type for Google Places results
+            let inferredType = 'General';
+            if (category && category !== 'All') {
+              inferredType = category;
+            } else if (q && q.trim()) {
+              const qLower = q.toLowerCase().trim();
+              if (qLower.includes('police') || qLower.includes('security') || qLower.includes('thana')) {
+                inferredType = 'Police';
+              } else if (qLower.includes('medical') || qLower.includes('hospital') || qLower.includes('clinic')) {
+                inferredType = 'Medical';
+              } else if (qLower.includes('toilet') || qLower.includes('restroom') || qLower.includes('washroom')) {
+                inferredType = 'Toilet';
+              } else if (qLower.includes('water')) {
+                inferredType = 'Water';
+              } else if (qLower.includes('parking') || qLower.includes('park')) {
+                inferredType = 'Parking';
+              } else if (qLower.includes('temple') || qLower.includes('mandir')) {
+                inferredType = 'Temple';
+              }
+            }
+
             return {
               id: `google-${place.place_id}`,
               name: place.name,
-              type: category || 'General',
+              type: inferredType,
               latitude: place.geometry.location.lat,
               longitude: place.geometry.location.lng,
               description: place.vicinity || '',
