@@ -380,6 +380,7 @@ export default function NavigationMap() {
       directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
         map: mapInstanceRef.current,
         suppressMarkers: true,
+        preserveViewport: true,
         polylineOptions: {
           strokeColor: '#10b981',
           strokeWeight: 6,
@@ -619,8 +620,8 @@ export default function NavigationMap() {
       markersRef.current.push(marker);
     });
 
-    // Auto-fit bounds if we have points and no active navigation path
-    if (filteredFacilities.length > 0 && !selectedFacility) {
+    // Auto-fit map bounds ONCE when category or search query changes so all radius markers are cleanly visible
+    if (filteredFacilities.length > 0 && !selectedFacility && mapInstanceRef.current) {
       const bounds = new window.google.maps.LatLngBounds();
       if (activeOrigin) {
         bounds.extend({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
@@ -628,7 +629,7 @@ export default function NavigationMap() {
       filteredFacilities.forEach((fac) => {
         bounds.extend({ lat: fac.latitude, lng: fac.longitude });
       });
-      map.fitBounds(bounds, 50);
+      mapInstanceRef.current.fitBounds(bounds, 60);
     }
   }, [scriptLoaded, filteredFacilities, selectedFacility, categories]);
 
@@ -684,14 +685,6 @@ export default function NavigationMap() {
           setDurationText(leg.duration.text);
           setNavigationSteps(leg.steps);
           setRouteError(null);
-
-          // Fit bounds ONCE when destination changes so route is visible, then leave panning completely free
-          if (hasDestinationChanged && mapInstanceRef.current) {
-            const routeBounds = new window.google.maps.LatLngBounds();
-            routeBounds.extend({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
-            routeBounds.extend({ lat: selectedFacility.latitude, lng: selectedFacility.longitude });
-            mapInstanceRef.current.fitBounds(routeBounds, 80);
-          }
 
           // Update tracking refs on successful route calculation
           lastRoutedCoordsRef.current = {
@@ -1083,7 +1076,18 @@ export default function NavigationMap() {
                   {/* Start Navigation Button */}
                   {!isNavigating && (
                     <button
-                      onClick={() => setIsNavigating(true)}
+                      onClick={() => {
+                        setIsNavigating(true);
+                        // Focus once on starting position when Start is tapped
+                        if (mapInstanceRef.current && activeOrigin) {
+                          mapInstanceRef.current.setZoom(19);
+                          const latOffset = 0.08 / Math.pow(2, 19 - 10);
+                          mapInstanceRef.current.setCenter({ 
+                            lat: activeOrigin.latitude - latOffset, 
+                            lng: activeOrigin.longitude 
+                          });
+                        }
+                      }}
                       className="col-span-2 sm:col-span-1 bg-white hover:bg-slate-100 text-slate-800 font-extrabold py-2 px-4 rounded-full border border-slate-300 shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer shrink-0"
                     >
                       <svg className="w-4.5 h-4.5 text-blue-500 fill-none stroke-current" strokeWidth="2.5" viewBox="0 0 24 24">

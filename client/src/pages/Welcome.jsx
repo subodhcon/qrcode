@@ -250,11 +250,11 @@ export default function Welcome() {
               onClick={() => setSosActive(true)}
               className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
-                🛡️
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                🚨
               </div>
               <span className="text-[10px] font-bold text-slate-800 leading-tight">
-                {t('emergencyServicesTitle') || "Police & Help"}
+                {t('emergencyServicesTitle') || "Emergency Help"}
               </span>
             </button>
 
@@ -263,7 +263,7 @@ export default function Welcome() {
               to="/map?category=Medical"
               className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
             >
-              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
                 🏥
               </div>
               <span className="text-[10px] font-bold text-slate-800 leading-tight">
