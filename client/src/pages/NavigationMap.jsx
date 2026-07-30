@@ -513,13 +513,8 @@ export default function NavigationMap() {
       userCircleRef.current.setRadius(accuracyRadius);
     }
 
-    if (selectedFacility && isNavigating) {
-      // Auto-zoom to highly detailed walking scale (19) and center-lock position with standard navigation offset
-      map.setZoom(19);
-      const latOffset = 0.08 / Math.pow(2, 19 - 10);
-      map.setCenter({ lat: position.lat - latOffset, lng: position.lng });
-    }
-  }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, selectedFacility, isNavigating, t]);
+    // User marker updated cleanly on GPS change without locking map center
+  }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, t]);
 
   // 8b. Draw Facilities Markers
   useEffect(() => {
@@ -689,6 +684,14 @@ export default function NavigationMap() {
           setDurationText(leg.duration.text);
           setNavigationSteps(leg.steps);
           setRouteError(null);
+
+          // Fit bounds ONCE when destination changes so route is visible, then leave panning completely free
+          if (hasDestinationChanged && mapInstanceRef.current) {
+            const routeBounds = new window.google.maps.LatLngBounds();
+            routeBounds.extend({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
+            routeBounds.extend({ lat: selectedFacility.latitude, lng: selectedFacility.longitude });
+            mapInstanceRef.current.fitBounds(routeBounds, 80);
+          }
 
           // Update tracking refs on successful route calculation
           lastRoutedCoordsRef.current = {
