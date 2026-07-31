@@ -11,6 +11,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      },
       includeAssets: ['favicon.svg', 'gaya_hero.png', 'icons.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'DIN — Dynamic QR & Location Guide',

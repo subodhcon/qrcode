@@ -1,8 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.jsx'
 import { LanguageProvider } from './context/LanguageContext.jsx'
+
+// Register PWA Service Worker for offline support & automatic updates
+registerSW({ immediate: true })
 
 // Filter out Google Maps deprecation warnings from console
 const originalWarn = console.warn;
