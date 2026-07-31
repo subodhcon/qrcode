@@ -390,12 +390,12 @@ export default function Welcome() {
             {/* Vertical Divider Line */}
             <div className="w-px h-7 bg-red-200/90 shrink-0" />
 
-            {/* Quick Dial Numbers Row */}
-            <div className="flex items-center justify-between gap-1 sm:gap-2 flex-1 min-w-0">
+            {/* Quick Dial Numbers Row (Horizontally Scrollable) */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 overflow-x-auto no-scrollbar py-0.5 pr-1">
               {/* Police 100 */}
               <a
                 href="tel:100"
-                className="flex items-center gap-0.5 hover:opacity-80 transition-opacity text-left shrink-0"
+                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
               >
                 <span className="text-[11px] sm:text-xs">🛡️</span>
                 <div className="leading-none">
@@ -407,7 +407,7 @@ export default function Welcome() {
               {/* Ambulance 102 */}
               <a
                 href="tel:102"
-                className="flex items-center gap-0.5 hover:opacity-80 transition-opacity text-left shrink-0"
+                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
               >
                 <span className="text-[11px] sm:text-xs">🚑</span>
                 <div className="leading-none">
@@ -419,7 +419,7 @@ export default function Welcome() {
               {/* Fire 101 */}
               <a
                 href="tel:101"
-                className="flex items-center gap-0.5 hover:opacity-80 transition-opacity text-left shrink-0"
+                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
               >
                 <span className="text-[11px] sm:text-xs">🔥</span>
                 <div className="leading-none">
@@ -431,7 +431,7 @@ export default function Welcome() {
               {/* Women Helpline 181 */}
               <a
                 href="tel:181"
-                className="flex items-center gap-0.5 hover:opacity-80 transition-opacity text-left shrink-0"
+                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
               >
                 <span className="text-[11px] sm:text-xs">👩</span>
                 <div className="leading-none">
@@ -439,10 +439,35 @@ export default function Welcome() {
                   <p className="text-[9px] sm:text-[11px] font-black text-slate-900">181</p>
                 </div>
               </a>
+
+              {/* Disaster 1070 */}
+              <a
+                href="tel:1070"
+                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
+              >
+                <span className="text-[11px] sm:text-xs">🌊</span>
+                <div className="leading-none">
+                  <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Disaster</p>
+                  <p className="text-[9px] sm:text-[11px] font-black text-slate-900">1070</p>
+                </div>
+              </a>
+
+              {/* Medical Emergency 112 */}
+              <a
+                href="tel:112"
+                className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
+              >
+                <span className="text-[11px] sm:text-xs">📞</span>
+                <div className="leading-none">
+                  <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Emergency</p>
+                  <p className="text-[9px] sm:text-[11px] font-black text-slate-900">112</p>
+                </div>
+              </a>
             </div>
 
             {/* Far Right Arrow Chevron */}
             <button
+              onClick={() => setSosActive(true)}
               className="text-red-600 hover:text-red-800 transition-colors p-0.5 cursor-pointer shrink-0"
               aria-label="View all emergency numbers"
             >

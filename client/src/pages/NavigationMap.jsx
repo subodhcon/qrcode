@@ -747,9 +747,40 @@ export default function NavigationMap() {
   /* ── Error ── */
   if (error && !activeOrigin) {
     return (
-      <div className="max-w-md mx-auto my-12 bg-white border border-red-300/40 rounded-2xl p-8 text-center shadow-xl">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Map Error</h2>
-        <p className="text-slate-600 text-sm mb-6">{error}</p>
+      <div className="min-h-screen w-full flex items-center justify-center bg-slate-50/60 p-4">
+        <div className="max-w-md w-full bg-white border border-slate-100 rounded-[28px] p-6 sm:p-8 text-center shadow-2xl animate-fade-in relative overflow-hidden">
+          
+          {/* Header Accent Decorator */}
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center mx-auto mb-4 shadow-sm text-2xl">
+            📍
+          </div>
+
+          <h2 className="text-xl font-black text-slate-900 mb-2 tracking-tight">
+            Location Permission Needed
+          </h2>
+
+          <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-5">
+            To provide live navigation, calculate walking distances, and show nearby services on the map, DIN requires access to your device's location (GPS).
+          </p>
+
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left mb-6 space-y-2">
+            <p className="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">
+              How to enable permission:
+            </p>
+            <ol className="text-xs text-slate-700 space-y-1.5 list-decimal list-inside font-medium">
+              <li>Click the <strong>lock/tune icon</strong> 🔒 or <strong>"Not allowed"</strong> prompt next to the address bar.</li>
+              <li>Toggle <strong>Location</strong> permission to <strong>"Allow"</strong>.</li>
+              <li>Refresh this page or click retry below.</li>
+            </ol>
+          </div>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs tracking-wide shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>🔄</span> Try Reloading Map
+          </button>
+        </div>
       </div>
     );
   }
@@ -816,11 +847,11 @@ export default function NavigationMap() {
             
             {/* Top Bar with Back Button & Search Input */}
             <div className="flex items-center gap-2 w-full">
-              {/* Back to Welcome Page Button */}
+              {/* Back to Home / Welcome Page Button */}
               <Link
-                to="/welcome"
+                to="/"
                 className="w-9 h-9 rounded-2xl border border-slate-200/80 bg-white/95 hover:bg-white text-slate-700 flex items-center justify-center shadow-md backdrop-blur-md transition-all active:scale-95 cursor-pointer shrink-0"
-                title="Back to Welcome Page"
+                title="Back to Home Page"
               >
                 <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -943,23 +974,29 @@ export default function NavigationMap() {
 
       {/* ── Floating Map Control Stack (Bottom Right) ── */}
       <div className={`absolute ${(selectedFacility || (showStatus && activeOrigin)) ? 'bottom-[180px]' : 'bottom-4'} right-3 z-30 flex flex-col gap-1.5 transition-all duration-300 items-end`}>
+        {/* Recenter / Re-locate GPS Floating Button (Positioned Above SOS) */}
+        <button
+          onClick={handleRecenter}
+          className="w-11 h-11 rounded-xl text-base flex items-center justify-center shadow-lg bg-white border border-slate-200/90 text-blue-600 hover:text-blue-700 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-slate-50 hover:shadow-xl group relative"
+          title={t('recenterMap') || "Re-center to my location"}
+          aria-label="Re-center to my location"
+        >
+          {/* Precise Location Crosshair SVG */}
+          <svg className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <circle cx="12" cy="12" r="3" className="fill-blue-600" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v3m0 14v3M2 12h3m14 0h3" />
+          </svg>
+        </button>
+
         {/* Floating SOS Button */}
         <button
           onClick={() => setSosActive(true)}
-          className="h-8 px-2.5 rounded-lg text-xs font-black flex items-center gap-1 shadow-md bg-red-500 hover:bg-red-600 text-white backdrop-blur-md cursor-pointer transition-all active:scale-95 shadow-red-500/20"
+          className="h-9 px-3 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md bg-red-500 hover:bg-red-600 text-white backdrop-blur-md cursor-pointer transition-all active:scale-95 shadow-red-500/30"
           title="Emergency SOS"
         >
-          <span>🚨</span>
-          <span className="text-[10px]">SOS</span>
-        </button>
-
-        {/* Recenter Floating Button */}
-        <button
-          onClick={handleRecenter}
-          className="w-8 h-8 rounded-lg text-sm flex items-center justify-center shadow-md bg-white/95 border border-slate-200/80 text-emerald-600 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-white"
-          title={t('recenterMap')}
-        >
-          🎯
+          <span className="text-sm">🚨</span>
+          <span className="text-xs font-extrabold tracking-wider">SOS</span>
         </button>
 
         {/* Map Type Expansion Wrapper */}
