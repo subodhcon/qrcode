@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
+import PwaInstallPrompt from '../components/PwaInstallPrompt';
 
 /**
  * RootLayout — premium light base shell.
@@ -23,6 +24,9 @@ export default function RootLayout() {
       <main className="flex-1 w-full relative z-10">
         <Outlet />
       </main>
+
+      {/* PWA Install Prompt Banner */}
+      <PwaInstallPrompt />
 
       {/* Bottom ambient glow */}
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/15 to-transparent" />
