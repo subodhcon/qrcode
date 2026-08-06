@@ -289,10 +289,10 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex border-b border-slate-800 gap-6">
+      <div className="flex border-b border-slate-800 gap-6 overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth pb-0.5">
         <button
           onClick={() => setActiveTab('categories')}
-          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer ${
+          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer shrink-0 ${
             activeTab === 'categories' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-white'
           }`}
         >
@@ -300,7 +300,7 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={() => setActiveTab('analytics')}
-          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer ${
+          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer shrink-0 ${
             activeTab === 'analytics' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-white'
           }`}
         >
@@ -308,7 +308,7 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={() => setActiveTab('announcements')}
-          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer ${
+          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer shrink-0 ${
             activeTab === 'announcements' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-white'
           }`}
         >
@@ -316,7 +316,7 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={() => setActiveTab('feedback')}
-          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer ${
+          className={`pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer shrink-0 ${
             activeTab === 'feedback' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-white'
           }`}
         >
@@ -336,54 +336,56 @@ export default function AdminDashboard() {
       ) : activeTab === 'categories' ? (
         /* Categories Table */
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/40">
-                <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Category Name</th>
-                <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Emoji</th>
-                <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Google Search Keyword</th>
-                <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
-                <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {categories.map((cat) => (
-                <tr key={cat._id || cat.id} className="hover:bg-slate-950/20 transition-colors">
-                  <td className="py-4 px-6 font-bold text-white text-sm">{cat.name}</td>
-                  <td className="py-4 px-6 text-slate-300 text-sm">{cat.emoji}</td>
-                  <td className="py-4 px-6 font-mono text-slate-400 text-xs">{cat.keyword}</td>
-                  <td className="py-4 px-6 text-slate-400 text-xs">
-                    <span className={`px-2 py-0.5 rounded font-extrabold text-[10px] ${cat.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                      {cat.status || 'Active'}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => openEditModal(cat)}
-                        className="py-1 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(cat)}
-                        className="py-1 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-950/40">
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Category Name</th>
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Emoji</th>
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Google Search Keyword</th>
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
+                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
                 </tr>
-              ))}
-              {categories.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="py-6 px-6 text-center text-slate-500 text-xs">
-                    No categories found. Click "Add Search Category" to create one.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {categories.map((cat) => (
+                  <tr key={cat._id || cat.id} className="hover:bg-slate-950/20 transition-colors">
+                    <td className="py-4 px-6 font-bold text-white text-sm">{cat.name}</td>
+                    <td className="py-4 px-6 text-slate-300 text-sm">{cat.emoji}</td>
+                    <td className="py-4 px-6 font-mono text-slate-400 text-xs">{cat.keyword}</td>
+                    <td className="py-4 px-6 text-slate-400 text-xs">
+                      <span className={`px-2 py-0.5 rounded font-extrabold text-[10px] ${cat.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                        {cat.status || 'Active'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => openEditModal(cat)}
+                          className="py-1 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(cat)}
+                          className="py-1 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {categories.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="py-6 px-6 text-center text-slate-500 text-xs">
+                      No categories found. Click "Add Search Category" to create one.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : activeTab === 'analytics' ? (
         /* Tab: Dashboard Analytics */

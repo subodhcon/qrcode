@@ -850,16 +850,16 @@ export default function NavigationMap() {
               {/* Back to Home / Welcome Page Button */}
               <Link
                 to="/"
-                className="w-9 h-9 rounded-2xl border border-slate-200/80 bg-white/95 hover:bg-white text-slate-700 flex items-center justify-center shadow-md backdrop-blur-md transition-all active:scale-95 cursor-pointer shrink-0"
+                className="w-9 h-9 rounded-2xl border border-slate-800 bg-slate-900/95 hover:bg-slate-850 text-white flex items-center justify-center shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer shrink-0"
                 title="Back to Home Page"
               >
-                <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
                 </svg>
               </Link>
 
               {/* Search Input */}
-              <div className="flex items-center gap-1.5 rounded-2xl border border-slate-200/80 px-3 py-1.5 shadow-md bg-white/95 backdrop-blur-md flex-1">
+              <div className="flex items-center gap-1.5 rounded-2xl border border-slate-800 px-3 py-1.5 shadow-lg bg-slate-900/95 backdrop-blur-md flex-1">
                 <input
                   id="search-input"
                   name="search"
@@ -867,7 +867,7 @@ export default function NavigationMap() {
                   placeholder={t('searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-transparent text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none w-full"
+                  className="bg-transparent text-white text-xs font-medium placeholder-slate-400 focus:outline-none w-full"
                 />
                 {searchQuery ? (
                   <button 
@@ -875,7 +875,7 @@ export default function NavigationMap() {
                       setSearchQuery('');
                       setSearchParams({});
                     }} 
-                    className="w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-all text-[11px] font-bold flex items-center justify-center cursor-pointer shrink-0"
+                    className="w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all text-[11px] font-bold flex items-center justify-center cursor-pointer shrink-0"
                     title="Clear search"
                   >
                     ✕
@@ -892,7 +892,7 @@ export default function NavigationMap() {
                 onClick={() => { setSelectedCategory('All'); setSearchQuery(''); setSearchParams({}); }}
                 className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 ${ (selectedCategory === 'All' && !searchQuery)
                     ? 'bg-emerald-500 text-white border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
-                    : 'border-slate-200 text-slate-600 hover:text-slate-900 bg-white/95 backdrop-blur-md'
+                    : 'border-slate-800 text-slate-200 hover:text-white bg-slate-900/95 backdrop-blur-md'
                   }`}
               >
                 🌐 {t('all')}
@@ -905,7 +905,7 @@ export default function NavigationMap() {
                     onClick={() => { setSelectedCategory(cat.name); setSearchQuery(''); setSearchParams({ category: cat.name }); }}
                     className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap cursor-pointer border transition-all active:scale-95 flex items-center gap-1 ${isSel
                         ? 'bg-emerald-500 text-white border-emerald-400 font-extrabold shadow-lg shadow-emerald-500/20'
-                        : 'border-slate-200 text-slate-600 hover:text-slate-900 bg-white/95 backdrop-blur-md'
+                        : 'border-slate-800 text-slate-200 hover:text-white bg-slate-900/95 backdrop-blur-md'
                       }`}
                   >
                     <span>{cat.emoji}</span>
@@ -977,14 +977,14 @@ export default function NavigationMap() {
         {/* Recenter / Re-locate GPS Floating Button (Positioned Above SOS) */}
         <button
           onClick={handleRecenter}
-          className="w-11 h-11 rounded-xl text-base flex items-center justify-center shadow-lg bg-white border border-slate-200/90 text-blue-600 hover:text-blue-700 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-slate-50 hover:shadow-xl group relative"
+          className="w-11 h-11 rounded-xl text-base flex items-center justify-center shadow-lg bg-slate-900/95 border border-slate-800 text-blue-400 hover:text-blue-300 backdrop-blur-md cursor-pointer transition-all active:scale-95 hover:bg-slate-850 hover:shadow-xl group relative"
           title={t('recenterMap') || "Re-center to my location"}
           aria-label="Re-center to my location"
         >
           {/* Precise Location Crosshair SVG */}
-          <svg className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            <circle cx="12" cy="12" r="3" className="fill-blue-600" />
+            <circle cx="12" cy="12" r="3" className="fill-blue-400" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v3m0 14v3M2 12h3m14 0h3" />
           </svg>
         </button>
@@ -1003,7 +1003,7 @@ export default function NavigationMap() {
         <div className="flex items-center gap-1.5">
           {/* Expanded Map Types Menu (Slides out to the left) */}
           {showMapTypes && (
-            <div className="flex gap-1 bg-white/95 border border-slate-200/80 p-1 rounded-lg shadow-lg backdrop-blur-md animate-fade-in mr-0.5">
+            <div className="flex gap-1 bg-slate-900/95 border border-slate-800 p-1 rounded-lg shadow-lg backdrop-blur-md animate-fade-in mr-0.5">
               {MAP_TYPES.map((type) => {
                 const isSelected = mapType === type.key;
                 const labelText = type.label === 'Standard Map' ? 'Map' : type.label;
@@ -1017,7 +1017,7 @@ export default function NavigationMap() {
                     className={`px-2 py-1 rounded-md text-[9px] font-black transition-all active:scale-95 border flex items-center gap-1 cursor-pointer ${
                       isSelected
                         ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-500/20'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-750'
                     }`}
                   >
                     <span className="text-xs">{type.icon}</span>
@@ -1034,7 +1034,7 @@ export default function NavigationMap() {
             className={`w-8 h-8 rounded-lg text-xs font-black flex items-center justify-center shadow-md border backdrop-blur-md cursor-pointer transition-all active:scale-95 ${
               showMapTypes
                 ? 'bg-emerald-500 text-white border-emerald-400'
-                : 'bg-white/95 text-slate-600 border-slate-200/80 hover:bg-white'
+                : 'bg-slate-900/95 text-slate-200 border-slate-800 hover:bg-slate-850'
             }`}
             title="Toggle Map Types"
           >
@@ -1047,7 +1047,7 @@ export default function NavigationMap() {
       <div className="absolute bottom-3 left-3 right-3 z-30 max-w-xl mx-auto">
         {selectedFacility ? (
           /* Selected destination metrics */
-          <div className="relative bg-white/97 border border-slate-200/90 rounded-2xl p-3 md:p-4 shadow-xl backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="relative bg-slate-900/95 border border-slate-800 rounded-2xl p-3 md:p-4 shadow-xl backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 text-white">
 
             {/* Close Button for Preview */}
             {!isNavigating && (
@@ -1060,53 +1060,53 @@ export default function NavigationMap() {
                   setRouteError(null);
                   setIsNavigating(false);
                 }}
-                className="absolute top-2 right-2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer text-xs p-1"
+                className="absolute top-2 right-2 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer text-xs p-1"
                 title={t('closePreview')}
               >
                 ✕
               </button>
             )}
 
-            <div className="flex items-center gap-2.5 pb-2 sm:pb-0 border-b border-slate-200/80 sm:border-none min-w-0 flex-1">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 bg-emerald-50 border border-emerald-200 text-emerald-600">
+            <div className="flex items-center gap-2.5 pb-2 sm:pb-0 border-b border-slate-800 sm:border-none min-w-0 flex-1">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 bg-slate-800 border border-slate-700 text-emerald-400">
                 🚶
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 truncate">
+                <p className="text-[9px] uppercase font-bold tracking-widest text-slate-400 truncate">
                   {t('navigatingTo')}
                 </p>
-                <h4 className="text-xs md:text-sm font-black text-slate-900 leading-tight truncate">
+                <h4 className="text-xs md:text-sm font-black text-white leading-tight truncate">
                   {selectedFacility.name}
                 </h4>
               </div>
             </div>
 
-            <div className="hidden sm:block h-8 w-px bg-slate-200 shrink-0" />
+            <div className="hidden sm:block h-8 w-px bg-slate-800 shrink-0" />
 
             <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-4 shrink-0">
               {routeError ? (
-                <div className="col-span-2 text-[10px] md:text-xs font-semibold text-rose-600 py-1 px-2.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-1.5">
+                <div className="col-span-2 text-[10px] md:text-xs font-semibold text-rose-400 py-1 px-2.5 bg-rose-950/30 border border-rose-900 rounded-xl flex items-center gap-1.5">
                   <span>⚠️</span> {routeError}
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2 bg-slate-50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-200/40 sm:border-none">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0">
+                  <div className="flex items-center gap-2 bg-slate-800/40 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-850 sm:border-none">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-950/65 border border-indigo-900 text-indigo-400 flex items-center justify-center shrink-0">
                       ⏱️
                     </div>
                     <div>
-                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">{t('walkTime')}</p>
-                      <h4 className="text-xs md:text-sm font-black text-slate-900 whitespace-nowrap">{durationText || t('calculating')}</h4>
+                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-400">{t('walkTime')}</p>
+                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{durationText || t('calculating')}</h4>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-slate-50 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-200/40 sm:border-none">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0">
+                  <div className="flex items-center gap-2 bg-slate-800/40 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-850 sm:border-none">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-950/65 border border-emerald-900 text-emerald-400 flex items-center justify-center shrink-0">
                       🗺️
                     </div>
                     <div>
-                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-500">{t('distance')}</p>
-                      <h4 className="text-xs md:text-sm font-black text-slate-900 whitespace-nowrap">{distanceText || t('calculating')}</h4>
+                      <p className="text-[8px] uppercase font-bold tracking-wider text-slate-400">{t('distance')}</p>
+                      <h4 className="text-xs md:text-sm font-black text-white whitespace-nowrap">{distanceText || t('calculating')}</h4>
                     </div>
                   </div>
 
@@ -1125,9 +1125,9 @@ export default function NavigationMap() {
                           });
                         }
                       }}
-                      className="col-span-2 sm:col-span-1 bg-white hover:bg-slate-100 text-slate-800 font-extrabold py-2 px-4 rounded-full border border-slate-300 shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer shrink-0"
+                      className="col-span-2 sm:col-span-1 bg-slate-800 hover:bg-slate-750 text-white font-extrabold py-2 px-4 rounded-full border border-slate-750 shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer shrink-0"
                     >
-                      <svg className="w-4.5 h-4.5 text-blue-500 fill-none stroke-current" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <svg className="w-4.5 h-4.5 text-blue-400 fill-none stroke-current" strokeWidth="2.5" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
                       <span>{t('start')}</span>
@@ -1140,10 +1140,10 @@ export default function NavigationMap() {
           </div>
         ) : showStatus && activeOrigin ? (
           /* Scanned QR location details card */
-          <div className="bg-white/97 border border-slate-200/80 rounded-2xl p-3 shadow-xl backdrop-blur-md space-y-2.5 text-left relative transition-all duration-300">
+          <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md space-y-2.5 text-left relative transition-all duration-300 text-white">
             {/* You Are Here */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 {t('youAreHere')}
               </div>
@@ -1151,16 +1151,16 @@ export default function NavigationMap() {
 
             {/* Title & Address */}
             <div className="space-y-0.5">
-              <h4 className="text-xs md:text-sm font-black text-slate-900 leading-tight">
+              <h4 className="text-xs md:text-sm font-black text-white leading-tight">
                 {activeOrigin.name}
               </h4>
-              <p className="text-[9px] text-slate-500 leading-none">{liveAddress}</p>
+              <p className="text-[9px] text-slate-400 leading-none">{liveAddress}</p>
             </div>
 
             {/* Nearest Services */}
             {(nearestServices.Police || nearestServices.Medical || nearestServices.Toilet || nearestServices.Help) && (
               <div className="space-y-1.5 pt-0.5">
-                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">
                   {t('nearbyFacilities')}
                 </p>
                 
@@ -1169,12 +1169,12 @@ export default function NavigationMap() {
                   {nearestServices.Police && (
                     <button
                       onClick={() => handleNavigateTo(nearestServices.Police)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-emerald-50 border border-emerald-200 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-100 transition-all text-left"
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-emerald-950/40 border border-emerald-900 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-900/30 transition-all text-left"
                     >
                       <span className="text-xs">👮</span>
                       <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-500">Police</p>
-                        <p className="text-[9px] text-emerald-700 font-extrabold leading-none">{nearestServices.Police.distanceFormatted}</p>
+                        <p className="text-[7px] font-bold uppercase text-slate-400">Police</p>
+                        <p className="text-[9px] text-emerald-400 font-extrabold leading-none">{nearestServices.Police.distanceFormatted}</p>
                       </div>
                     </button>
                   )}
@@ -1182,12 +1182,12 @@ export default function NavigationMap() {
                   {nearestServices.Medical && (
                     <button
                       onClick={() => handleNavigateTo(nearestServices.Medical)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-red-50 border border-red-200 flex items-center gap-1.5 cursor-pointer hover:bg-red-100 transition-all text-left"
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-red-950/40 border border-red-900 flex items-center gap-1.5 cursor-pointer hover:bg-red-900/30 transition-all text-left"
                     >
                       <span className="text-xs">🏥</span>
                       <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-500">Hospital</p>
-                        <p className="text-[9px] text-red-700 font-extrabold leading-none">{nearestServices.Medical.distanceFormatted}</p>
+                        <p className="text-[7px] font-bold uppercase text-slate-400">Hospital</p>
+                        <p className="text-[9px] text-red-400 font-extrabold leading-none">{nearestServices.Medical.distanceFormatted}</p>
                       </div>
                     </button>
                   )}
@@ -1195,12 +1195,12 @@ export default function NavigationMap() {
                   {nearestServices.Toilet && (
                     <button
                       onClick={() => handleNavigateTo(nearestServices.Toilet)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-blue-50 border border-blue-200 flex items-center gap-1.5 cursor-pointer hover:bg-blue-100 transition-all text-left"
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-blue-950/40 border border-blue-900 flex items-center gap-1.5 cursor-pointer hover:bg-blue-900/30 transition-all text-left"
                     >
                       <span className="text-xs">🚻</span>
                       <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-500">Toilet</p>
-                        <p className="text-[9px] text-blue-700 font-extrabold leading-none">{nearestServices.Toilet.distanceFormatted}</p>
+                        <p className="text-[7px] font-bold uppercase text-slate-400">Toilet</p>
+                        <p className="text-[9px] text-blue-400 font-extrabold leading-none">{nearestServices.Toilet.distanceFormatted}</p>
                       </div>
                     </button>
                   )}
@@ -1208,12 +1208,12 @@ export default function NavigationMap() {
                   {nearestServices.Help && (
                     <button
                       onClick={() => handleNavigateTo(nearestServices.Help)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-cyan-50 border border-cyan-200 flex items-center gap-1.5 cursor-pointer hover:bg-cyan-100 transition-all text-left"
+                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-cyan-950/40 border border-cyan-900 flex items-center gap-1.5 cursor-pointer hover:bg-cyan-900/30 transition-all text-left"
                     >
                       <span className="text-xs">💧</span>
                       <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-500">Water</p>
-                        <p className="text-[9px] text-cyan-700 font-extrabold leading-none">{nearestServices.Help.distanceFormatted}</p>
+                        <p className="text-[7px] font-bold uppercase text-slate-400">Water</p>
+                        <p className="text-[9px] text-cyan-400 font-extrabold leading-none">{nearestServices.Help.distanceFormatted}</p>
                       </div>
                     </button>
                   )}
@@ -1222,12 +1222,17 @@ export default function NavigationMap() {
             )}
             
             {/* Footer Attribution inside card footer */}
-            <div className="text-center pt-1 border-t border-slate-200/60">
-              <span className="text-[9px] text-slate-400 font-semibold">
+            <div className="text-center pt-1 border-t border-slate-800">
+              <span className="text-[9px] text-slate-500 font-semibold">
                 Powered by{' '}
-                <span className="font-black text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-600 bg-clip-text ml-0.5">
+                <a
+                  href="https://confluxaa.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 bg-clip-text hover:opacity-85 transition-opacity ml-0.5 cursor-pointer"
+                >
                   Confluxaa
-                </span>
+                </a>
               </span>
             </div>
           </div>

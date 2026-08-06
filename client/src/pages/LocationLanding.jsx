@@ -168,7 +168,7 @@ export default function LocationLanding() {
   );
 
   return (
-    <div className="max-w-lg mx-auto py-6 px-4 animate-fade-slide-up space-y-5">
+    <div className="max-w-lg md:max-w-4xl mx-auto py-6 px-4 animate-fade-slide-up space-y-5">
 
       {/* ── SOS Modal ── */}
       {sosActive && (
@@ -268,7 +268,7 @@ export default function LocationLanding() {
       )}
 
       {/* ── Top Status Bar ── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between w-full">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold uppercase tracking-wider">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           {t('scanConfirmed')}
@@ -281,72 +281,81 @@ export default function LocationLanding() {
         </button>
       </div>
 
-      {/* ── Hero Location Card ── */}
-      <div
-        className="rounded-3xl p-6 relative overflow-hidden bg-white border border-slate-200"
-        style={{
-          boxShadow: '0 4px 24px rgba(0,0,0,0.08)'
-        }}
-      >
-        {/* Background glow */}
-        <div className="absolute -top-16 -right-16 w-44 h-44 bg-indigo-100/60 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-emerald-100/60 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative space-y-4">
-          {/* Location pin icon */}
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', boxShadow: '0 8px 20px rgba(99,102,241,0.25)' }}>
-            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t('youAreHere')}</p>
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight">{location?.name}</h1>
-            {location?.description && (
-              <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">{location.description}</p>
-            )}
-          </div>
-
-          {/* Primary CTA — Open Map */}
-          <Link
-            to={`/map/${location?.slug}`}
-            className="w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl text-sm font-bold text-white transition-all duration-200 active:scale-[0.98]"
+      {/* ── Main Layout Split ── */}
+      <div className="flex flex-col md:grid md:grid-cols-12 md:gap-8 items-start w-full">
+        
+        {/* Left Column: Hero Location Card */}
+        <div className="col-span-12 md:col-span-6 w-full space-y-4">
+          <div
+            className="rounded-3xl p-6 relative overflow-hidden bg-white border border-slate-200"
             style={{
-              background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)',
-              boxShadow: '0 8px 24px rgba(99,102,241,0.3)'
+              boxShadow: '0 4px 24px rgba(0,0,0,0.08)'
             }}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            {t('openMapBtn')}
-          </Link>
+            {/* Background glow */}
+            <div className="absolute -top-16 -right-16 w-44 h-44 bg-indigo-100/60 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-emerald-100/60 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative space-y-4">
+              {/* Location pin icon */}
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', boxShadow: '0 8px 20px rgba(99,102,241,0.25)' }}>
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t('youAreHere')}</p>
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight">{location?.name}</h1>
+                {location?.description && (
+                  <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">{location.description}</p>
+                )}
+              </div>
+
+              {/* Primary CTA — Open Map */}
+              <Link
+                to={`/map/${location?.slug}`}
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl text-sm font-bold text-white transition-all duration-200 active:scale-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)',
+                  boxShadow: '0 8px 24px rgba(99,102,241,0.3)'
+                }}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                {t('openMapBtn')}
+              </Link>
+            </div>
+          </div>
         </div>
+
+        {/* Right Column: Nearby Facilities Section */}
+        <div className="col-span-12 md:col-span-6 w-full mt-6 md:mt-0 space-y-4">
+          {(medical || help || toilet || police) && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-black text-slate-900">{t('nearbyFacilities')}</h2>
+                <span className="text-[11px] text-slate-500 font-medium">{t('tapToNavigate')}</span>
+              </div>
+
+              {/* 2-column dynamic grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {medical && <FacilityCard type="Medical" data={medical} locationSlug={location?.slug} />}
+                {help && <FacilityCard type="Help" data={help} locationSlug={location?.slug} />}
+                {toilet && <FacilityCard type="Toilet" data={toilet} locationSlug={location?.slug} />}
+                {police && <FacilityCard type="Police" data={police} locationSlug={location?.slug} />}
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
 
-      {/* ── Nearby Facilities Section ── */}
-      {(medical || help || toilet || police) && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-900">{t('nearbyFacilities')}</h2>
-            <span className="text-[11px] text-slate-500 font-medium">{t('tapToNavigate')}</span>
-          </div>
-
-          {/* 2-column dynamic grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {medical && <FacilityCard type="Medical" data={medical} locationSlug={location?.slug} />}
-            {help && <FacilityCard type="Help" data={help} locationSlug={location?.slug} />}
-            {toilet && <FacilityCard type="Toilet" data={toilet} locationSlug={location?.slug} />}
-            {police && <FacilityCard type="Police" data={police} locationSlug={location?.slug} />}
-          </div>
-        </div>
-      )}
-
       {/* ── Powered by footer ── */}
-      <div className="text-center text-[10px] text-slate-500 font-medium pt-2">
+      <div className="text-center text-[10px] text-slate-500 font-medium pt-4 w-full border-t border-slate-200/50">
         Powered by{' '}
         <a href="https://confluxaa.com" target="_blank" rel="noopener noreferrer"
           className="font-extrabold text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text hover:opacity-80 transition-opacity">

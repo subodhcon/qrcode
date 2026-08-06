@@ -20,12 +20,28 @@ export default defineConfig({
         name: 'DIN — Dynamic QR & Location Guide',
         short_name: 'DIN Guide',
         description: 'Dynamic QR Code Navigation & Location Landing Guide for Pilgrims and Visitors',
-        theme_color: '#0f172a',
-        background_color: '#f8fafc',
+        theme_color: '#059669',
+        background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
+        shortcuts: [
+          {
+            name: 'Interactive Map',
+            short_name: 'Map',
+            description: 'Open live map navigation',
+            url: '/map',
+            icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Emergency SOS',
+            short_name: 'SOS',
+            description: 'One tap emergency help numbers',
+            url: '/?sos=true',
+            icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }]
+          }
+        ],
         icons: [
           {
             src: '/pwa-192x192.png',
