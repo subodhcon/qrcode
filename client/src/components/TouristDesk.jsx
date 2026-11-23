@@ -23,13 +23,14 @@ const COUNTRIES = [
   { code: 'OTHER', name: 'Other Country', dial: '+91', flag: '🌍' }
 ];
 
-export function buildWhatsAppMessage(tourist, passId) {
+export function buildWhatsAppMessage(tourist, passId, lang = 'en') {
   const isGroup = tourist.type === 'group';
   const memberCountText = isGroup
-    ? `समूह (Group - ${tourist.totalMembers || 1} सदस्य)`
-    : 'व्यक्तिगत (Individual - 1 व्यक्ति)';
+    ? (lang === 'hi' ? `समूह (Group - ${tourist.totalMembers || 1} सदस्य)` : `Group (${tourist.totalMembers || 1} Members)`)
+    : (lang === 'hi' ? 'व्यक्तिगत (Individual - 1 व्यक्ति)' : 'Individual (1 Person)');
 
-  const dateStr = new Date(tourist.createdAt || Date.now()).toLocaleDateString('hi-IN', {
+  const dateLocale = lang === 'hi' ? 'hi-IN' : 'en-US';
+  const dateStr = new Date(tourist.createdAt || Date.now()).toLocaleDateString(dateLocale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -37,9 +38,10 @@ export function buildWhatsAppMessage(tourist, passId) {
     minute: '2-digit'
   });
 
-  const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+  const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://bodhmahotsav.vercel.app';
 
-  return `🙏 *नमो बुद्धाय | WELCOME TO BODH GAYA* 🙏
+  if (lang === 'hi') {
+    return `🙏 *नमो बुद्धाय | WELCOME TO BODH GAYA* 🙏
 *नगर परिषद बोधगया — आधिकारिक डिजिटल पर्यटक पास*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -47,7 +49,7 @@ export function buildWhatsAppMessage(tourist, passId) {
 👤 *पर्यटक का नाम:* ${tourist.fullName}
 👥 *पंजीकरण प्रकार:* ${memberCountText}
 📞 *पंजीकृत मोबाइल:* ${tourist.countryCode || '+91'} ${tourist.phone}
-🚨 *इमरजेंसी संपर्क:* ${tourist.emergencyContact?.name ? tourist.emergencyContact.name + ' (' + (tourist.emergencyContact.relation || 'Relative') + '): ' : ''}${tourist.emergencyContact?.phone || 'N/A'}
+🚨 *आपातकालीन संपर्क:* ${tourist.emergencyContact?.name ? tourist.emergencyContact.name + ' (' + (tourist.emergencyContact.relation || 'Relative') + '): ' : ''}${tourist.emergencyContact?.phone || 'N/A'}
 🌍 *देश / पता:* ${tourist.country || 'India'} (${tourist.city || tourist.address || 'Bodh Gaya'})
 📅 *पंजीकरण दिनांक:* ${dateStr}
 
@@ -65,10 +67,38 @@ export function buildWhatsAppMessage(tourist, passId) {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 🌸 *भगवान बुद्ध की पावन ज्ञानस्थली में आपकी यात्रा सुखद, सुरक्षित एवं मंगलमय हो!*
 🏛️ _प्रशासन — नगर परिषद बोधगया (पर्यटन एवं तीर्थयात्री सहायता डेस्क)_`;
+  }
+
+  return `🙏 *NAMO BUDDHAYA | WELCOME TO BODH GAYA* 🙏
+*NAGAR PARISHAD BODH GAYA — OFFICIAL DIGITAL PILGRIM PASS*
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎫 *Pass ID:* ${passId || tourist.registrationNo}
+👤 *Tourist Name:* ${tourist.fullName}
+👥 *Pass Type:* ${memberCountText}
+📞 *Registered Mobile:* ${tourist.countryCode || '+91'} ${tourist.phone}
+🚨 *Emergency Contact:* ${tourist.emergencyContact?.name ? tourist.emergencyContact.name + ' (' + (tourist.emergencyContact.relation || 'Relative') + '): ' : ''}${tourist.emergencyContact?.phone || 'N/A'}
+🌍 *Country / Address:* ${tourist.country || 'India'} (${tourist.city || tourist.address || 'Bodh Gaya'})
+📅 *Registration Date:* ${dateStr}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🗺️ *Bodh Gaya Digital Guide & Live Walking Map:*
+👉 ${appOrigin}/map
+(Mahabodhi Temple UNESCO site, 80ft Great Buddha, Monasteries, Drinking Water, Restrooms, Hospitals)
+
+🚨 *24x7 Bodh Gaya Emergency Helplines:*
+• Police Control Room: 112
+• Mahabodhi Temple Control Room: 0631-2200735
+• Ambulance / Medical Emergency: 108
+• Tourist Police Assistance: 0631-2200424
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌸 *May your pilgrimage to the sacred land of Enlightenment be peaceful and auspicious!*
+🏛️ _Administration — Nagar Parishad Bodh Gaya (Tourist & Pilgrim Desk)_`;
 }
 
 export default function TouristDesk() {
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslation();
   const [tourists, setTourists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -148,7 +178,7 @@ export default function TouristDesk() {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('कृपया केवल इमेज (JPG, PNG, WebP) फ़ाइल चुनें।');
+        alert(t('imageOnlyAlert'));
         return;
       }
       setPhotoFile(file);
@@ -161,7 +191,7 @@ export default function TouristDesk() {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('कृपया केवल इमेज (JPG, PNG, WebP) फ़ाइल चुनें।');
+        alert(t('imageOnlyAlert'));
         return;
       }
       setIdFile(file);
@@ -225,7 +255,7 @@ export default function TouristDesk() {
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (!fullName.trim() || !phone.trim() || !emergencyPhone.trim() || !address.trim()) {
-      setFormError('कृपया सभी अनिवार्य फ़ील्ड्स (नाम, फोन, आपातकालीन संपर्क और पता) भरें।');
+      setFormError(t('fillRequiredFields'));
       return;
     }
 
@@ -276,11 +306,11 @@ export default function TouristDesk() {
         setSelectedTourist(savedData);
         setPassQrCodeUrl(qrUrl);
         setIsPassModalOpen(true);
-        showToast('✓ पर्यटक सफलतापूर्वक पंजीकृत! पास आईडी तैयार है।');
+        showToast(t('registeredSuccess'));
       }
     } catch (err) {
       console.error('Registration failed:', err);
-      setFormError(err.message || 'पंजीकरण विफल रहा। कृपया पुनः प्रयास करें।');
+      setFormError(err.message || t('regFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -297,31 +327,31 @@ export default function TouristDesk() {
       targetPhone = `${code}${cleanPhone}`;
     }
 
-    const message = buildWhatsAppMessage(tourist, tourist.registrationNo);
+    const message = buildWhatsAppMessage(tourist, tourist.registrationNo, currentLanguage);
     const encoded = encodeURIComponent(message);
     const whatsappWebUrl = `https://web.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`;
 
     window.open(whatsappWebUrl, '_blank');
-    showToast('📲 WhatsApp Web खुल रहा है...');
+    showToast(t('openingWhatsApp'));
   };
 
   // Copy WhatsApp message to clipboard
   const handleCopyMessage = (tourist) => {
     if (!tourist) return;
-    const message = buildWhatsAppMessage(tourist, tourist.registrationNo);
+    const message = buildWhatsAppMessage(tourist, tourist.registrationNo, currentLanguage);
     navigator.clipboard.writeText(message);
-    showToast('📋 WhatsApp संदेश क्लिपबोर्ड पर कॉपी हो गया!');
+    showToast(t('msgCopied'));
   };
 
   // Delete Tourist
   const handleDeleteTourist = async (id, regNo) => {
-    if (!window.confirm(`क्या आप पंजीकरण पास ${regNo} को सच में हटाना चाहते हैं?`)) return;
+    if (!window.confirm(t('confirmDeleteTourist').replace('{id}', regNo))) return;
     try {
       await api.delete(`/tourists/${id}`);
       setTourists(prev => prev.filter(t => t._id !== id));
-      showToast(`✓ पास ${regNo} हटा दिया गया।`);
+      showToast(t('deletedSuccess').replace('{id}', regNo));
     } catch (err) {
-      alert(err.message || 'हटाने में त्रुटि आई।');
+      alert(err.message || t('deleteFailed'));
     }
   };
 
@@ -531,11 +561,11 @@ export default function TouristDesk() {
                     <td className="py-3.5 px-4">
                       {item.type === 'group' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                          <span>👥 समूह ({item.totalMembers || 1})</span>
+                          <span>👥 {t('groupBadge')} ({item.totalMembers || 1})</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                          <span>👤 1 व्यक्ति</span>
+                          <span>👤 1 {t('person')}</span>
                         </span>
                       )}
                     </td>
@@ -785,32 +815,32 @@ export default function TouristDesk() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-slate-300 mb-1">
-                    आपातकालीन व्यक्ति का नाम (Emergency Contact Name)
+                    {t('emergencyPersonName')}
                   </label>
                   <input
                     type="text"
                     value={emergencyName}
                     onChange={(e) => setEmergencyName(e.target.value)}
-                    placeholder="उदा: सुधीर सिंह (पिता / टूर गाइड)"
+                    placeholder={t('emergencyNamePlaceholder')}
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs text-slate-300 mb-1">
-                    संबंध (Relation)
+                    {t('emergencyRelation')}
                   </label>
                   <select
                     value={emergencyRelation}
                     onChange={(e) => setEmergencyRelation(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   >
-                    <option value="Family">परिवार (Family / Relative)</option>
-                    <option value="Parent">माता / पिता (Parent)</option>
-                    <option value="Spouse">पति / पत्नी (Spouse)</option>
-                    <option value="Friend">मित्र (Friend)</option>
-                    <option value="Tour Guide">टूर गाइड (Tour Guide)</option>
-                    <option value="Embassy">दूतावास (Embassy)</option>
+                    <option value="Family">{t('relationFamily')}</option>
+                    <option value="Parent">{t('relationParent')}</option>
+                    <option value="Spouse">{t('relationSpouse')}</option>
+                    <option value="Friend">{t('relationFriend')}</option>
+                    <option value="Tour Guide">{t('relationTourGuide')}</option>
+                    <option value="Embassy">{t('relationEmbassy')}</option>
                   </select>
                 </div>
               </div>
@@ -818,7 +848,7 @@ export default function TouristDesk() {
               {/* Photo & ID Card Upload Section */}
               <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-4">
                 <div className="text-xs font-bold text-amber-400 flex items-center justify-between">
-                  <span>📸 फोटो एवं पहचान पत्र (Photo & ID Card Upload)</span>
+                  <span>📸 {t('photoIdUploadTitle')}</span>
                   <span className="text-[10px] text-slate-500 font-normal">Cloudinary Secure Storage</span>
                 </div>
 
@@ -826,7 +856,7 @@ export default function TouristDesk() {
                   {/* Photo Upload */}
                   <div>
                     <label className="block text-xs text-slate-300 mb-1 font-medium">
-                      पर्यटक की फोटो (Tourist Photo)
+                      {t('photoCaptureUpload')}
                     </label>
                     <input
                       type="file"
@@ -846,12 +876,12 @@ export default function TouristDesk() {
                             alt="Preview"
                             className="w-20 h-20 object-cover rounded-xl border border-amber-500/40"
                           />
-                          <span className="text-[10px] text-emerald-400 block mt-1">✓ फोटो चुनी गई</span>
+                          <span className="text-[10px] text-emerald-400 block mt-1">✓ {t('photoChosen')}</span>
                         </div>
                       ) : (
                         <>
                           <span className="text-2xl mb-1">📷</span>
-                          <span className="text-xs text-slate-400">फोटो चुनें या कैप्चर करें</span>
+                          <span className="text-xs text-slate-400">{t('choosePhotoCapture')}</span>
                           <span className="text-[10px] text-slate-500">JPG, PNG (Max 10MB)</span>
                         </>
                       )}
@@ -861,7 +891,7 @@ export default function TouristDesk() {
                   {/* ID Card Document Upload */}
                   <div>
                     <label className="block text-xs text-slate-300 mb-1 font-medium">
-                      आईडी कार्ड फोटो / स्कैन (ID Card Document)
+                      {t('idCardDocLabel')}
                     </label>
                     <input
                       type="file"
@@ -881,12 +911,12 @@ export default function TouristDesk() {
                             alt="ID Preview"
                             className="w-20 h-20 object-cover rounded-xl border border-amber-500/40"
                           />
-                          <span className="text-[10px] text-emerald-400 block mt-1">✓ आईडी डॉक्युमेंट चुना गया</span>
+                          <span className="text-[10px] text-emerald-400 block mt-1">✓ {t('idDocChosen')}</span>
                         </div>
                       ) : (
                         <>
                           <span className="text-2xl mb-1">🪪</span>
-                          <span className="text-xs text-slate-400">पहचान पत्र फोटो चुनें</span>
+                          <span className="text-xs text-slate-400">{t('chooseIdPhoto')}</span>
                           <span className="text-[10px] text-slate-500">Aadhaar, Passport, etc.</span>
                         </>
                       )}
@@ -898,31 +928,31 @@ export default function TouristDesk() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                   <div>
                     <label className="block text-xs text-slate-300 mb-1">
-                      पहचान पत्र प्रकार (ID Proof Type)
+                      {t('idCardType')}
                     </label>
                     <select
                       value={idCardType}
                       onChange={(e) => setIdCardType(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
                     >
-                      <option value="Aadhaar">आधार कार्ड (Aadhaar Card)</option>
-                      <option value="Passport">पासपोर्ट (Passport)</option>
-                      <option value="Voter ID">मतदाता पहचान पत्र (Voter ID)</option>
-                      <option value="Driving License">ड्राइविंग लाइसेंस (Driving License)</option>
-                      <option value="National ID">राष्ट्रीय पहचान पत्र (National ID)</option>
-                      <option value="Other">अन्य (Other)</option>
+                      <option value="Aadhaar">{t('aadhaarCard')}</option>
+                      <option value="Passport">{t('passport')}</option>
+                      <option value="Voter ID">{t('voterId')}</option>
+                      <option value="Driving License">{t('drivingLicense')}</option>
+                      <option value="National ID">{t('nationalId')}</option>
+                      <option value="Other">{t('other')}</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs text-slate-300 mb-1">
-                      पहचान पत्र संख्या (ID Number)
+                      {t('idCardNumber')}
                     </label>
                     <input
                       type="text"
                       value={idCardNumber}
                       onChange={(e) => setIdCardNumber(e.target.value)}
-                      placeholder="उदा: 1234 5678 9012"
+                      placeholder={t('idNumberPlaceholder')}
                       className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
                     />
                   </div>
@@ -933,36 +963,36 @@ export default function TouristDesk() {
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    स्थायी पता (Permanent Address) *
+                    {t('permanentAddress')} *
                   </label>
                   <textarea
                     required
                     rows={2}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="मकान संख्या, मोहल्ला/मार्ग, शहर..."
+                    placeholder={t('addressPlaceholderDetail')}
                     className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500 resize-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-slate-300 mb-1">शहर (City)</label>
+                    <label className="block text-xs text-slate-300 mb-1">{t('city')}</label>
                     <input
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="उदा: पटना / Bangkok"
+                      placeholder={t('cityPlaceholder')}
                       className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-300 mb-1">राज्य / प्रांत (State)</label>
+                    <label className="block text-xs text-slate-300 mb-1">{t('state')}</label>
                     <input
                       type="text"
                       value={stateName}
                       onChange={(e) => setStateName(e.target.value)}
-                      placeholder="उदा: बिहार / Central Province"
+                      placeholder={t('statePlaceholder')}
                       className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
@@ -975,10 +1005,10 @@ export default function TouristDesk() {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold text-purple-300">
-                        समूह के अन्य सदस्य (Group Members List)
+                        {t('groupMembersList')}
                       </div>
                       <div className="text-[10px] text-slate-400">
-                        मुख्य लीडर के अलावा साथ आए सदस्यों का विवरण
+                        {t('groupMembersDesc')}
                       </div>
                     </div>
                     <button
@@ -986,13 +1016,13 @@ export default function TouristDesk() {
                       onClick={handleAddMember}
                       className="py-1.5 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
                     >
-                      <span>＋ सदस्य जोड़ें</span>
+                      <span>{t('addMember')}</span>
                     </button>
                   </div>
 
                   {groupMembers.length === 0 ? (
                     <div className="text-center py-4 text-xs text-slate-500">
-                      कोई अतिरिक्त सदस्य नहीं जोड़ा गया। "＋ सदस्य जोड़ें" पर क्लिक करें।
+                      {t('noMembersAdded')}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -1005,14 +1035,14 @@ export default function TouristDesk() {
                           <input
                             type="text"
                             required
-                            placeholder="सदस्य का नाम"
+                            placeholder={t('memberName')}
                             value={m.name}
                             onChange={(e) => handleMemberChange(idx, 'name', e.target.value)}
                             className="flex-1 min-w-[120px] px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white"
                           />
                           <input
                             type="number"
-                            placeholder="उम्र"
+                            placeholder={t('memberAge')}
                             value={m.age}
                             onChange={(e) => handleMemberChange(idx, 'age', e.target.value)}
                             className="w-16 px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white"
@@ -1022,13 +1052,13 @@ export default function TouristDesk() {
                             onChange={(e) => handleMemberChange(idx, 'gender', e.target.value)}
                             className="w-20 px-2 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white"
                           >
-                            <option value="Male">पुरुष</option>
-                            <option value="Female">महिला</option>
-                            <option value="Other">अन्य</option>
+                            <option value="Male">{t('genderMale')}</option>
+                            <option value="Female">{t('genderFemale')}</option>
+                            <option value="Other">{t('genderOther')}</option>
                           </select>
                           <input
                             type="text"
-                            placeholder="संबंध (जैसे पत्नी, पुत्र)"
+                            placeholder={t('relationPlaceholder')}
                             value={m.relation}
                             onChange={(e) => handleMemberChange(idx, 'relation', e.target.value)}
                             className="w-24 px-2 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white"
@@ -1037,7 +1067,7 @@ export default function TouristDesk() {
                             type="button"
                             onClick={() => handleRemoveMember(idx)}
                             className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20"
-                            title="सदस्य हटाएं"
+                            title={t('removeMember')}
                           >
                             ✕
                           </button>
@@ -1093,10 +1123,10 @@ export default function TouristDesk() {
                 <span className="text-2xl">🙏</span>
                 <div>
                   <h3 className="text-base font-black uppercase tracking-wider">
-                    नगर परिषद बोधगया — डिजिटल पर्यटक पास
+                    {t('officialPassHeaderTitle')}
                   </h3>
                   <div className="text-[10px] font-bold opacity-90">
-                    Bodh Gaya Official Pilgrim & Tourist Entry Pass
+                    {t('officialPassHeaderSub')}
                   </div>
                 </div>
               </div>
@@ -1133,7 +1163,7 @@ export default function TouristDesk() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] text-slate-400 font-bold uppercase">Pass ID</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">{t('passIdLabel')}</div>
                     <div className="text-sm font-black font-mono text-amber-400">
                       {selectedTourist.registrationNo}
                     </div>
@@ -1156,41 +1186,41 @@ export default function TouristDesk() {
                       )}
                     </div>
                     <span className="mt-1.5 text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold uppercase">
-                      VERIFIED PASS
+                      {t('verifiedPass')}
                     </span>
                   </div>
 
                   {/* Details */}
                   <div className="col-span-2 space-y-1.5 text-xs">
                     <div>
-                      <span className="text-slate-400 text-[10px] block">नाम / Full Name:</span>
+                      <span className="text-slate-400 text-[10px] block">{t('fullName')}:</span>
                       <span className="text-white font-black text-sm">{selectedTourist.fullName}</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <span className="text-slate-400 text-[10px] block">प्रकार / Type:</span>
+                        <span className="text-slate-400 text-[10px] block">{t('regType')}:</span>
                         <span className="text-amber-300 font-bold">
                           {selectedTourist.type === 'group'
-                            ? `समूह (${selectedTourist.totalMembers || 1})`
-                            : 'व्यक्तिगत (1)'}
+                            ? `${t('groupBadge')} (${selectedTourist.totalMembers || 1})`
+                            : `${t('individualBadge')} (1)`}
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 text-[10px] block">देश / Country:</span>
+                        <span className="text-slate-400 text-[10px] block">{t('country')}:</span>
                         <span className="text-white font-bold">{selectedTourist.country || 'India'}</span>
                       </div>
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] block">व्हाट्सएप संपर्क / Mobile:</span>
+                      <span className="text-slate-400 text-[10px] block">{t('mobileNumber')}:</span>
                       <span className="text-slate-200 font-mono">
                         {selectedTourist.countryCode} {selectedTourist.phone}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] block">आपातकालीन संपर्क / Emergency:</span>
+                      <span className="text-slate-400 text-[10px] block">{t('emergencyPhone')}:</span>
                       <span className="text-rose-300 font-mono font-bold">
                         {selectedTourist.emergencyContact?.phone}
                       </span>
@@ -1201,9 +1231,9 @@ export default function TouristDesk() {
                 {/* QR Code & Verification Footer */}
                 <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] text-slate-400 font-bold">आपातकालीन हेल्पलाइन:</div>
+                    <div className="text-[10px] text-slate-400 font-bold">{t('emergencyHelplineFooter')}</div>
                     <div className="text-[9px] text-slate-300">
-                      पुलिस: 112 | मंदिर कंट्रोल: 0631-2200735 | एम्बुलेंस: 108
+                      {t('emergencyHelplineContactList')}
                     </div>
                   </div>
 
@@ -1233,7 +1263,7 @@ export default function TouristDesk() {
                     className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <span>📋</span>
-                    <span>Copy Message</span>
+                    <span>{t('copyMessage')}</span>
                   </button>
 
                   <button

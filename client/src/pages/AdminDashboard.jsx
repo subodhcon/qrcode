@@ -584,7 +584,7 @@ export default function AdminDashboard() {
                 <textarea
                   value={announcementText}
                   onChange={(e) => setAnnouncementText(e.target.value)}
-                  placeholder="e.g. यातायात सूचना: महाबोधि मंदिर मार्ग श्रद्धालुओं के लिए खुला है। कृपया पुलिस कतार नियमों का पालन करें।"
+                  placeholder={t('advisoryPlaceholder')}
                   rows={4}
                   className="w-full rounded-2xl bg-slate-950 border border-slate-800 p-4 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-600"
                   required
