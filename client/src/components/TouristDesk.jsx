@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import Loading from './Loading';
+import { useTranslation } from '../context/LanguageContext';
 
 const COUNTRIES = [
   { code: 'IN', name: 'India', dial: '+91', flag: '🇮🇳' },
@@ -67,6 +68,7 @@ export function buildWhatsAppMessage(tourist, passId) {
 }
 
 export default function TouristDesk() {
+  const { t } = useTranslation();
   const [tourists, setTourists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -357,7 +359,7 @@ export default function TouristDesk() {
             👥
           </div>
           <div>
-            <div className="text-xs text-slate-400 font-medium">कुल पंजीकृत पर्यटक</div>
+            <div className="text-xs text-slate-400 font-medium">{t('totalRegistrations')}</div>
             <div className="text-xl font-black text-white font-mono">{safeTourists.length}</div>
           </div>
         </div>
@@ -367,7 +369,7 @@ export default function TouristDesk() {
             👤
           </div>
           <div>
-            <div className="text-xs text-slate-400 font-medium">व्यक्तिगत (Individual)</div>
+            <div className="text-xs text-slate-400 font-medium">{t('individual')}</div>
             <div className="text-xl font-black text-white font-mono">
               {safeTourists.filter(t => t.type === 'individual').length}
             </div>
@@ -379,7 +381,7 @@ export default function TouristDesk() {
             🏛️
           </div>
           <div>
-            <div className="text-xs text-slate-400 font-medium">समूह (Group Registrations)</div>
+            <div className="text-xs text-slate-400 font-medium">{t('group')}</div>
             <div className="text-xl font-black text-white font-mono">
               {safeTourists.filter(t => t.type === 'group').length}
             </div>
@@ -395,7 +397,7 @@ export default function TouristDesk() {
             className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm md:text-base transition-all shadow-xl shadow-amber-500/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span className="text-xl">➕</span>
-            <span>नया पर्यटक पंजीकरण</span>
+            <span>{t('newTouristRegistration')}</span>
           </button>
         </div>
       </div>
@@ -408,7 +410,7 @@ export default function TouristDesk() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="नाम, मोबाइल, पास ID या देश से खोजें..."
+            placeholder={t('searchTouristPlaceholder')}
             className="w-full pl-10 pr-4 py-2 bg-slate-950/70 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/60"
           />
         </div>
@@ -422,7 +424,7 @@ export default function TouristDesk() {
                 : 'bg-slate-800/60 text-slate-400 hover:text-white'
             }`}
           >
-            सभी ({safeTourists.length})
+            {t('allTourists')} ({safeTourists.length})
           </button>
           <button
             onClick={() => setTypeFilter('individual')}
@@ -432,7 +434,7 @@ export default function TouristDesk() {
                 : 'bg-slate-800/60 text-slate-400 hover:text-white'
             }`}
           >
-            👤 व्यक्तिगत
+            👤 {t('individual')}
           </button>
           <button
             onClick={() => setTypeFilter('group')}
@@ -442,7 +444,7 @@ export default function TouristDesk() {
                 : 'bg-slate-800/60 text-slate-400 hover:text-white'
             }`}
           >
-            👥 समूह
+            👥 {t('group')}
           </button>
         </div>
       </div>
@@ -457,14 +459,14 @@ export default function TouristDesk() {
       {/* Tourist Records Table */}
       {loading ? (
         <div className="h-48 flex items-center justify-center bg-slate-900/60 border border-slate-800 rounded-2xl">
-          <Loading message="पर्यटक डेटा लोड हो रहा है..." />
+          <Loading message={t('loadingTouristData')} />
         </div>
       ) : filteredTourists.length === 0 ? (
         <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-12 text-center text-slate-400">
           <div className="text-4xl mb-2">📭</div>
-          <div className="text-sm font-bold text-slate-300">कोई पंजीकरण नहीं मिला</div>
+          <div className="text-sm font-bold text-slate-300">{t('noRegistrations')}</div>
           <p className="text-xs text-slate-500 mt-1">
-            ऊपर दिए गए "नया पर्यटक पंजीकरण" बटन पर क्लिक करके नया पास बनाएं।
+            {t('clickNewRegistration')}
           </p>
         </div>
       ) : (
@@ -473,13 +475,13 @@ export default function TouristDesk() {
             <table className="w-full text-left text-xs sm:text-sm">
               <thead className="bg-slate-950/70 border-b border-slate-800 text-slate-400 text-[11px] font-black uppercase tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">पास ID व तिथि</th>
-                  <th className="py-3 px-4">पर्यटक का नाम व फोटो</th>
-                  <th className="py-3 px-4">प्रकार (Type)</th>
-                  <th className="py-3 px-4">मोबाइल व व्हाट्सएप</th>
-                  <th className="py-3 px-4">आपातकालीन संपर्क</th>
-                  <th className="py-3 px-4">देश / पता</th>
-                  <th className="py-3 px-4 text-right">एक्शन</th>
+                  <th className="py-3 px-4">{t('passIdDate')}</th>
+                  <th className="py-3 px-4">{t('touristNamePhoto')}</th>
+                  <th className="py-3 px-4">{t('regType')}</th>
+                  <th className="py-3 px-4">{t('mobileWhatsApp')}</th>
+                  <th className="py-3 px-4">{t('emergencyContact')}</th>
+                  <th className="py-3 px-4">{t('countryAddress')}</th>
+                  <th className="py-3 px-4 text-right">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
@@ -574,7 +576,7 @@ export default function TouristDesk() {
                         <button
                           onClick={() => handleOpenWhatsAppWeb(item)}
                           className="p-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer"
-                          title="WhatsApp Web पर पास भेजें"
+                          title={t('sendWhatsApp')}
                         >
                           <span className="text-sm">📲</span>
                         </button>
@@ -592,7 +594,7 @@ export default function TouristDesk() {
                             setIsPassModalOpen(true);
                           }}
                           className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition-all cursor-pointer"
-                          title="डिजिटल पास कार्ड देखें व प्रिंट करें"
+                          title={t('viewPassBadge')}
                         >
                           <span className="text-sm">🪪</span>
                         </button>
@@ -601,7 +603,7 @@ export default function TouristDesk() {
                         <button
                           onClick={() => handleDeleteTourist(item._id, item.registrationNo)}
                           className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-all cursor-pointer"
-                          title="हटाएं"
+                          title={t('deleteTouristRecord')}
                         >
                           <span className="text-sm">🗑️</span>
                         </button>
@@ -629,10 +631,10 @@ export default function TouristDesk() {
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-white">
-                    बोधगया पर्यटक पंजीकरण केंद्र (Tourist Registration)
+                    {t('regModalTitle')}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    डिजिटल पास आईडी, Cloudinary स्टोरेज एवं डायरेक्ट WhatsApp शेयरिंग
+                    Cloudinary Secure Storage • Instant WhatsApp Dispatch
                   </p>
                 </div>
               </div>
@@ -655,7 +657,7 @@ export default function TouristDesk() {
               {/* Mode Toggle: Individual vs Group */}
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-2">
-                  पंजीकरण प्रकार (Select Registration Type) *
+                  {t('regTypeSelect')} *
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -668,7 +670,7 @@ export default function TouristDesk() {
                     }`}
                   >
                     <span>👤</span>
-                    <span>व्यक्तिगत (Individual - 1 Person)</span>
+                    <span>{t('singleTourist')}</span>
                   </button>
 
                   <button
@@ -681,7 +683,7 @@ export default function TouristDesk() {
                     }`}
                   >
                     <span>👥</span>
-                    <span>समूह (Group - Multiple Members)</span>
+                    <span>{t('groupDelegation')}</span>
                   </button>
                 </div>
               </div>
@@ -691,17 +693,17 @@ export default function TouristDesk() {
                 <div className="bg-purple-950/30 border border-purple-800/50 rounded-2xl p-4 space-y-3">
                   <div className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
                     <span>🏛️</span>
-                    <span>समूह / टूर विवरण (Group Information)</span>
+                    <span>{t('groupDelegation')}</span>
                   </div>
                   <div>
                     <label className="block text-xs text-slate-300 mb-1">
-                      ग्रुप / टूर ऑपरेटर / परिवार का नाम (Group Name)
+                      {t('groupName')}
                     </label>
                     <input
                       type="text"
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
-                      placeholder="उदा: Bangkok Pilgrim Group / शर्मा परिवार"
+                      placeholder={t('groupNamePlaceholder')}
                       className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500"
                     />
                   </div>
@@ -712,14 +714,14 @@ export default function TouristDesk() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    पर्यटक का पूरा नाम (Full Name) *
+                    {t('fullName')} *
                   </label>
                   <input
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="उदा: राहुल कुमार / Somchai Prasert"
+                    placeholder={t('fullNamePlaceholder')}
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
@@ -727,7 +729,7 @@ export default function TouristDesk() {
                 {/* Country Selector */}
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    देश (Country / Nationality) *
+                    {t('country')} *
                   </label>
                   <select
                     value={selectedCountry}
@@ -747,7 +749,7 @@ export default function TouristDesk() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    मोबाइल / WhatsApp नंबर *
+                    {t('mobileNumber')} *
                   </label>
                   <div className="flex gap-2">
                     <span className="px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-amber-400 font-mono flex items-center">
@@ -758,7 +760,7 @@ export default function TouristDesk() {
                       required
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="10 अंकों का व्हाट्सएप नंबर"
+                      placeholder={t('mobilePlaceholder')}
                       className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
@@ -766,14 +768,14 @@ export default function TouristDesk() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    आपातकालीन नंबर (Emergency Contact) *
+                    {t('emergencyPhone')} *
                   </label>
                   <input
                     type="tel"
                     required
                     value={emergencyPhone}
                     onChange={(e) => setEmergencyPhone(e.target.value)}
-                    placeholder="आपातकालीन मोबाइल नंबर"
+                    placeholder={t('emergencyPhonePlaceholder')}
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
@@ -1053,7 +1055,7 @@ export default function TouristDesk() {
                   onClick={() => setIsRegisterModalOpen(false)}
                   className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-bold transition-all cursor-pointer"
                 >
-                  रद्द करें (Cancel)
+                  {t('cancel')}
                 </button>
 
                 <button
@@ -1064,12 +1066,12 @@ export default function TouristDesk() {
                   {submitting ? (
                     <>
                       <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                      <span>पास जनरेट हो रहा है...</span>
+                      <span>{t('submitting')}</span>
                     </>
                   ) : (
                     <>
                       <span>💾</span>
-                      <span>पंजीकरण करें एवं पास बनाएं</span>
+                      <span>{t('createAndIssuePass')}</span>
                     </>
                   )}
                 </button>
@@ -1221,7 +1223,7 @@ export default function TouristDesk() {
                   className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm md:text-base shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                 >
                   <span className="text-2xl">📲</span>
-                  <span>WhatsApp Web पर सीधे भेजें (Send via WhatsApp Web)</span>
+                  <span>{t('shareViaWhatsApp')}</span>
                 </button>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1231,7 +1233,7 @@ export default function TouristDesk() {
                     className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <span>📋</span>
-                    <span>मैसेज कॉपी करें</span>
+                    <span>Copy Message</span>
                   </button>
 
                   <button
@@ -1240,7 +1242,7 @@ export default function TouristDesk() {
                     className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 text-xs font-bold transition-all border border-amber-500/30 flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <span>🖨️</span>
-                    <span>पास प्रिंट करें (Print Pass)</span>
+                    <span>{t('printPass')}</span>
                   </button>
                 </div>
               </div>

@@ -162,35 +162,38 @@ export const getAllFacilitiesNear = async (req, res, next) => {
   try {
     let origin = null;
 
-    // 1. Resolve origin (either from GPS query parameters or gate slug)
-    if (lat && lng) {
+    // 1. Resolve origin (either from GPS query parameters, gate slug, or Bodh Gaya center fallback)
+    const parsedLat = parseFloat(lat);
+    const parsedLng = parseFloat(lng);
+    if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
       origin = {
         name: 'Current Location',
-        latitude: parseFloat(lat),
-        longitude: parseFloat(lng),
+        latitude: parsedLat,
+        longitude: parsedLng,
       };
     } else if (locationSlug) {
       const location = await Location.findOne({ slug: locationSlug });
-      if (!location) {
-        return res.status(404).json({
-          success: false,
-          message: `Location '${locationSlug}' not found.`,
-        });
+      if (location) {
+        origin = {
+          name: location.name,
+          slug: location.slug,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        };
       }
+    }
+
+    // Resilient fallback to Bodh Gaya Mahabodhi Temple Center if GPS is unavailable or blocked
+    if (!origin) {
       origin = {
-        name: location.name,
-        slug: location.slug,
-        latitude: location.latitude,
-        longitude: location.longitude,
+        name: 'Bodh Gaya (Mahabodhi Temple Complex)',
+        latitude: 24.6961,
+        longitude: 84.9913,
       };
     }
 
-    if (!origin) {
-      return res.status(400).json({
-        success: false,
-        message: 'Either lat/lng query parameters or locationSlug URL parameter is required.',
-      });
-    }
+    // Normalize category query
+    const cleanCategory = category ? decodeURIComponent(category).trim() : null;
 
     // 2. Fetch active facilities from DB & Locations (graceful fallback if DB is reconnecting)
     let dbFacilities = [];
@@ -198,8 +201,8 @@ export const getAllFacilitiesNear = async (req, res, next) => {
 
     if (mongoose.connection.readyState === 1) {
       const dbQuery = { deletedAt: null, status: 'Active' };
-      if (category && category !== 'All') {
-        const synonyms = CATEGORY_SYNONYMS[category] || [category];
+      if (cleanCategory && cleanCategory !== 'All') {
+        const synonyms = CATEGORY_SYNONYMS[cleanCategory] || [cleanCategory];
         const regexList = synonyms.map((s) => new RegExp(`^${s}$`, 'i'));
         dbQuery.type = { $in: regexList };
       }
@@ -403,8 +406,8 @@ export const getAllFacilitiesNear = async (req, res, next) => {
     let enrichedOsm = [];
     const activeSearchQuery = (q && q.trim()) 
       ? q.trim() 
-      : (category && category !== 'All') 
-        ? (CATEGORY_OSM_KEYWORDS[category] || category) 
+      : (cleanCategory && cleanCategory !== 'All') 
+        ? (CATEGORY_OSM_KEYWORDS[cleanCategory] || cleanCategory) 
         : null;
 
     if (activeSearchQuery) {

@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
 import TouristDesk from '../components/TouristDesk';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 const EMOJI_PRESETS = ['🛕', '💧', '🚻', '🏥', 'ℹ️', '🛡️', '🅿️', '🍽️', '🏧', '🏨', '🚌', '🛍️', '🌳', '📍'];
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Tabs: 'tourists' | 'categories' | 'analytics' | 'announcements' | 'feedback'
   const [activeTab, setActiveTab] = useState('tourists');
@@ -339,26 +342,31 @@ export default function AdminDashboard() {
           <div className="space-y-1.5 text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>🏛️ Nagar Parishad Bodh Gaya • Admin Console</span>
+              <span>{t('adminConsoleBadge')}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Bodh Gaya Guide Control Console
+              {t('adminTitle')}
             </h1>
             <p className="text-slate-400 text-xs font-medium">
-              Real-time Navigation, Categories, Citizen Support &amp; Broadcast Management
+              {t('adminSubtitle')}
             </p>
           </div>
           
           <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
+            {/* Language Selector Dropdown */}
+            <div className="backdrop-blur-md bg-slate-800/90 rounded-2xl p-0.5 border border-slate-700/80 shadow-md">
+              <LanguageSelector />
+            </div>
+
             <a
               href="/"
               target="_blank"
               rel="noopener noreferrer"
-              className="py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-bold transition-all border border-slate-700/60 shadow-sm flex items-center gap-1.5"
+              className="py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-bold transition-all border border-slate-700/60 shadow-sm flex items-center gap-1.5 cursor-pointer"
               title="Open public Welcome page in new tab"
             >
               <span>🌐</span>
-              <span>Live Guide</span>
+              <span>{t('liveGuide')}</span>
             </a>
 
             {activeTab === 'categories' && (
@@ -367,7 +375,7 @@ export default function AdminDashboard() {
                 className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-bold transition-all shadow-lg shadow-emerald-600/20 active:scale-95 flex items-center gap-1.5 cursor-pointer"
               >
                 <span className="text-base leading-none">＋</span>
-                <span>Add Category</span>
+                <span>{t('addCategory')}</span>
               </button>
             )}
 
@@ -378,7 +386,7 @@ export default function AdminDashboard() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              <span>Logout</span>
+              <span>{t('logout')}</span>
             </button>
           </div>
         </div>
@@ -393,9 +401,9 @@ export default function AdminDashboard() {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
             }`}
           >
-            <span>👥 Tourist Desk</span>
+            <span>👥 {t('touristDeskTab')}</span>
             <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-bold">
-              पंजीकरण
+              {t('registrationBadge')}
             </span>
           </button>
 
@@ -407,7 +415,7 @@ export default function AdminDashboard() {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
             }`}
           >
-            <span>🗂️ Categories</span>
+            <span>🗂️ {t('categoriesTab')}</span>
             <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-300 border border-slate-700 font-mono">
               {safeCategories.length}
             </span>
@@ -421,7 +429,7 @@ export default function AdminDashboard() {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
             }`}
           >
-            <span>📢 Official Broadcast</span>
+            <span>📢 {t('broadcastTab')}</span>
             {announcementText && (
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             )}
@@ -435,7 +443,7 @@ export default function AdminDashboard() {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
             }`}
           >
-            <span>📝 Citizen Support Desk</span>
+            <span>📝 {t('citizenSupportTab')}</span>
             {safeFeedbacks.filter(f => f?.status !== 'Resolved').length > 0 && (
               <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-black animate-pulse">
                 {safeFeedbacks.filter(f => f?.status !== 'Resolved').length}
@@ -451,7 +459,7 @@ export default function AdminDashboard() {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
             }`}
           >
-            <span>📊 Visitor Analytics</span>
+            <span>📊 {t('analyticsTab')}</span>
           </button>
         </div>
 

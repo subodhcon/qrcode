@@ -18,6 +18,20 @@ const CANONICAL_CATEGORIES = [
   { name: 'Food & Dining', emoji: '🍽️', status: 'Active' }
 ];
 
+export const getFacilityEmoji = (type) => {
+  const t = (type || '').toLowerCase();
+  if (t.includes('temple') || t.includes('monastery') || t.includes('mandir')) return '🛕';
+  if (t.includes('water')) return '💧';
+  if (t.includes('toilet') || t.includes('restroom')) return '🚻';
+  if (t.includes('medical') || t.includes('hospital') || t.includes('clinic')) return '🏥';
+  if (t.includes('help') || t.includes('info')) return 'ℹ️';
+  if (t.includes('police') || t.includes('security') || t.includes('thana')) return '🛡️';
+  if (t.includes('parking') || t.includes('park')) return '🅿️';
+  if (t.includes('food') || t.includes('restaurant') || t.includes('dining')) return '🍽️';
+  if (t.includes('lost')) return '🧳';
+  return '📍';
+};
+
 // =========================================================================
 // [PRESERVED]: Map Style Switcher options for Google Maps
 // const MAP_TYPES = [
@@ -603,16 +617,20 @@ export default function NavigationMap() {
 
   // Compute nearest services dynamically from local facilities array
   const nearestServices = useMemo(() => {
-    const getNearest = (type) => {
-      const filtered = facilities.filter(f => f.type === type);
+    const getNearest = (matcher) => {
+      const filtered = facilities.filter(f => matcher(f));
       if (filtered.length === 0) return null;
       return filtered[0]; // Facilities list is already sorted by proximity from backend
     };
     return {
-      Police: getNearest('Police'),
-      Medical: getNearest('Medical'),
-      Toilet: getNearest('Toilet'),
-      Help: getNearest('Help')
+      Police: getNearest(f => f.type === 'Police' || f.type === 'Security'),
+      Medical: getNearest(f => f.type === 'Medical' || f.type === 'Hospital'),
+      Toilet: getNearest(f => f.type === 'Toilet' || f.type === 'Restrooms'),
+      Help: getNearest(f => f.type === 'Help Desk' || f.type === 'Help'),
+      Water: getNearest(f => f.type === 'Drinking Water' || f.type === 'Water'),
+      Temple: getNearest(f => f.type === 'Temple'),
+      Parking: getNearest(f => f.type === 'Parking'),
+      Food: getNearest(f => f.type === 'Food & Dining' || f.type === 'Food'),
     };
   }, [facilities]);
 
@@ -1444,101 +1462,185 @@ export default function NavigationMap() {
 
           </div>
         ) : showStatus && activeOrigin ? (
-          /* Scanned QR location details card */
-          <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md space-y-2.5 text-left relative transition-all duration-300 text-white">
-            {/* You Are Here */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {t('youAreHere')}
-              </div>
-            </div>
+          <div className="space-y-2">
+            {/* ── Category / Nearby Places Carousel ── */}
+            {filteredFacilities.length > 0 && (
+              <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md space-y-2 text-left animate-fade-in text-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    <span>
+                      {selectedCategory && selectedCategory !== 'All'
+                        ? `${t('nearbyPlacesInCategory') || 'Nearby Places in'} ${t(selectedCategory) || selectedCategory}`
+                        : (t('nearbyPlaces') || 'Nearby Places')
+                      }
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700 font-mono">
+                    {filteredFacilities.length} {t('facilities') || 'Places'}
+                  </span>
+                </div>
 
-            {/* Title & Address */}
-            <div className="space-y-0.5">
-              <h4 className="text-xs md:text-sm font-black text-white leading-tight">
-                {activeOrigin.name}
-              </h4>
-              <p className="text-[9px] text-slate-400 leading-none">{liveAddress}</p>
-            </div>
-
-            {/* Nearest Services */}
-            {(nearestServices.Police || nearestServices.Medical || nearestServices.Toilet || nearestServices.Help) && (
-              <div className="space-y-1.5 pt-0.5">
-                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">
-                  {t('nearbyFacilities')}
-                </p>
-                
-                {/* Horizontal swipable badge list */}
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar whitespace-nowrap snap-x snap-mandatory">
-                  {nearestServices.Police && (
-                    <button
-                      onClick={() => handleNavigateTo(nearestServices.Police)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-emerald-950/40 border border-emerald-900 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-900/30 transition-all text-left"
+                {/* Horizontal Place Cards */}
+                <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar whitespace-nowrap snap-x snap-mandatory">
+                  {filteredFacilities.slice(0, 15).map((fac) => (
+                    <div
+                      key={fac.id || fac._id}
+                      onClick={() => handleNavigateTo(fac)}
+                      className="flex-shrink-0 snap-center w-56 sm:w-64 p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/60 transition-all cursor-pointer group active:scale-98 flex flex-col justify-between"
                     >
-                      <span className="text-xs">👮</span>
-                      <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-400">Police</p>
-                        <p className="text-[9px] text-emerald-400 font-extrabold leading-none">{nearestServices.Police.distanceFormatted}</p>
+                      <div className="flex items-start gap-2">
+                        <span className="text-lg p-1.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
+                          {getFacilityEmoji(fac.type)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <h5 className="text-xs font-black text-white group-hover:text-amber-300 transition-colors truncate leading-snug">
+                            {fac.name}
+                          </h5>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                            {fac.description || fac.address || t(fac.type) || fac.type}
+                          </p>
+                        </div>
                       </div>
-                    </button>
-                  )}
 
-                  {nearestServices.Medical && (
-                    <button
-                      onClick={() => handleNavigateTo(nearestServices.Medical)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-red-950/40 border border-red-900 flex items-center gap-1.5 cursor-pointer hover:bg-red-900/30 transition-all text-left"
-                    >
-                      <span className="text-xs">🏥</span>
-                      <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-400">Hospital</p>
-                        <p className="text-[9px] text-red-400 font-extrabold leading-none">{nearestServices.Medical.distanceFormatted}</p>
+                      <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-850">
+                        <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-400">
+                          <span>📍 {fac.distanceFormatted}</span>
+                          <span className="text-slate-600">•</span>
+                          <span>⏱️ {fac.walkingTimeFormatted}</span>
+                        </div>
+                        <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 group-hover:bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/30">
+                          {t('navigate') || 'Go'} ➔
+                        </span>
                       </div>
-                    </button>
-                  )}
-
-                  {nearestServices.Toilet && (
-                    <button
-                      onClick={() => handleNavigateTo(nearestServices.Toilet)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-blue-950/40 border border-blue-900 flex items-center gap-1.5 cursor-pointer hover:bg-blue-900/30 transition-all text-left"
-                    >
-                      <span className="text-xs">🚻</span>
-                      <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-400">Toilet</p>
-                        <p className="text-[9px] text-blue-400 font-extrabold leading-none">{nearestServices.Toilet.distanceFormatted}</p>
-                      </div>
-                    </button>
-                  )}
-
-                  {nearestServices.Help && (
-                    <button
-                      onClick={() => handleNavigateTo(nearestServices.Help)}
-                      className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-cyan-950/40 border border-cyan-900 flex items-center gap-1.5 cursor-pointer hover:bg-cyan-900/30 transition-all text-left"
-                    >
-                      <span className="text-xs">💧</span>
-                      <div>
-                        <p className="text-[7px] font-bold uppercase text-slate-400">Water</p>
-                        <p className="text-[9px] text-cyan-400 font-extrabold leading-none">{nearestServices.Help.distanceFormatted}</p>
-                      </div>
-                    </button>
-                  )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
-            
-            {/* Footer Attribution inside card footer */}
-            <div className="text-center pt-1 border-t border-slate-800">
-              <span className="text-[9px] text-slate-500 font-semibold">
-                Powered by{' '}
-                <a
-                  href="https://yugantasolutions.in"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 bg-clip-text hover:opacity-85 transition-opacity ml-0.5 cursor-pointer"
-                >
-                  Yuganta Solutions
-                </a>
-              </span>
+
+            {/* Scanned QR location details card */}
+            <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md space-y-2.5 text-left relative transition-all duration-300 text-white">
+              {/* You Are Here */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {t('youAreHere')}
+                </div>
+              </div>
+
+              {/* Title & Address */}
+              <div className="space-y-0.5">
+                <h4 className="text-xs md:text-sm font-black text-white leading-tight">
+                  {activeOrigin.name}
+                </h4>
+                <p className="text-[9px] text-slate-400 leading-none">{liveAddress}</p>
+              </div>
+
+              {/* Nearest Services Quick Access */}
+              {(nearestServices.Police || nearestServices.Medical || nearestServices.Toilet || nearestServices.Water || nearestServices.Temple || nearestServices.Parking) && (
+                <div className="space-y-1.5 pt-0.5">
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">
+                    {t('nearbyFacilities')}
+                  </p>
+                  
+                  {/* Horizontal swipable badge list */}
+                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar whitespace-nowrap snap-x snap-mandatory">
+                    {nearestServices.Police && (
+                      <button
+                        onClick={() => handleNavigateTo(nearestServices.Police)}
+                        className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-emerald-950/40 border border-emerald-900 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-900/30 transition-all text-left"
+                      >
+                        <span className="text-xs">👮</span>
+                        <div>
+                          <p className="text-[7px] font-bold uppercase text-slate-400">{t('police') || 'Police'}</p>
+                          <p className="text-[9px] text-emerald-400 font-extrabold leading-none">{nearestServices.Police.distanceFormatted}</p>
+                        </div>
+                      </button>
+                    )}
+
+                    {nearestServices.Medical && (
+                      <button
+                        onClick={() => handleNavigateTo(nearestServices.Medical)}
+                        className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-red-950/40 border border-red-900 flex items-center gap-1.5 cursor-pointer hover:bg-red-900/30 transition-all text-left"
+                      >
+                        <span className="text-xs">🏥</span>
+                        <div>
+                          <p className="text-[7px] font-bold uppercase text-slate-400">{t('Medical') || 'Medical'}</p>
+                          <p className="text-[9px] text-red-400 font-extrabold leading-none">{nearestServices.Medical.distanceFormatted}</p>
+                        </div>
+                      </button>
+                    )}
+
+                    {nearestServices.Toilet && (
+                      <button
+                        onClick={() => handleNavigateTo(nearestServices.Toilet)}
+                        className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-blue-950/40 border border-blue-900 flex items-center gap-1.5 cursor-pointer hover:bg-blue-900/30 transition-all text-left"
+                      >
+                        <span className="text-xs">🚻</span>
+                        <div>
+                          <p className="text-[7px] font-bold uppercase text-slate-400">{t('Restrooms') || 'Toilet'}</p>
+                          <p className="text-[9px] text-blue-400 font-extrabold leading-none">{nearestServices.Toilet.distanceFormatted}</p>
+                        </div>
+                      </button>
+                    )}
+
+                    {nearestServices.Water && (
+                      <button
+                        onClick={() => handleNavigateTo(nearestServices.Water)}
+                        className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-cyan-950/40 border border-cyan-900 flex items-center gap-1.5 cursor-pointer hover:bg-cyan-900/30 transition-all text-left"
+                      >
+                        <span className="text-xs">💧</span>
+                        <div>
+                          <p className="text-[7px] font-bold uppercase text-slate-400">{t('Drinking Water') || 'Water'}</p>
+                          <p className="text-[9px] text-cyan-400 font-extrabold leading-none">{nearestServices.Water.distanceFormatted}</p>
+                        </div>
+                      </button>
+                    )}
+
+                    {nearestServices.Temple && (
+                      <button
+                        onClick={() => handleNavigateTo(nearestServices.Temple)}
+                        className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-amber-950/40 border border-amber-900 flex items-center gap-1.5 cursor-pointer hover:bg-amber-900/30 transition-all text-left"
+                      >
+                        <span className="text-xs">🛕</span>
+                        <div>
+                          <p className="text-[7px] font-bold uppercase text-slate-400">{t('Temple') || 'Temple'}</p>
+                          <p className="text-[9px] text-amber-400 font-extrabold leading-none">{nearestServices.Temple.distanceFormatted}</p>
+                        </div>
+                      </button>
+                    )}
+
+                    {nearestServices.Parking && (
+                      <button
+                        onClick={() => handleNavigateTo(nearestServices.Parking)}
+                        className="flex-shrink-0 snap-center rounded-xl py-1.5 px-2.5 bg-teal-950/40 border border-teal-900 flex items-center gap-1.5 cursor-pointer hover:bg-teal-900/30 transition-all text-left"
+                      >
+                        <span className="text-xs">🅿️</span>
+                        <div>
+                          <p className="text-[7px] font-bold uppercase text-slate-400">{t('Parking') || 'Parking'}</p>
+                          <p className="text-[9px] text-teal-400 font-extrabold leading-none">{nearestServices.Parking.distanceFormatted}</p>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Footer Attribution inside card footer */}
+              <div className="text-center pt-1 border-t border-slate-800">
+                <span className="text-[9px] text-slate-500 font-semibold">
+                  Powered by{' '}
+                  <a
+                    href="https://yugantasolutions.in"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 bg-clip-text hover:opacity-85 transition-opacity ml-0.5 cursor-pointer"
+                  >
+                    Yuganta Solutions
+                  </a>
+                </span>
+              </div>
             </div>
           </div>
         ) : null}
