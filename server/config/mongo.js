@@ -19,22 +19,38 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
 /**
- * Sanitize and normalize MongoDB connection URI
- * Handles accidental quotes, trailing spaces, or extra arguments copied from Atlas UI
+ * Robustly sanitize and normalize MongoDB connection URI
+ * Handles:
+ * - Leading/trailing spaces or BOM characters
+ * - Surrounding quotes ("..." or '...')
+ * - Extra text pasted after URI (e.g. "mongodb+srv://... username password")
+ * - Missing scheme (e.g. user pasted "username:password@cluster0.mongodb.net" without mongodb+srv://)
+ * - Missing database name
  */
 export function sanitizeMongoUri(rawUri) {
   if (!rawUri || typeof rawUri !== 'string') return '';
-  let uri = rawUri.trim();
+  
+  // 1. Remove BOM, non-printable characters and whitespace
+  let uri = rawUri.replace(/^\uFEFF/, '').trim();
 
-  // Strip leading/trailing double or single quotes added in dashboard paste
+  // 2. Strip leading/trailing double or single quotes
   uri = uri.replace(/^["']+|["']+$/g, '').trim();
 
-  // If user pasted "mongodb+srv://... username password", extract just the URI token
-  if (uri.startsWith('mongodb+srv://') || uri.startsWith('mongodb://')) {
-    uri = uri.split(/\s+/)[0].trim();
+  // 3. If user pasted multiple arguments/tokens, extract the token containing the cluster or mongodb scheme
+  const tokens = uri.split(/\s+/);
+  const matchedToken = tokens.find(t => t.includes('.mongodb.net') || t.startsWith('mongodb'));
+  if (matchedToken) {
+    uri = matchedToken.trim();
   }
 
-  // If URI ends with root slash without database name, append default database name
+  // 4. If scheme is missing but has @ and cluster host
+  if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
+    if (uri.includes('@') || uri.includes('.mongodb.net')) {
+      uri = `mongodb+srv://${uri.replace(/^\/+/, '')}`;
+    }
+  }
+
+  // 5. Ensure database name is present
   if (uri.endsWith('.mongodb.net/')) {
     uri = `${uri}qrcode_db?retryWrites=true&w=majority`;
   } else if (uri.endsWith('.mongodb.net')) {
@@ -47,12 +63,13 @@ export function sanitizeMongoUri(rawUri) {
 const rawUri = process.env.MONGODB_URI || process.env.MONGO_URI || '';
 const MONGODB_URI = sanitizeMongoUri(rawUri);
 
-if (!MONGODB_URI) {
+// Safe debug logging (no passwords exposed)
+if (rawUri) {
+  const safePrefix = MONGODB_URI.substring(0, 22);
+  console.log(`[Mongo Config]: Processed URI (starts with: "${safePrefix}...", length: ${MONGODB_URI.length})`);
+} else {
   console.warn('⚠️ MONGODB_URI / MONGO_URI not set. Running database-less mode.');
 }
-
-// Disable Mongoose command buffering in serverless to prevent 10000ms timeouts on cold starts
-mongoose.set('bufferCommands', false);
 
 let isConnected = false;
 
@@ -63,7 +80,7 @@ export const connectMongo = async () => {
   if (!MONGODB_URI) return;
   try {
     const db = await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 8000,
       connectTimeoutMS: 10000,
     });
     isConnected = db.connections[0].readyState === 1;

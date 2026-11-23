@@ -83,8 +83,20 @@ app.get('/qrcodes/:filename', async (req, res, next) => {
 
 // Middleware to ensure DB connection is ready before handling API requests
 app.use('/api', async (req, res, next) => {
+  // Allow health endpoint to respond without DB block
+  if (req.path === '/health' || req.path === '/config/maps-key') {
+    return next();
+  }
+
   if (mongoose.connection.readyState !== 1) {
     await connectMongo();
+  }
+
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database connection in progress or unavailable. Please verify MONGODB_URI in Vercel settings.'
+    });
   }
   next();
 });
