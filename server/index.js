@@ -22,48 +22,31 @@ app.use(helmet({
   contentSecurityPolicy: false // Disable CSP to allow Leaflet tiles and scripts to run cleanly
 }));
 
-// Bulletproof CORS Configuration for Vercel & Production
-const explicitAllowed = (process.env.CLIENT_URL || '')
-  .split(',')
-  .map(url => url.trim().replace(/\/$/, ''))
-  .filter(Boolean);
+// Bulletproof Universal CORS & Preflight Handler for Vercel Serverless & Production
+app.use((req, res, next) => {
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-CSRF-Token');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
 
-const defaultAllowed = [
-  'https://bodhmahotsav.vercel.app',
-  'https://qrcode-yu4p.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:3000'
-];
-
-const allowedOriginsSet = new Set([...explicitAllowed, ...defaultAllowed]);
-
+// Complementary Express CORS Middleware
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow non-browser requests (mobile apps, server-to-server, curl)
-    if (!origin) return callback(null, true);
-
-    // Dynamic origin match: whitelisted origins, all vercel.app domains, or localhost
-    const isAllowed = 
-      allowedOriginsSet.has(origin) ||
-      origin.endsWith('.vercel.app') ||
-      origin.includes('localhost') ||
-      process.env.NODE_ENV !== 'production';
-
-    if (isAllowed) {
-      return callback(null, true);
-    }
-
-    // Permissive fallback so legitimate visitors are never blocked by CORS
-    return callback(null, true);
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  origin: true,
   credentials: true,
-  optionsSuccessStatus: 200
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
-// Explicit preflight OPTIONS handler for all endpoints
-app.options('*', cors());
+app.options('*', (req, res) => {
+  res.status(204).end();
+});
 
 // Logger Middleware
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
