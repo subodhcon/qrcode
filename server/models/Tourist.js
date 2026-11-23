@@ -130,3 +130,4 @@ touristSchema.statics.generateRegistrationNo = async function(type = 'individual
 };
 
 export const Tourist = mongoose.models.Tourist || mongoose.model('Tourist', touristSchema);
+export default Tourist;

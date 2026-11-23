@@ -1,3 +1,4 @@
+
 import mongoose from 'mongoose';
 import { connectMongo } from '../config/mongo.js';
 import { Location } from '../models/Location.js';

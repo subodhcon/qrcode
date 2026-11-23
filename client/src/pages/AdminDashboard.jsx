@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
 import TouristDesk from '../components/TouristDesk';
+import LostReportsDesk from '../components/LostReportsDesk';
 import { useTranslation } from '../context/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
 
@@ -10,10 +11,11 @@ const EMOJI_PRESETS = ['🛕', '💧', '🚻', '🏥', 'ℹ️', '🛡️', '�
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslation();
 
-  // Tabs: 'tourists' | 'categories' | 'analytics' | 'announcements' | 'feedback'
+  // Tabs: 'tourists' | 'lostReports' | 'categories' | 'analytics' | 'announcements' | 'feedback'
   const [activeTab, setActiveTab] = useState('tourists');
+  const [activeLostCount, setActiveLostCount] = useState(0);
 
   // Shared List States
   const [categories, setCategories] = useState([]);
@@ -219,10 +221,30 @@ export default function AdminDashboard() {
       fetchTelemetry();
     } else if (activeTab === 'announcements') {
       fetchAnnouncement();
+    } else if (activeTab === 'lostReports') {
+      setLoading(false);
+      setError(null);
     } else if (activeTab === 'feedback') {
       fetchFeedbacks();
     }
   }, [activeTab]);
+
+  // Live monitoring of missing pilgrim SOS reports
+  useEffect(() => {
+    const fetchLostStats = async () => {
+      try {
+        const res = await api.get('/lost-reports?status=Reported');
+        if (res && res.stats) {
+          setActiveLostCount(res.stats.active || 0);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    fetchLostStats();
+    const interval = setInterval(fetchLostStats, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -391,6 +413,31 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* Live SOS Missing Pilgrim Alert Banner */}
+        {activeLostCount > 0 && (
+          <div
+            onClick={() => setActiveTab('lostReports')}
+            className="bg-gradient-to-r from-rose-950 via-rose-900 to-rose-950 border-2 border-rose-500/80 rounded-2xl p-3.5 shadow-2xl flex items-center justify-between cursor-pointer hover:border-rose-400 transition-all animate-pulse"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl animate-bounce">🚨</span>
+              <div>
+                <h4 className="text-xs sm:text-sm font-black text-rose-200 uppercase tracking-wide">
+                  {currentLanguage === 'hi' ? 'लाइव अलर्ट: खोए हुए श्रद्धालु काउंटर पर उपस्थित हैं!' : 'LIVE ALERT: Missing Pilgrims Reported at Counters!'}
+                </h4>
+                <p className="text-[11px] text-rose-300/80">
+                  {currentLanguage === 'hi'
+                    ? `${activeLostCount} श्रद्धालुओं को सहायता व रेस्क्यू टीम की आवश्यकता है। तुरंत सहायता डेस्क देखें।`
+                    : `${activeLostCount} pilgrims are waiting at help counters. Tap to dispatch rescue team.`}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-black text-rose-200 bg-rose-500/30 px-3 py-1.5 rounded-xl border border-rose-400 shrink-0">
+              {currentLanguage === 'hi' ? 'डेस्क खोलें ➔' : 'View SOS Desk ➔'}
+            </span>
+          </div>
+        )}
+
         {/* Segmented Tabs Navigation */}
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-1.5 flex gap-2 overflow-x-auto no-scrollbar shadow-lg backdrop-blur-md">
           <button
@@ -405,6 +452,26 @@ export default function AdminDashboard() {
             <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-bold">
               {t('registrationBadge')}
             </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('lostReports')}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+              activeTab === 'lostReports'
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
+            }`}
+          >
+            <span>🚨 {currentLanguage === 'hi' ? 'खोया-पाया सहायता' : 'Lost & Found SOS'}</span>
+            {activeLostCount > 0 ? (
+              <span className="text-[10px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse shadow-md shadow-rose-500/50">
+                {activeLostCount}
+              </span>
+            ) : (
+              <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-400 border border-slate-700">
+                Desk
+              </span>
+            )}
           </button>
 
           <button
@@ -472,6 +539,8 @@ export default function AdminDashboard() {
           <div className="bg-slate-900/90 border border-rose-500/30 rounded-3xl p-6 text-center text-rose-400 text-sm shadow-xl backdrop-blur-md">
             {error}
           </div>
+        ) : activeTab === 'lostReports' ? (
+          <LostReportsDesk />
         ) : activeTab === 'tourists' ? (
           <TouristDesk />
         ) : activeTab === 'categories' ? (

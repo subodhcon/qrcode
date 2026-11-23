@@ -32,6 +32,7 @@ import { requireAuth } from '../middlewares/auth.js';
 import { authLimiter, apiLimiter } from '../middlewares/rateLimiter.js';
 import qrRoutes from './qrRoutes.js';
 import touristRoutes from './touristRoutes.js';
+import lostReportRoutes from './lostReportRoutes.js';
 import Announcement from '../models/Announcement.js';
 import { Feedback } from '../models/Feedback.js';
 
@@ -65,6 +66,9 @@ router.use('/qrcodes', qrRoutes);
 
 // Tourist Desk & Registration Routes
 router.use('/tourists', touristRoutes);
+
+// Lost and Found Assistance Routes
+router.use('/lost-reports', lostReportRoutes);
 
 // Telemetry Logging APIs
 router.post('/analytics/scan', apiLimiter, trackQRScan);

@@ -319,7 +319,7 @@ export default function TouristDesk() {
   // Open WhatsApp Web with formatted message
   const handleOpenWhatsAppWeb = (tourist) => {
     if (!tourist) return;
-    const cleanPhone = tourist.phone.replace(/[^0-9]/g, '');
+    const cleanPhone = (tourist.phone || '').replace(/[^0-9]/g, '');
     const code = (tourist.countryCode || '+91').replace(/[^0-9]/g, '');
     // Ensure international format
     let targetPhone = cleanPhone;

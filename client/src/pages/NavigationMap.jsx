@@ -5,6 +5,7 @@ import api from '../services/api';
 import Loading from '../components/Loading';
 import { useTranslation } from '../context/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
+import LostAndFoundModal from '../components/LostAndFoundModal';
 
 const CANONICAL_CATEGORIES = [
   { name: 'Temple', emoji: '🛕', status: 'Active' },
@@ -73,7 +74,7 @@ const DEFAULT_BODHGAYA_CENTER = {
 
 export default function NavigationMap() {
   const { locationId } = useParams();
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const destinationParam = searchParams.get('destination');
 
@@ -128,6 +129,7 @@ export default function NavigationMap() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [showMapTypes, setShowMapTypes] = useState(false);
   const [sosActive, setSosActive] = useState(false);
+  const [lostFoundModalOpen, setLostFoundModalOpen] = useState(false);
   const [liveAddress, setLiveAddress] = useState('Bodh Gaya, Bihar, India');
   const [gateLocation, setGateLocation] = useState(null);
 
@@ -617,8 +619,9 @@ export default function NavigationMap() {
 
   // Compute nearest services dynamically from local facilities array
   const nearestServices = useMemo(() => {
+    const list = Array.isArray(facilities) ? facilities : [];
     const getNearest = (matcher) => {
-      const filtered = facilities.filter(f => matcher(f));
+      const filtered = list.filter(f => f && matcher(f));
       if (filtered.length === 0) return null;
       return filtered[0]; // Facilities list is already sorted by proximity from backend
     };
@@ -636,9 +639,10 @@ export default function NavigationMap() {
 
   // Filter facilities by search query strictly (matches name, category type, address, or description)
   const filteredFacilities = useMemo(() => {
-    if (!searchQuery.trim()) return facilities;
+    const list = Array.isArray(facilities) ? facilities : [];
+    if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase().trim();
-    return facilities.filter((f) => {
+    return list.filter((f) => {
       const name = (f.name || '').toLowerCase();
       const type = (f.type || '').toLowerCase();
       const addr = (f.address || '').toLowerCase();
@@ -1466,6 +1470,25 @@ export default function NavigationMap() {
             {/* ── Category / Nearby Places Carousel ── */}
             {filteredFacilities.length > 0 && (
               <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md space-y-2 text-left animate-fade-in text-white">
+                {/* Quick SOS Action Banner if Lost and Found Category is Active */}
+                {(selectedCategory === 'Lost and Found' || (searchQuery && searchQuery.toLowerCase().includes('lost'))) && (
+                  <button
+                    type="button"
+                    onClick={() => setLostFoundModalOpen(true)}
+                    className="w-full mb-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 via-rose-500 to-orange-500 hover:from-rose-500 hover:to-orange-400 text-white font-black text-xs flex items-center justify-between shadow-lg shadow-rose-600/30 transition-all cursor-pointer active:scale-98"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-base animate-pulse">🚨</span>
+                      <span className="tracking-wide">
+                        {currentLanguage === 'hi' ? 'खोया श्रद्धालु सहायता रिपोर्ट दर्ज करें' : 'Report Lost Pilgrim at Help Counter'}
+                      </span>
+                    </div>
+                    <span className="text-[10px] bg-black/25 px-2 py-0.5 rounded-full font-bold">
+                      {currentLanguage === 'hi' ? 'कंट्रोल रूम सूचित करें ➔' : 'Notify Control Room ➔'}
+                    </span>
+                  </button>
+                )}
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -1742,6 +1765,13 @@ export default function NavigationMap() {
           </div>
         </div>
       )}
+
+      {/* ── Lost & Found Counter Assistance Modal ── */}
+      <LostAndFoundModal
+        isOpen={lostFoundModalOpen}
+        onClose={() => setLostFoundModalOpen(false)}
+        initialMode="form"
+      />
     </div>
   );
 }

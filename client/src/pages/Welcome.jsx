@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../context/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
+import LostAndFoundModal from '../components/LostAndFoundModal';
 import api from '../services/api';
 
 export default function Welcome() {
@@ -12,6 +13,7 @@ export default function Welcome() {
   const [sosActive, setSosActive] = useState(false);
   const [guidelinesActive, setGuidelinesActive] = useState(false);
   const [feedbackActive, setFeedbackActive] = useState(false);
+  const [lostFoundModalOpen, setLostFoundModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Search State
@@ -376,17 +378,17 @@ export default function Welcome() {
                 </Link>
 
                 {/* 7. Lost and Found */}
-                <Link
-                  to="/map?category=Lost%20and%20Found"
-                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group"
+                <div
+                  onClick={() => setLostFoundModalOpen(true)}
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group cursor-pointer"
                 >
                   <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover:scale-110 transition-transform">
                     🧳
                   </div>
                   <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-snug text-center px-0.5 line-clamp-2">
-                    {t('busStands') || t('lostFound') || "Lost and Found"}
+                    {t('lostFound') || "Lost and Found"}
                   </span>
-                </Link>
+                </div>
 
                 {/* 8. Food & Dining */}
                 <Link
@@ -905,6 +907,12 @@ export default function Welcome() {
           </div>
         </div>
       )}
+
+      {/* ── Lost & Found Dual Mode Modal ── */}
+      <LostAndFoundModal
+        isOpen={lostFoundModalOpen}
+        onClose={() => setLostFoundModalOpen(false)}
+      />
 
     </div>
 
