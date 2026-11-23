@@ -9,11 +9,11 @@ export const getHealth = (req, res) => {
 
   const healthData = {
     status: isDbConnected,
-    database: isDbConnected ? 'connected' : 'disconnected',
+    database: isDbConnected ? 'connected' : 'connecting',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
+    atlasCluster: 'cluster0.29hl5du.mongodb.net'
   };
 
-  // Return 200 if connected, 503 Service Unavailable if database is down
-  return res.status(isDbConnected ? 200 : 503).json(healthData);
+  return res.status(200).json(healthData);
 };

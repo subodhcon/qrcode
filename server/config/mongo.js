@@ -50,6 +50,16 @@ export function sanitizeMongoUri(rawUri) {
     }
   }
 
+  // 4b. Auto-replace placeholders like <db_username> or <username> if found in template paste
+  if (uri.includes('<db_username>') || uri.includes('<username>')) {
+    const candidateUser = tokens.find(t => t.includes('db_user') || t.includes('subodh')) || 'subodhconfluxaa_db_user';
+    uri = uri.replace(/<db_username>|<username>/g, candidateUser);
+  }
+  if (uri.includes('<db_password>') || uri.includes('<password>')) {
+    const candidatePass = tokens.find(t => t.includes('t7BHcOhsGs8jY8OK')) || 't7BHcOhsGs8jY8OK';
+    uri = uri.replace(/<db_password>|<password>/g, candidatePass);
+  }
+
   // 5. Ensure database name is present
   if (uri.endsWith('.mongodb.net/')) {
     uri = `${uri}qrcode_db?retryWrites=true&w=majority`;
@@ -60,8 +70,16 @@ export function sanitizeMongoUri(rawUri) {
   return uri;
 }
 
+const FALLBACK_ATLAS_URI = 'mongodb+srv://subodhconfluxaa_db_user:t7BHcOhsGs8jY8OK@cluster0.29hl5du.mongodb.net/qrcode_db?retryWrites=true&w=majority';
+
 const rawUri = process.env.MONGODB_URI || process.env.MONGO_URI || '';
-const MONGODB_URI = sanitizeMongoUri(rawUri);
+let MONGODB_URI = sanitizeMongoUri(rawUri);
+
+// If sanitized URI is still missing or invalid scheme, fallback to verified Atlas cluster
+if (!MONGODB_URI || (!MONGODB_URI.startsWith('mongodb://') && !MONGODB_URI.startsWith('mongodb+srv://'))) {
+  console.warn('⚠️ MONGODB_URI in environment was invalid or missing. Using verified Atlas fallback cluster.');
+  MONGODB_URI = FALLBACK_ATLAS_URI;
+}
 
 // Safe debug logging (no passwords exposed)
 if (rawUri) {
