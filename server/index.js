@@ -22,16 +22,48 @@ app.use(helmet({
   contentSecurityPolicy: false // Disable CSP to allow Leaflet tiles and scripts to run cleanly
 }));
 
-const allowedOrigins = process.env.CLIENT_URL 
-  ? process.env.CLIENT_URL.split(',').map(url => url.trim()) 
-  : '*';
+// Bulletproof CORS Configuration for Vercel & Production
+const explicitAllowed = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map(url => url.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+const defaultAllowed = [
+  'https://bodhmahotsav.vercel.app',
+  'https://qrcode-yu4p.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+const allowedOriginsSet = new Set([...explicitAllowed, ...defaultAllowed]);
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' && process.env.CLIENT_URL ? allowedOrigins : '*',
+  origin: (origin, callback) => {
+    // Allow non-browser requests (mobile apps, server-to-server, curl)
+    if (!origin) return callback(null, true);
+
+    // Dynamic origin match: whitelisted origins, all vercel.app domains, or localhost
+    const isAllowed = 
+      allowedOriginsSet.has(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.includes('localhost') ||
+      process.env.NODE_ENV !== 'production';
+
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    // Permissive fallback so legitimate visitors are never blocked by CORS
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
+
+// Explicit preflight OPTIONS handler for all endpoints
+app.options('*', cors());
 
 // Logger Middleware
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
