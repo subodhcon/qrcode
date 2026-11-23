@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 export default function PwaInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(true);
+  const [showPrompt, setShowPrompt] = useState(() => {
+    return !sessionStorage.getItem('pwa_prompt_dismissed');
+  });
   const [platform, setPlatform] = useState('other'); // 'ios' | 'android' | 'desktop' | 'other'
 
   useEffect(() => {
@@ -26,7 +28,9 @@ export default function PwaInstallPrompt() {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowPrompt(true);
+      if (!sessionStorage.getItem('pwa_prompt_dismissed')) {
+        setShowPrompt(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -46,11 +50,11 @@ export default function PwaInstallPrompt() {
       setDeferredPrompt(null);
       setShowPrompt(false);
     } else if (platform === 'ios') {
-      alert('To install DIN App on your iPhone/iPad:\n\n1. Tap the Share button (⎋) at the bottom of Safari.\n2. Scroll down and tap "Add to Home Screen" (➕).\n3. Tap "Add".');
+      alert('To install Bodh Gaya Guide on your iPhone/iPad:\n\n1. Tap the Share button (⎋) at the bottom of Safari.\n2. Scroll down and tap "Add to Home Screen" (➕).\n3. Tap "Add".');
     } else if (platform === 'desktop') {
-      alert('To install DIN App on Windows / Mac / Linux:\n\n• Look for the Install App icon (📥) at the right end of your browser address bar.\n• Or open Chrome/Edge Menu (⋮) -> "Cast, save and share" -> "Install page as app".');
+      alert('To install Bodh Gaya Guide on Windows / Mac / Linux:\n\n• Look for the Install App icon (📥) at the right end of your browser address bar.\n• Or open Chrome/Edge Menu (⋮) -> "Cast, save and share" -> "Install page as app".');
     } else {
-      alert('To install DIN App:\n\n• Open browser menu (⋮) -> Tap "Add to Home screen" or "Install App".');
+      alert('To install Bodh Gaya Guide:\n\n• Open browser menu (⋮) -> Tap "Add to Home screen" or "Install App".');
     }
   };
 
@@ -70,7 +74,7 @@ export default function PwaInstallPrompt() {
           </div>
           <div className="min-w-0 text-left">
             <h4 className="text-xs font-black text-white truncate flex items-center gap-1.5">
-              <span>Install DIN App</span>
+              <span>Install Bodh Gaya Guide</span>
               <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                 {platform === 'ios' ? 'iOS' : platform === 'android' ? 'Android' : 'PWA'}
               </span>

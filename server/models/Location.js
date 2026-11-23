@@ -6,7 +6,8 @@ const locationSchema = new mongoose.Schema({
   latitude: { type: Number, required: true },
   longitude: { type: Number, required: true },
   type: { type: String },
-  description: { type: String }
+  description: { type: String },
+  deletedAt: { type: Date, default: null }
 }, { timestamps: true });
 
 export const Location = mongoose.model('Location', locationSchema);

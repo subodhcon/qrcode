@@ -3,6 +3,42 @@ import { Location } from '../models/Location.js';
 import { Facility } from '../models/Facility.js';
 import { Category } from '../models/Category.js';
 
+export const CATEGORY_SYNONYMS = {
+  'Temple': ['Temple', 'Temples & Ghats', 'Mandir', 'Monastery', 'Worship', 'place_of_worship'],
+  'Lost and Found': ['Lost and Found', 'Lost & Found', 'Bus Stand', 'Lost and Found Center'],
+  'Drinking Water': ['Drinking Water', 'Water', 'Drinking water', 'Pyau'],
+  'Restrooms': ['Restrooms', 'Toilet', 'Toilets', 'Restroom', 'Washroom'],
+  'Medical': ['Medical', 'Hospital', 'Clinic', 'Pharmacy', 'First Aid', 'Doctor'],
+  'Help Desk': ['Help Desk', 'Help', 'Information', 'Tourist Help', 'Tourist Information'],
+  'Security': ['Security', 'Police', 'Police Station', 'Thana', 'Chowki'],
+  'Parking': ['Parking', 'Parking Area', 'Car Park', 'Parking Stand'],
+  'Food & Dining': ['Food & Dining', 'Food', 'Restaurant', 'Dining', 'Bhojanalaya']
+};
+
+const CATEGORY_OSM_KEYWORDS = {
+  'Temple': 'temple',
+  'Lost and Found': 'police',
+  'Drinking Water': 'drinking water',
+  'Restrooms': 'toilets',
+  'Medical': 'hospital',
+  'Help Desk': 'tourist information',
+  'Security': 'police',
+  'Parking': 'parking',
+  'Food & Dining': 'restaurant'
+};
+
+// =========================================================================
+// [PRESERVED]: Google Places API in-memory cache
+// const googlePlacesCache = new Map();
+// const GOOGLE_CACHE_TTL = 10 * 60 * 1000;
+// =========================================================================
+
+// In-memory cache for OpenStreetMap (OSM) / Nominatim queries (TTL: 15 minutes)
+const osmCache = new Map();
+const OSM_CACHE_TTL = 15 * 60 * 1000;
+const googlePlacesCache = new Map();
+const GOOGLE_CACHE_TTL = 10 * 60 * 1000;
+
 // Haversine distance calculator in meters
 function getHaversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371e3; // Earth radius in meters
@@ -120,8 +156,8 @@ export const getNavigationDetails = async (req, res, next) => {
  * Returns all facilities sorted by distance from the specified location.
  */
 export const getAllFacilitiesNear = async (req, res, next) => {
-  const { locationSlug } = req.params;
-  const { lat, lng, category, q } = req.query;
+  const { locationSlug } = req.params || {};
+  const { lat, lng, category, q } = req.query || {};
 
   try {
     let origin = null;
@@ -156,29 +192,36 @@ export const getAllFacilitiesNear = async (req, res, next) => {
       });
     }
 
-    // 2. Fetch active facilities from DB & Locations
-    const dbQuery = { deletedAt: null, status: 'Active' };
-    if (category && category !== 'All') {
-      dbQuery.type = category;
-    }
-    if (q && q.trim()) {
-      const regex = new RegExp(q.trim(), 'i');
-      dbQuery.$or = [
-        { name: regex },
-        { type: regex },
-        { description: regex },
-        { address: regex }
-      ];
-    }
-    const dbFacilities = await Facility.find(dbQuery);
-
-    // Also fetch matching registered Location landmarks
+    // 2. Fetch active facilities from DB & Locations (graceful fallback if DB is reconnecting)
+    let dbFacilities = [];
     let dbLocations = [];
-    if (q && q.trim()) {
-      const locRegex = new RegExp(q.trim(), 'i');
-      dbLocations = await Location.find({
-        $or: [{ name: locRegex }, { description: locRegex }, { type: locRegex }]
-      });
+
+    if (mongoose.connection.readyState === 1) {
+      const dbQuery = { deletedAt: null, status: 'Active' };
+      if (category && category !== 'All') {
+        const synonyms = CATEGORY_SYNONYMS[category] || [category];
+        const regexList = synonyms.map((s) => new RegExp(`^${s}$`, 'i'));
+        dbQuery.type = { $in: regexList };
+      }
+      if (q && q.trim()) {
+        const regex = new RegExp(q.trim(), 'i');
+        dbQuery.$or = [
+          { name: regex },
+          { type: regex },
+          { description: regex },
+          { address: regex }
+        ];
+      }
+      dbFacilities = await Facility.find(dbQuery);
+
+      if (q && q.trim()) {
+        const locRegex = new RegExp(q.trim(), 'i');
+        dbLocations = await Location.find({
+          $or: [{ name: locRegex }, { description: locRegex }, { type: locRegex }]
+        });
+      }
+    } else {
+      console.warn('[Warning]: Database not ready. Serving OpenStreetMap live facilities.');
     }
 
     const enrichedDbFacilities = dbFacilities.map((f) => {
@@ -237,7 +280,11 @@ export const getAllFacilitiesNear = async (req, res, next) => {
 
     const enrichedDb = [...enrichedDbFacilities, ...enrichedDbLocations];
 
-    // 3. Fetch facilities from Google Places API (if key available)
+    // =========================================================================
+    // [PRESERVED]: GOOGLE PLACES API PROVIDER
+    // To switch back to Google Places, uncomment this block and set GOOGLE_PLACES_API_KEY
+    // =========================================================================
+    /*
     let enrichedGoogle = [];
     const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
 
@@ -269,15 +316,31 @@ export const getAllFacilitiesNear = async (req, res, next) => {
           keywordParam = 'temple|landmark|restaurant|hospital|toilet';
         }
 
-        let googleUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${origin.latitude},${origin.longitude}&radius=5000&key=${googleApiKey}`;
-        if (typeParam) googleUrl += `&type=${typeParam}`;
-        if (keywordParam) googleUrl += `&keyword=${encodeURIComponent(keywordParam)}`;
+        const cacheKey = `${origin.latitude.toFixed(3)},${origin.longitude.toFixed(3)}:${typeParam}:${keywordParam}`;
+        const cached = googlePlacesCache.get(cacheKey);
 
-        const googleRes = await fetch(googleUrl);
-        const googleData = await googleRes.json();
+        let googleResults = null;
+        if (cached && (Date.now() - cached.timestamp < GOOGLE_CACHE_TTL)) {
+          googleResults = cached.results;
+        } else {
+          let googleUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${origin.latitude},${origin.longitude}&radius=5000&key=${googleApiKey}`;
+          if (typeParam) googleUrl += `&type=${typeParam}`;
+          if (keywordParam) googleUrl += `&keyword=${encodeURIComponent(keywordParam)}`;
 
-        if (googleData.results && Array.isArray(googleData.results)) {
-          enrichedGoogle = googleData.results.map((place) => {
+          const googleRes = await fetch(googleUrl);
+          const googleData = await googleRes.json();
+          if (googleData.results && Array.isArray(googleData.results)) {
+            googleResults = googleData.results;
+            if (googlePlacesCache.size > 200) {
+              const oldestKey = googlePlacesCache.keys().next().value;
+              googlePlacesCache.delete(oldestKey);
+            }
+            googlePlacesCache.set(cacheKey, { timestamp: Date.now(), results: googleResults });
+          }
+        }
+
+        if (googleResults && Array.isArray(googleResults)) {
+          enrichedGoogle = googleResults.map((place) => {
             const distanceMeters = getHaversineDistance(
               origin.latitude,
               origin.longitude,
@@ -329,9 +392,107 @@ export const getAllFacilitiesNear = async (req, res, next) => {
         console.error('Error fetching Google Places:', err);
       }
     }
+    */
+    // =========================================================================
+
+    // =========================================================================
+    // [ACTIVE]: OPENSTREETMAP (OSM) / DB-PRIMARY PROVIDER
+    // Leverages verified local database landmarks and enriches with OpenStreetMap
+    // Nominatim / Overpass data with in-memory caching and safe timeout handling.
+    // =========================================================================
+    let enrichedOsm = [];
+    const activeSearchQuery = (q && q.trim()) 
+      ? q.trim() 
+      : (category && category !== 'All') 
+        ? (CATEGORY_OSM_KEYWORDS[category] || category) 
+        : null;
+
+    if (activeSearchQuery) {
+      try {
+        const osmQuery = encodeURIComponent(activeSearchQuery);
+        const osmCacheKey = `${origin.latitude.toFixed(3)},${origin.longitude.toFixed(3)}:${osmQuery}`;
+        const cachedOsm = osmCache.get(osmCacheKey);
+
+        let osmResults = null;
+        if (cachedOsm && Date.now() - cachedOsm.timestamp < OSM_CACHE_TTL) {
+          osmResults = cachedOsm.results;
+        } else {
+          // Bounding box around Bodh Gaya (~10km)
+          const minLon = origin.longitude - 0.08;
+          const maxLat = origin.latitude + 0.08;
+          const maxLon = origin.longitude + 0.08;
+          const minLat = origin.latitude - 0.08;
+          const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${osmQuery}&limit=10&addressdetails=1&viewbox=${minLon},${maxLat},${maxLon},${minLat}`;
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+          const osmRes = await fetch(osmUrl, {
+            headers: {
+              'User-Agent': 'BodhGaya-QRCode-Navigation/1.0',
+            },
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+
+          if (osmRes.ok) {
+            const osmData = await osmRes.json();
+            if (Array.isArray(osmData)) {
+              osmResults = osmData;
+              if (osmCache.size > 200) {
+                const oldestKey = osmCache.keys().next().value;
+                osmCache.delete(oldestKey);
+              }
+              osmCache.set(osmCacheKey, { timestamp: Date.now(), results: osmResults });
+            }
+          }
+        }
+
+        if (osmResults && Array.isArray(osmResults)) {
+          enrichedOsm = osmResults.map((place) => {
+            const pLat = parseFloat(place.lat);
+            const pLon = parseFloat(place.lon);
+            const distanceMeters = getHaversineDistance(
+              origin.latitude,
+              origin.longitude,
+              pLat,
+              pLon
+            );
+            const walkingTimeMinutes = Math.max(1, Math.round(distanceMeters / 80));
+
+            // Align type to requested category if explicitly selected
+            const inferredType = (category && category !== 'All')
+              ? category
+              : place.type 
+                ? (place.type.charAt(0).toUpperCase() + place.type.slice(1)) 
+                : 'Landmark';
+
+            return {
+              id: `osm-${place.place_id || place.osm_id}`,
+              name: place.name || (place.display_name ? place.display_name.split(',')[0] : 'Landmark'),
+              type: inferredType,
+              latitude: pLat,
+              longitude: pLon,
+              description: place.display_name || '',
+              distance: distanceMeters,
+              distanceFormatted:
+                distanceMeters < 1000
+                  ? `${Math.round(distanceMeters)}m`
+                  : `${(distanceMeters / 1000).toFixed(1)}km`,
+              walkingTime: walkingTimeMinutes,
+              walkingTimeFormatted: `${walkingTimeMinutes} min${walkingTimeMinutes > 1 ? 's' : ''}`,
+              source: 'osm',
+            };
+          });
+        }
+      } catch (osmErr) {
+        // Graceful fallback to verified DB records if network is offline or throttled
+      }
+    }
 
     // 4. Merge results & sort by distance
-    const merged = [...enrichedDb, ...enrichedGoogle];
+    // [PRESERVED: Google Places Merge]: const merged = [...enrichedDb, ...enrichedGoogle];
+    const merged = [...enrichedDb, ...enrichedOsm];
     merged.sort((a, b) => a.distance - b.distance);
 
     return res.status(200).json({

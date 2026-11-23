@@ -1,23 +1,38 @@
+import mongoose from 'mongoose';
 import { Category } from '../models/Category.js';
+import { DEFAULT_CATEGORIES } from '../scripts/seedCategories.js';
 
-// Get all active categories
+// Get all active categories (with graceful canonical fallback)
 export const getCategories = async (req, res, next) => {
   try {
-    const categories = await Category.find({});
+    let categories = [];
+    if (mongoose.connection.readyState === 1) {
+      categories = await Category.find({});
+    }
+    if (!categories || categories.length === 0) {
+      categories = DEFAULT_CATEGORIES;
+    }
     return res.status(200).json({ success: true, data: categories });
   } catch (error) {
-    next(error);
+    // Graceful fallback to default canonical categories
+    return res.status(200).json({ success: true, data: DEFAULT_CATEGORIES });
   }
 };
 
 // Create a category
 export const createCategory = async (req, res, next) => {
   try {
-    const { name, emoji, keyword, googleType } = req.body;
+    const { name, emoji, keyword, googleType, status } = req.body;
     if (!name || !emoji || !keyword) {
       return res.status(400).json({ success: false, message: 'Name, Emoji, and Keyword are required.' });
     }
-    const category = await Category.create({ name, emoji, keyword, googleType });
+    const category = await Category.create({ 
+      name, 
+      emoji, 
+      keyword, 
+      googleType, 
+      status: status || 'Active' 
+    });
     return res.status(201).json({ success: true, data: category });
   } catch (error) {
     next(error);

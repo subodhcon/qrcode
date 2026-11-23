@@ -1,113 +1,204 @@
 import React, { useState } from 'react';
-import Loading from '../components/Loading';
+import { Link } from 'react-router-dom';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function Home() {
+  const { t, currentLanguage } = useTranslation();
   const [downloading, setDownloading] = useState(false);
 
-  // Pure Canvas download — no html2canvas CORS issues
+  const qrTargetUrl = `${window.location.origin}/`;
+  const highResQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&ecc=H&data=${encodeURIComponent(qrTargetUrl)}`;
+
+  // Pure Canvas download — Crisp print quality @2x with official Bodh Gaya branding
   const downloadQR = async () => {
     if (downloading) return;
     setDownloading(true);
     try {
-      const slug = 'event-map';
-      const name = 'Event Navigator';
-      const qrTargetUrl = `${window.location.origin}/`;
-      const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrTargetUrl)}`;
+      const slug = 'bodhgaya-digital-guide';
 
-      // Fetch QR as blob to avoid canvas taint
+      // Fetch QR as blob to avoid canvas CORS taint
       const loadImg = (url) =>
         fetch(url)
           .then((r) => { if (!r.ok) throw new Error(); return r.blob(); })
           .then((blob) => new Promise((res, rej) => {
             const img = new Image();
-            img.onload  = () => res(img);
+            img.onload = () => res(img);
             img.onerror = rej;
             img.src = URL.createObjectURL(blob);
           }));
 
-      const qrImg = await loadImg(fallbackUrl);
+      const qrImg = await loadImg(highResQrUrl);
 
-      // Canvas dimensions @2x for crisp print quality
-      const W = 720, H = 1040, R = 40;
+      // Canvas dimensions @2x (800x1160) for sharp A4 print output
+      const W = 800, H = 1160, R = 36;
       const canvas = document.createElement('canvas');
-      canvas.width = W; canvas.height = H;
+      canvas.width = W;
+      canvas.height = H;
       const ctx = canvas.getContext('2d');
 
       const rr = (x, y, w, h, r) => {
         ctx.beginPath();
-        ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
-        ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-        ctx.lineTo(x+w,y+h-r);
-        ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-        ctx.lineTo(x+r,y+h);
-        ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-        ctx.lineTo(x,y+r);
-        ctx.quadraticCurveTo(x,y,x+r,y);
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
         ctx.closePath();
       };
 
-      // Background
-      const bg = ctx.createLinearGradient(0,0,0,H);
-      bg.addColorStop(0,'#0f172a'); bg.addColorStop(1,'#020617');
-      rr(0,0,W,H,R); ctx.fillStyle=bg; ctx.fill();
-      rr(0,0,W,H,R); ctx.strokeStyle='rgba(30,41,59,0.8)'; ctx.lineWidth=2; ctx.stroke();
+      // 1. Background gradient (Rich Slate / Deep Midnight Navy)
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#090d16');
+      bg.addColorStop(0.5, '#0f172a');
+      bg.addColorStop(1, '#020617');
+      rr(0, 0, W, H, R);
+      ctx.fillStyle = bg;
+      ctx.fill();
+      rr(0, 0, W, H, R);
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 3;
+      ctx.stroke();
 
-      // Glow
-      const g=ctx.createRadialGradient(80,80,0,80,80,200);
-      g.addColorStop(0,'rgba(16,185,129,0.1)'); g.addColorStop(1,'transparent');
-      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+      // 2. Subtle top ambient glow
+      const g = ctx.createRadialGradient(W / 2, 80, 0, W / 2, 80, 360);
+      g.addColorStop(0, 'rgba(16, 185, 129, 0.18)');
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
 
-      // Badge pill
-      const bW=260,bH=40,bX=(W-bW)/2,bY=56;
-      rr(bX,bY,bW,bH,20); ctx.fillStyle='rgba(16,185,129,0.1)'; ctx.fill();
-      rr(bX,bY,bW,bH,20); ctx.strokeStyle='rgba(16,185,129,0.25)'; ctx.lineWidth=1.5; ctx.stroke();
-      ctx.beginPath(); ctx.arc(bX+22,bY+20,5,0,Math.PI*2);
-      ctx.fillStyle='#10b981'; ctx.fill();
-      ctx.font='bold 17px Arial,sans-serif'; ctx.fillStyle='#10b981';
-      ctx.textAlign='center'; ctx.fillText('SCAN & NAVIGATE', W/2+6, bY+27);
+      // 3. Top badge pill: ज्ञान की पावन भूमि (Land of Enlightenment)
+      const bW = 380, bH = 38, bX = (W - bW) / 2, bY = 46;
+      rr(bX, bY, bW, bH, 19);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.fill();
+      rr(bX, bY, bW, bH, 19);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(bX + 22, bY + 19, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fbbf24';
+      ctx.fill();
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillStyle = '#fef08a';
+      ctx.textAlign = 'center';
+      ctx.fillText(currentLanguage === 'hi' ? '• ज्ञान की पावन भूमि •' : '• LAND OF ENLIGHTENMENT •', W / 2 + 8, bY + 25);
 
-      // Location name
-      ctx.font='bold 44px Arial,sans-serif'; ctx.fillStyle='#ffffff';
-      ctx.fillText(name, W/2, 168);
+      // 4. Main Title
+      ctx.font = '900 42px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      const mainTitle = currentLanguage === 'hi' ? 'बोधगया डिजिटल गाइड' : 'Bodh Gaya Digital Guide';
+      ctx.fillText(mainTitle, W / 2, 140);
 
       // Subtitle
-      ctx.font='22px Arial,sans-serif'; ctx.fillStyle='#64748b';
-      ctx.fillText('Event Navigation System', W/2, 208);
+      ctx.font = '600 18px sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('नगर परिषद बोधगया • Dynamic QR Navigation Guide', W / 2, 172);
 
-      // QR white box
-      const qS=420, qX=(W-qS)/2, qY=240, qP=22;
-      rr(qX,qY,qS,qS,20); ctx.fillStyle='#ffffff'; ctx.fill();
-      ctx.drawImage(qrImg, qX+qP, qY+qP, qS-qP*2, qS-qP*2);
+      // 5. QR White Box
+      const qS = 450, qX = (W - qS) / 2, qY = 205, qP = 25;
+      rr(qX, qY, qS, qS, 24);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.drawImage(qrImg, qX + qP, qY + qP, qS - qP * 2, qS - qP * 2);
 
       // Scanner corners
-      [[qX+12,qY+12,1,1],[qX+qS-12,qY+12,-1,1],[qX+12,qY+qS-12,1,-1],[qX+qS-12,qY+qS-12,-1,-1]]
-        .forEach(([cx,cy,dx,dy])=>{
-          ctx.strokeStyle='#10b981'; ctx.lineWidth=3.5; ctx.lineCap='round';
-          ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx*18,cy); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,cy+dy*18); ctx.stroke();
+      [[qX + 14, qY + 14, 1, 1], [qX + qS - 14, qY + 14, -1, 1], [qX + 14, qY + qS - 14, 1, -1], [qX + qS - 14, qY + qS - 14, -1, -1]]
+        .forEach(([cx, cy, dx, dy]) => {
+          ctx.strokeStyle = '#059669';
+          ctx.lineWidth = 4;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + dx * 22, cy);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx, cy + dy * 22);
+          ctx.stroke();
         });
 
-      // You Are Here
-      ctx.font='bold 30px Arial,sans-serif'; ctx.fillStyle='#ffffff';
-      ctx.fillText('📍 Event Main QR Code', W/2, 730);
-      ctx.font='21px Arial,sans-serif'; ctx.fillStyle='#94a3b8';
-      ctx.fillText('Scan to find nearest medical, restrooms & security', W/2, 768);
+      // 6. Scan CTA Instruction
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillStyle = '#f8fafc';
+      const scanInstruction = currentLanguage === 'hi' ? '📱 किसी भी फोन कैमरे से स्कैन करें' : '📱 Scan with any Phone Camera or Google Lens';
+      ctx.fillText(scanInstruction, W / 2, 698);
 
-      // Divider
-      ctx.beginPath(); ctx.moveTo(60,840); ctx.lineTo(W-60,840);
-      ctx.strokeStyle='rgba(30,41,59,0.6)'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.font = '500 17px sans-serif';
+      ctx.fillStyle = '#cbd5e1';
+      const subInstruction = currentLanguage === 'hi' 
+        ? 'महाबोधि मंदिर, मठ, पेयजल, शौचालय व अस्पताल का सीधा रास्ता'
+        : 'Open live interactive map, find nearest temples, toilets, water & medical';
+      ctx.fillText(subInstruction, W / 2, 730);
 
-      // Footer
-      ctx.font='19px Arial,sans-serif'; ctx.fillStyle='#475569';
-      ctx.fillText('Developed by Confluxaa  •  confluxaa.com', W/2, 878);
+      // 7. Facilities Quick Icons Bar
+      const fBoxW = 680, fBoxH = 60, fBoxX = (W - fBoxW) / 2, fBoxY = 765;
+      rr(fBoxX, fBoxY, fBoxW, fBoxH, 16);
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.7)';
+      ctx.fill();
+      rr(fBoxX, fBoxY, fBoxW, fBoxH, 16);
+      ctx.strokeStyle = 'rgba(100, 116, 139, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
-      // Download
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillStyle = '#e2e8f0';
+      const facilitiesList = currentLanguage === 'hi'
+        ? '🛕 मंदिर   •   💧 पेयजल   •   🚻 शौचालय   •   🏥 अस्पताल   •   🅿️ पार्किंग'
+        : '🛕 Temples   •   💧 Water   •   🚻 Toilets   •   🏥 Hospitals   •   🅿️ Parking';
+      ctx.fillText(facilitiesList, W / 2, fBoxY + 36);
+
+      // 8. Emergency Helpline Bar
+      const eBoxW = 680, eBoxH = 75, eBoxX = (W - eBoxW) / 2, eBoxY = 845;
+      rr(eBoxX, eBoxY, eBoxW, eBoxH, 16);
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+      ctx.fill();
+      rr(eBoxX, eBoxY, eBoxW, eBoxH, 16);
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillText(currentLanguage === 'hi' ? '🚨 24x7 आपातकालीन सहायता हेल्पलाइन' : '🚨 24x7 Emergency Services & Helpline', W / 2, eBoxY + 30);
+
+      ctx.font = '900 18px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('Emergency: 112   |   Police: 100   |   Ambulance: 102   |   Fire: 101', W / 2, eBoxY + 57);
+
+      // 9. Divider
+      ctx.beginPath();
+      ctx.moveTo(60, 960);
+      ctx.lineTo(W - 60, 960);
+      ctx.strokeStyle = 'rgba(51, 65, 85, 0.8)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // 10. Footer Section
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillText('🏛️ नगर परिषद बोधगया द्वारा अधिकृत (Authorized by Nagar Parishad Bodh Gaya)', W / 2, 1010);
+
+      ctx.font = '14px sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('Bodh Gaya Dynamic QR Navigation System  •  Developed by Yuganta Solutions (yugantasolutions.in)', W / 2, 1045);
+
+      // Download triggered
       canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href=url; a.download=`${slug}-qr-placard.png`;
-        document.body.appendChild(a); a.click();
-        document.body.removeChild(a); URL.revokeObjectURL(url);
+        a.href = url;
+        a.download = `${slug}-qr-placard.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }, 'image/png');
 
     } catch (err) {
@@ -118,94 +209,174 @@ export default function Home() {
     }
   };
 
-  const qrTargetUrl = `${window.location.origin}/`;
+  // Direct print function
+  const handleDirectPrint = () => {
+    window.print();
+  };
 
   return (
-    <div className="min-h-[85vh] w-full flex items-center justify-center py-8 md:py-16 px-4 bg-slate-50">
+    <div className="min-h-screen w-full flex flex-col items-center py-6 md:py-10 px-4 bg-slate-50">
+      
+      {/* ── Print Specific Styles ── */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #printable-placard, #printable-placard * {
+            visibility: visible;
+          }
+          #printable-placard {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 100% !important;
+            margin: 0;
+            padding: 0;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* ── Top Bar: Back Link & Language Selector ── */}
+      <header className="w-full max-w-4xl flex items-center justify-between pb-6 mb-2 border-b border-slate-200/80 no-print">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm"
+        >
+          <span>←</span>
+          <span>{t('backToHome') || "Back to Guide"}</span>
+        </Link>
+        <LanguageSelector />
+      </header>
       
       {/* ── Main Responsive Grid Wrapper ── */}
-      <div className="w-full max-w-4xl flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 animate-fade-slide-up">
+      <div className="w-full max-w-4xl flex flex-col md:flex-row items-center md:items-start justify-between gap-8 md:gap-12 animate-fade-slide-up">
 
-        {/* ── Left Column: Hero & Information/Instructions ── */}
-        <div className="text-center md:text-left space-y-5 md:flex-1 md:max-w-md">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-50 text-emerald-700 text-[11px] font-bold uppercase tracking-widest">
+        {/* ── Left Column: Instructions & Placement Guidelines ── */}
+        <div className="text-center md:text-left space-y-5 md:flex-1 md:max-w-md no-print">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-50 text-emerald-700 text-[11px] font-black uppercase tracking-wider">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            QR Navigation System
+            {t('badge') || "Bodh Gaya Digital Guide"}
           </div>
           
           <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-              Event Location Placard
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+              {t('qrPlacardTitle') || "Bodh Gaya Official QR Placard"}
             </h1>
-            <p className="text-sm text-slate-500 leading-relaxed">
-              Print and deploy this unique QR placard sign at the event to enable instant visitor navigation and digital guidance.
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+              {t('qrPlacardSubtitle') || "Print and deploy this official QR placard sign across key locations in Bodh Gaya to enable instant visitor navigation and digital guidance."}
             </p>
           </div>
 
           {/* Quick Guide / Instructions for Administrators */}
-          <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3 hidden md:block">
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Placement Guidelines</h3>
-            <ul className="text-xs text-slate-600 space-y-2.5">
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500">📍</span>
-                <span>Deploy at key high-traffic checkpoints like main entry gates and info booths.</span>
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3.5 text-left">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <span>📋</span>
+              <span>{t('placementGuidelines') || "Placement Guidelines"}</span>
+            </h3>
+            <ul className="text-xs text-slate-600 space-y-3 font-medium">
+              <li className="flex items-start gap-2.5">
+                <span className="text-emerald-600 text-sm shrink-0">📍</span>
+                <span>{t('guidelineCheckpoint') || "Deploy at key high-traffic checkpoints like Mahabodhi Temple gates, Gaya Railway Station, bus stands, and information booths."}</span>
               </li>
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500">🖨️</span>
-                <span>Print in color on A4/A3 card sheets for optimal scanner readability.</span>
+              <li className="flex items-start gap-2.5">
+                <span className="text-emerald-600 text-sm shrink-0">🖨️</span>
+                <span>{t('guidelinePaper') || "Print in color on A4/A3 card sheets for optimal weather resistance and scanner readability."}</span>
               </li>
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500">📶</span>
-                <span>Enables visitors to locate medical camps, toilets, security, and dining areas in one scan.</span>
+              <li className="flex items-start gap-2.5">
+                <span className="text-emerald-600 text-sm shrink-0">📶</span>
+                <span>{t('guidelineServices') || "Enables visitors to locate medical camps, toilets, security desks, and temples in one instant scan."}</span>
               </li>
             </ul>
           </div>
+
+          {/* Action Buttons for Mobile / Tablet */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              onClick={downloadQR}
+              disabled={downloading}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-5 rounded-2xl text-xs sm:text-sm font-extrabold text-white cursor-pointer transition-all duration-200 disabled:opacity-60 disabled:cursor-wait bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 active:scale-98"
+            >
+              {downloading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeLinecap="round" strokeOpacity="0.3" />
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  <span>{t('submitting') || "Generating..."}</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>{t('downloadPlacardBtn') || "Download Print Placard"}</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleDirectPrint}
+              className="flex items-center justify-center gap-2 py-3 px-5 rounded-2xl text-xs sm:text-sm font-extrabold text-slate-800 bg-white hover:bg-slate-100 border border-slate-300 shadow-sm transition-all cursor-pointer active:scale-98"
+            >
+              <span>🖨️</span>
+              <span>{t('directPrintBtn') || "Print Directly"}</span>
+            </button>
+          </div>
         </div>
 
-        {/* ── Right Column: QR Placard Card ── */}
+        {/* ── Right Column: QR Placard Live Card (Printable Area) ── */}
         <div className="w-full flex justify-center md:flex-1">
           <div
-            className="relative w-full max-w-[360px] rounded-[28px] overflow-hidden border border-slate-200 bg-white"
-            style={{
-              boxShadow: '0 10px 30px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.02)'
-            }}
+            id="printable-placard"
+            className="relative w-full max-w-[370px] rounded-[28px] overflow-hidden border border-slate-200 bg-white shadow-xl"
           >
-            {/* Subtle top accent gradient strip */}
-            <div className="h-1.5 bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500" />
+            {/* Top Amber Accent Strip */}
+            <div className="h-1.5 bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500" />
 
-            <div className="relative p-7 space-y-6 text-center">
+            <div className="p-6 sm:p-7 space-y-5 text-center">
 
               {/* Header badge */}
               <div className="space-y-1.5">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black uppercase tracking-widest">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Scan &amp; Navigate
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-amber-400 text-amber-300 text-[10px] font-black uppercase tracking-widest shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  {t('welcomeSubHeader') || "Land of Enlightenment"}
                 </div>
-                <h2 className="text-lg font-black text-slate-900">Event Navigator</h2>
-                <p className="text-[11px] text-slate-500">Event Navigation System</p>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                  {t('welcomeCity') || "Bodh Gaya"}
+                </h2>
+                <p className="text-[11px] font-bold text-slate-500">
+                  {t('badge') || "Bodh Gaya Digital Guide"}
+                </p>
               </div>
 
-              {/* QR Code frame */}
+              {/* QR Code frame with High Error Correction */}
               <div className="relative w-56 h-56 mx-auto">
                 {/* Scanner crosshairs */}
-                <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
                   <div className="absolute top-2.5 left-2.5 w-5 h-5 border-t-2 border-l-2 border-emerald-500 rounded-tl-md" />
                   <div className="absolute top-2.5 right-2.5 w-5 h-5 border-t-2 border-r-2 border-emerald-500 rounded-tr-md" />
                   <div className="absolute bottom-2.5 left-2.5 w-5 h-5 border-b-2 border-l-2 border-emerald-500 rounded-bl-md" />
                   <div className="absolute bottom-2.5 right-2.5 w-5 h-5 border-b-2 border-r-2 border-emerald-500 rounded-br-md" />
                 </div>
 
-                {/* Scan line animation */}
+                {/* Animated Scan Line */}
                 <div
-                  className="absolute left-3 right-3 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-70 z-10"
+                  className="absolute left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-80 z-10 pointer-events-none no-print"
                   style={{ animation: 'scanLine 2.5s ease-in-out infinite', top: '8px' }}
                 />
 
-                {/* QR image */}
-                <div className="w-full h-full bg-white rounded-2xl p-3 flex items-center justify-center shadow-sm border border-slate-100">
+                {/* High Res QR Image */}
+                <div className="w-full h-full bg-white rounded-2xl p-3 flex items-center justify-center shadow-inner border border-slate-100">
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrTargetUrl)}`}
-                    alt="Event Navigator QR Code"
+                    src={highResQrUrl}
+                    alt="Bodh Gaya Digital Guide QR Code"
                     className="w-full h-full object-contain"
                   />
                 </div>
@@ -213,49 +384,43 @@ export default function Home() {
 
               {/* CTA text */}
               <div className="space-y-1">
-                <p className="text-sm font-bold text-slate-900">📍 Event Main QR Code</p>
-                <p className="text-xs text-slate-500 leading-relaxed px-2">
-                  Scan to open the interactive map and find the nearest facilities and routes.
+                <p className="text-xs font-black text-slate-900 flex items-center justify-center gap-1.5">
+                  <span>📍</span>
+                  <span>{t('qrMainCodeTitle') || "Bodh Gaya Main Guide QR Code"}</span>
+                </p>
+                <p className="text-[11px] text-slate-500 leading-relaxed px-1">
+                  {t('qrScanCTA') || "Scan to open live interactive map, discover Mahabodhi Temple, Monasteries, Drinking Water, Restrooms, Hospitals & Emergency SOS."}
                 </p>
               </div>
 
-              {/* Download button */}
-              <button
-                onClick={downloadQR}
-                disabled={downloading}
-                className="download-btn w-full flex items-center justify-center gap-2 py-3 px-5 rounded-2xl text-sm font-bold text-white cursor-pointer transition-all duration-200 disabled:opacity-60 disabled:cursor-wait"
-                style={{
-                  background: downloading
-                    ? 'rgba(16,185,129,0.4)'
-                    : 'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)',
-                  boxShadow: '0 4px 20px rgba(16,185,129,0.25)'
-                }}
-              >
-                {downloading ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeLinecap="round" strokeOpacity="0.3" />
-                      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                    </svg>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download Print Placard
-                  </>
-                )}
-              </button>
-
-              {/* Footer tag */}
-              <div className="pt-1 border-t border-slate-100 text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                Developed by
-                <a href="https://confluxaa.com" target="_blank" rel="noopener noreferrer" className="font-black text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text hover:opacity-80 transition-opacity ml-0.5">
-                  Confluxaa
-                </a>
+              {/* Emergency strip on the physical placard */}
+              <div className="rounded-xl bg-red-50 border border-red-200/80 p-2.5 text-center space-y-0.5">
+                <p className="text-[10px] font-black text-red-700 uppercase tracking-wider">
+                  🚨 {t('emergencyHelpline') || "Emergency Helpline"}
+                </p>
+                <p className="text-xs font-black text-slate-900">
+                  112 • 100 • 102 • 101
+                </p>
               </div>
+
+              {/* Official Authorization & Footer */}
+              <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-500 space-y-1">
+                <p className="font-bold text-amber-700">
+                  🏛️ {t('authorizedBy') || "Authorized by Nagar Parishad Bodh Gaya."}
+                </p>
+                <div className="flex items-center justify-center gap-1 text-[9px] text-slate-400">
+                  <span>Developed by</span>
+                  <a
+                    href="https://yugantasolutions.in"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-black text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text hover:opacity-80 transition-opacity ml-0.5"
+                  >
+                    Yuganta Solutions
+                  </a>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>

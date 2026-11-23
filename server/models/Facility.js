@@ -7,8 +7,9 @@ const facilitySchema = new mongoose.Schema({
   description: { type: String },
   type: { 
     type: String, 
-    enum: ['Medical', 'Toilet', 'Police', 'Help'], 
-    default: 'Medical' 
+    default: 'Medical',
+    trim: true,
+    required: true
   },
   status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
   deletedAt: { type: Date, default: null }

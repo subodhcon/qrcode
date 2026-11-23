@@ -19,7 +19,6 @@ export default function Welcome() {
 
   // Location / GPS State
   const [locating, setLocating] = useState(false);
-  const [userCoords, setUserCoords] = useState(null);
 
   // Advisory Slider State
   const [activeSlide, setActiveSlide] = useState(0);
@@ -43,6 +42,8 @@ export default function Welcome() {
         const response = await api.get('/announcement');
         if (response && response.success && response.data && response.data.text) {
           setSlides([response.data.text, 'advisoryQueue', 'advisoryCleanliness', 'advisorySecurity']);
+        } else {
+          setSlides(['advisoryQueue', 'advisoryCleanliness', 'advisorySecurity']);
         }
       } catch (err) {
         console.error('Failed to load custom announcement', err);
@@ -74,7 +75,6 @@ export default function Welcome() {
         (position) => {
           setLocating(false);
           const { latitude, longitude } = position.coords;
-          setUserCoords({ latitude, longitude });
           navigate(`/map?lat=${latitude}&lng=${longitude}&locate=true`);
         },
         (error) => {
@@ -121,9 +121,11 @@ export default function Welcome() {
       
       {/* ── Background Image & Dark Overlay ── */}
       <div 
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 pointer-events-none opacity-85 scale-105"
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 pointer-events-none opacity-80 scale-105"
         style={{ backgroundImage: `url('/gaya_hero.png')` }}
       />
+      {/* Deep ambient dark gradient overlay for crystal-clear outdoor sunlight readability */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-slate-950/75 via-slate-900/50 to-slate-950/85 pointer-events-none" />
 
 
       {/* ── Main Responsive View Container ── */}
@@ -158,19 +160,19 @@ export default function Welcome() {
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-amber-400/80 shadow-md backdrop-blur-md">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                 <span className="text-[11px] font-black text-amber-300 tracking-wide uppercase">
-                  {t('welcomeSubHeader') || "Pitru Paksha Mela 2026"}
+                  {t('welcomeSubHeader') || "Land of Enlightenment"}
                 </span>
               </div>
-              <div className="space-y-0.5">
-                <p className="text-xs font-black text-white tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+              <div className="pt-1.5 pb-0.5">
+                <p className="text-sm font-bold text-white tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] mb-1 leading-normal">
                   {t('welcomeTitle') || "Welcome to"}
                 </p>
-                <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.95)]">
-                  {t('welcomeCity') || "Gaya Ji"}
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-normal leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.95)] py-0.5">
+                  {t('welcomeCity') || "Bodh Gaya"}
                 </h1>
               </div>
-              <p className="text-xs sm:text-sm text-white leading-relaxed font-black max-w-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                {t('welcomeTagline') || "Your Digital Guide for a Safe & Convenient Visit"}
+              <p className="text-xs sm:text-sm text-white/95 leading-relaxed font-bold max-w-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                {t('welcomeTagline') || "Land of Enlightenment • Your Digital Guide for a Safe & Convenient Visit"}
               </p>
             </section>
 
@@ -247,7 +249,7 @@ export default function Welcome() {
                       {t('feedbackTitle') || "Report Issue / Suggestion"}
                     </h3>
                     <p className="text-[11px] text-emerald-700 font-bold">
-                      Report info errors or submit suggestions
+                      {t('feedbackSubtitle') || "Report info errors or submit suggestions"}
                     </p>
                   </div>
                 </div>
@@ -288,35 +290,35 @@ export default function Welcome() {
           {/* ── Right Column: Quick Access & Emergency Helpline ── */}
           <div className="w-full md:w-[50%] flex flex-col justify-center space-y-4 md:space-y-6 md:max-w-[640px]">
             {/* ── Quick Access Grid ── */}
-            <section className="space-y-3">
-              <h3 className="text-base font-black text-white tracking-tight text-left drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+            <section className="space-y-2.5">
+              <h3 className="text-base font-bold text-white tracking-normal text-left drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] mb-1">
                 {t('quickAccess') || "Quick Access"}
               </h3>
 
-              <div className="grid grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
                 
-                {/* 1. Temples & Ghats */}
+                {/* 1. Temple */}
                 <Link
                   to="/map?category=Temple"
-                  className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover:scale-110 transition-transform">
                     🛕
                   </div>
-                  <span className="text-[10px] font-bold text-slate-800 leading-tight">
-                    {t('templesGhats') || "Temples & Ghats"}
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-snug text-center px-0.5 line-clamp-2">
+                    {t('temple') || t('templesGhats') || "Temple"}
                   </span>
                 </Link>
 
                 {/* 2. Emergency Services */}
                 <button
                   onClick={() => setSosActive(true)}
-                  className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group cursor-pointer"
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group cursor-pointer"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover:scale-110 transition-transform">
                     🚨
                   </div>
-                  <span className="text-[10px] font-bold text-slate-800 leading-tight">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-snug text-center px-0.5 line-clamp-2">
                     {t('emergencyServicesTitle') || "Emergency Help"}
                   </span>
                 </button>
@@ -324,78 +326,78 @@ export default function Welcome() {
                 {/* 3. Medical Camps */}
                 <Link
                   to="/map?category=Medical"
-                  className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover:scale-110 transition-transform">
                     🏥
                   </div>
-                  <span className="text-[10px] font-bold text-slate-800 leading-tight">
-                    Hospitals & Medical
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-snug text-center px-0.5 line-clamp-2">
+                    {t('hospitalsMedical') || "Hospitals & Medical"}
                   </span>
                 </Link>
 
                 {/* 4. Toilets */}
                 <Link
-                  to="/map?category=Toilet"
-                  className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
+                  to="/map?category=Restrooms"
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover:scale-110 transition-transform">
                     🚻
                   </div>
-                  <span className="text-[10px] font-bold text-slate-800 leading-tight">
-                    Toilets
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-snug text-center px-0.5 line-clamp-2">
+                    {t('toilets') || "Toilets"}
                   </span>
                 </Link>
 
                 {/* 5. Drinking Water */}
                 <Link
-                  to="/map?category=Water"
-                  className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
+                  to="/map?category=Drinking%20Water"
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover:scale-110 transition-transform">
                     💧
                   </div>
-                  <span className="text-[10px] font-bold text-slate-800 leading-tight">
-                    Drinking Water
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-snug text-center px-0.5 line-clamp-2">
+                    {t('drinkingWater') || "Drinking Water"}
                   </span>
                 </Link>
 
                 {/* 6. Parking Areas */}
                 <Link
                   to="/map?category=Parking"
-                  className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover:scale-110 transition-transform">
                     🅿️
                   </div>
-                  <span className="text-[10px] font-bold text-slate-800 leading-tight">
-                    Parking Areas
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-snug text-center px-0.5 line-clamp-2">
+                    {t('parkingAreas') || "Parking Areas"}
                   </span>
                 </Link>
 
-                {/* 7. Transport / Bus */}
+                {/* 7. Lost and Found */}
                 <Link
-                  to="/map?category=Transport"
-                  className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
+                  to="/map?category=Lost%20and%20Found"
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
-                    🚌
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover:scale-110 transition-transform">
+                    🧳
                   </div>
-                  <span className="text-[10px] font-bold text-slate-800 leading-tight">
-                    Bus Stands
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-snug text-center px-0.5 line-clamp-2">
+                    {t('busStands') || t('lostFound') || "Lost and Found"}
                   </span>
                 </Link>
 
                 {/* 8. Food & Dining */}
                 <Link
-                  to="/map?q=food"
-                  className="flex flex-col items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[96px] group"
+                  to="/map?category=Food%20%26%20Dining"
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg hover:border-slate-300 transition-all active:scale-95 text-center min-h-[92px] sm:min-h-[98px] group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover:scale-110 transition-transform">
                     🍽️
                   </div>
-                  <span className="text-[10px] font-bold text-slate-800 leading-tight">
-                    Food & Dining
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-snug text-center px-0.5 line-clamp-2">
+                    {t('foodDining') || "Food & Dining"}
                   </span>
                 </Link>
 
@@ -437,8 +439,8 @@ export default function Welcome() {
                     className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
                   >
                     <span className="text-[11px] sm:text-xs">🛡️</span>
-                    <div className="leading-none">
-                      <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Police</p>
+                    <div className="flex flex-col justify-center leading-tight">
+                      <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">{t('police') || "Police"}</p>
                       <p className="text-[9px] sm:text-[11px] font-black text-slate-900">100</p>
                     </div>
                   </a>
@@ -449,8 +451,8 @@ export default function Welcome() {
                     className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
                   >
                     <span className="text-[11px] sm:text-xs">🚑</span>
-                    <div className="leading-none">
-                      <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Ambulance</p>
+                    <div className="flex flex-col justify-center leading-tight">
+                      <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">{t('ambulance') || "Ambulance"}</p>
                       <p className="text-[9px] sm:text-[11px] font-black text-slate-900">102</p>
                     </div>
                   </a>
@@ -461,8 +463,8 @@ export default function Welcome() {
                     className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
                   >
                     <span className="text-[11px] sm:text-xs">🔥</span>
-                    <div className="leading-none">
-                      <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Fire</p>
+                    <div className="flex flex-col justify-center leading-tight">
+                      <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">{t('fire') || "Fire"}</p>
                       <p className="text-[9px] sm:text-[11px] font-black text-slate-900">101</p>
                     </div>
                   </a>
@@ -473,8 +475,8 @@ export default function Welcome() {
                     className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
                   >
                     <span className="text-[11px] sm:text-xs">👩</span>
-                    <div className="leading-none">
-                      <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Women</p>
+                    <div className="flex flex-col justify-center leading-tight">
+                      <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">{t('womenHelpline') || "Women"}</p>
                       <p className="text-[9px] sm:text-[11px] font-black text-slate-900">181</p>
                     </div>
                   </a>
@@ -485,8 +487,8 @@ export default function Welcome() {
                     className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
                   >
                     <span className="text-[11px] sm:text-xs">🌊</span>
-                    <div className="leading-none">
-                      <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Disaster</p>
+                    <div className="flex flex-col justify-center leading-tight">
+                      <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">{t('disasterMgmt') || "Disaster"}</p>
                       <p className="text-[9px] sm:text-[11px] font-black text-slate-900">1070</p>
                     </div>
                   </a>
@@ -497,8 +499,8 @@ export default function Welcome() {
                     className="flex items-center gap-1 hover:opacity-80 transition-opacity text-left shrink-0"
                   >
                     <span className="text-[11px] sm:text-xs">📞</span>
-                    <div className="leading-none">
-                      <p className="text-[7px] sm:text-[8px] font-bold text-slate-600">Emergency</p>
+                    <div className="flex flex-col justify-center leading-tight">
+                      <p className="text-[8px] sm:text-[9px] font-bold text-slate-600">{t('emergencyServices') || "Emergency"}</p>
                       <p className="text-[9px] sm:text-[11px] font-black text-slate-900">112</p>
                     </div>
                   </a>
@@ -524,17 +526,17 @@ export default function Welcome() {
         {/* ── Footer ── */}
         <footer className="relative z-30 text-center space-y-1 pt-2 pb-1 border-t border-slate-300/40">
           <p className="text-[10px] text-white leading-relaxed max-w-xs mx-auto font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-            {t('authorizedBy')}
+            {t('authorizedBy') || "Authorized by Nagar Parishad Bodh Gaya."}
           </p>
           <div className="text-[10px] text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
             Powered by{' '}
             <a 
-              href="https://confluxaa.com" 
+              href="https://yugantasolutions.in" 
               target="_blank" 
               rel="noopener noreferrer"
               className="font-black text-amber-300 hover:text-amber-200 transition-colors underline decoration-amber-300/60 decoration-1 cursor-pointer"
             >
-              Confluxaa
+              Yuganta Solutions
             </a>
           </div>
         </footer>
@@ -556,8 +558,8 @@ export default function Welcome() {
               {/* Drawer Top Header */}
               <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div className="space-y-0.5">
-                  <h3 className="text-base font-black text-slate-900">{t('welcomeCity') || "Gaya Ji"} Guide</h3>
-                  <p className="text-[10px] text-slate-500">{t('welcomeSubHeader') || "Pitru Paksha Mela 2026"}</p>
+                  <h3 className="text-base font-black text-slate-900">{t('welcomeCity') || "Bodh Gaya"} Guide</h3>
+                  <p className="text-[10px] text-slate-500">{t('welcomeSubHeader') || "Land of Enlightenment"}</p>
                 </div>
                 <button
                   onClick={() => setMenuOpen(false)}
@@ -583,16 +585,16 @@ export default function Welcome() {
                     setMenuOpen(false);
                     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
                     if (isStandalone) {
-                      alert('DIN App is already installed and running on your home screen!');
+                      alert('Bodh Gaya Guide is already installed and running on your home screen!');
                     } else {
-                      alert('To install DIN App:\n\n• Desktop Chrome/Edge: Click the Install icon (📥) at the right of your address bar.\n• Mobile Chrome/Android: Tap browser menu (⋮) -> "Add to Home screen".\n• iOS Safari: Tap Share (⎋) -> "Add to Home Screen".');
+                      alert('To install Bodh Gaya Guide:\n\n• Desktop Chrome/Edge: Click the Install icon (📥) at the right of your address bar.\n• Mobile Chrome/Android: Tap browser menu (⋮) -> "Add to Home screen".\n• iOS Safari: Tap Share (⎋) -> "Add to Home Screen".');
                     }
                   }}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors text-left cursor-pointer border border-emerald-200/60"
                 >
                   <span>📲</span>
                   <span className="flex items-center gap-1.5 font-black">
-                    <span>Install DIN App</span>
+                    <span>Install Bodh Gaya Guide</span>
                     <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-600 text-white">PWA</span>
                   </span>
                 </button>
@@ -622,7 +624,7 @@ export default function Welcome() {
                 </button>
 
                 <a
-                  href="http://www.pinddaangaya.bihar.gov.in/"
+                  href="https://gaya.nic.in/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-cyan-50 text-cyan-700 hover:text-cyan-800 transition-colors"
@@ -654,7 +656,7 @@ export default function Welcome() {
           <div className="w-full max-w-sm rounded-[24px] overflow-hidden shadow-2xl bg-white p-5 border border-slate-100 relative">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-sm font-extrabold text-[#1e293b] tracking-tight font-sans">
-                {t('oneTapToCall') || "One Tap Call"}
+                {t('emergencyHelpline') || t('oneTapToCall') || "One Tap Call"}
               </h3>
               <button
                 onClick={() => setSosActive(false)}
@@ -665,33 +667,74 @@ export default function Welcome() {
             </div>
 
             <div className="space-y-0.5 max-h-[340px] overflow-y-auto no-scrollbar pr-0.5 text-left">
+              {/* Police */}
               <a href="tel:100" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
-                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">Police Control Room (100)</span>
-                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-all"><span className="text-[#ef4444] text-xs">📞</span></div>
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  {t('police') || 'Police'} (100)
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
               </a>
+
+              {/* Ambulance */}
               <a href="tel:102" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
-                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">Ambulance Service (102)</span>
-                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-all"><span className="text-[#ef4444] text-xs">📞</span></div>
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  {t('ambulance') || 'Ambulance'} (102)
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
               </a>
+
+              {/* Fire */}
               <a href="tel:101" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
-                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">Fire Brigade (101)</span>
-                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-all"><span className="text-[#ef4444] text-xs">📞</span></div>
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  {t('fire') || 'Fire Brigade'} (101)
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
               </a>
+
+              {/* Women Helpline */}
               <a href="tel:1091" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
-                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">Women Helpline (1091)</span>
-                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-all"><span className="text-[#ef4444] text-xs">📞</span></div>
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  {t('womenHelpline') || 'Women Helpline'} (1091)
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
               </a>
+
+              {/* Child Helpline */}
               <a href="tel:1098" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
-                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">Child Helpline (1098)</span>
-                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-all"><span className="text-[#ef4444] text-xs">📞</span></div>
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  Child Helpline (1098)
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
               </a>
+
+              {/* Disaster Management */}
               <a href="tel:1070" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
-                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">Disaster Management (1070)</span>
-                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-all"><span className="text-[#ef4444] text-xs">📞</span></div>
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  {t('disasterMgmt') || 'Disaster Management'} (1070)
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
               </a>
+
+              {/* Medical Emergency */}
               <a href="tel:112" className="flex justify-between items-center py-3 text-decoration-none group">
-                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">Medical Emergency (112)</span>
-                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-all"><span className="text-[#ef4444] text-xs">📞</span></div>
+                <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
+                  {t('emergencyServices') || 'Medical Emergency'} (112)
+                </span>
+                <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
+                  <span className="text-[#ef4444] text-xs">📞</span>
+                </div>
               </a>
             </div>
           </div>
@@ -749,7 +792,7 @@ export default function Welcome() {
                     value={feedbackForm.name}
                     onChange={(e) => setFeedbackForm({ ...feedbackForm, name: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500 font-sans"
-                    placeholder="e.g. Subodh Kumar"
+                    placeholder={t('nameLabel') || "Your Name"}
                   />
                 </div>
 
@@ -786,7 +829,7 @@ export default function Welcome() {
                     required
                     rows="3"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500 font-sans resize-none"
-                    placeholder="Describe the issue or suggestion..."
+                    placeholder={t('messageLabel') || "Describe the issue or suggestion..."}
                   />
                 </div>
 
@@ -810,7 +853,7 @@ export default function Welcome() {
             <div className="h-1 bg-gradient-to-r from-amber-500 to-amber-300" />
             <div className="p-6 space-y-5">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900">{t('guidelinesModalTitle')}</h3>
+                <h3 className="text-sm font-black text-slate-900">{t('guidelinesModalTitle') || "Nagar Parishad Bodh Gaya Guidelines"}</h3>
                 <button onClick={() => setGuidelinesActive(false)} className="text-slate-400 hover:text-slate-700 transition-colors text-sm font-bold cursor-pointer">✕</button>
               </div>
               
@@ -825,7 +868,7 @@ export default function Welcome() {
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-                    <span>🧹</span> Cleanliness Guidelines
+                    <span>🧹</span> {t('cleanlinessGuidelines') || "Cleanliness Guidelines"}
                   </h4>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     {t('advisoryCleanliness')}
@@ -833,7 +876,7 @@ export default function Welcome() {
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold text-red-700 flex items-center gap-1.5">
-                    <span>🛡️</span> Security & Safety
+                    <span>🛡️</span> {t('securityGuidelines') || "Security Guidelines"}
                   </h4>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     {t('advisorySecurity')}
@@ -843,7 +886,7 @@ export default function Welcome() {
 
               <div className="space-y-2 pt-2 border-t border-slate-200">
                 <a
-                  href="http://www.pinddaangaya.bihar.gov.in/"
+                  href="https://gaya.nic.in/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition-all cursor-pointer shadow-lg shadow-amber-500/20"
@@ -864,5 +907,6 @@ export default function Welcome() {
       )}
 
     </div>
-  );
+
+);
 }

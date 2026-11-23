@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'local_development_jwt_secret_key_1234567890';
+import { getJwtSecret } from '../middlewares/auth.js';
 
 /**
  * Handle admin login credentials verification.
@@ -18,9 +17,11 @@ export const login = async (req, res, next) => {
     });
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+
   try {
-    // 1. Fetch user by email
-    const user = await User.findOne({ email });
+    // 1. Fetch user by email (normalized lowercase & trimmed)
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(401).json({
@@ -29,8 +30,8 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // 2. Compare hashed password
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    // 2. Compare hashed password asynchronously (non-blocking)
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
@@ -41,8 +42,8 @@ export const login = async (req, res, next) => {
     // 3. Generate JWT token
     const token = jwt.sign(
       { id: user._id.toString(), email: user.email },
-      JWT_SECRET,
-      { expiresIn: '24h' }
+      getJwtSecret(),
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
 
     // 4. Return token and user details

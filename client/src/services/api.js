@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Get API base URL from environment variables
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.example.com/v1';
+// Get API base URL from environment variables, fallback to relative /api
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Create custom axios instance
 const api = axios.create({
@@ -34,6 +34,15 @@ api.interceptors.response.use(
     return response.data;
   },
   (error) => {
+    // Automatic session expiry handling for Admin Portal
+    if (error.response?.status === 401 && window.location.pathname.startsWith('/admin')) {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      if (window.location.pathname !== '/admin/login') {
+        window.location.href = '/admin/login?expired=true';
+      }
+    }
+
     // Generic error handling logic
     const customError = {
       message: error.response?.data?.message || 'Something went wrong',

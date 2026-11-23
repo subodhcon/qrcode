@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
 import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 /* ── Facility Config ─────────────────────────────── */
 const FACILITY_CONFIG = {
@@ -18,8 +19,20 @@ const FACILITY_CONFIG = {
     navBg: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
     shadow: 'rgba(20,184,166,0.25)',
   },
+  'Help Desk': {
+    emoji: 'ℹ️', label: 'Help Desk',
+    color: '#14b8a6', bg: 'rgba(20,184,166,0.08)', border: 'rgba(20,184,166,0.2)',
+    navBg: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
+    shadow: 'rgba(20,184,166,0.25)',
+  },
   Toilet: {
-    emoji: '🚻', label: 'Restroom',
+    emoji: '🚻', label: 'Restrooms',
+    color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)',
+    navBg: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+    shadow: 'rgba(6,182,212,0.25)',
+  },
+  Restrooms: {
+    emoji: '🚻', label: 'Restrooms',
     color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)',
     navBg: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
     shadow: 'rgba(6,182,212,0.25)',
@@ -30,6 +43,48 @@ const FACILITY_CONFIG = {
     navBg: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
     shadow: 'rgba(129,140,248,0.25)',
   },
+  Security: {
+    emoji: '🛡️', label: 'Security',
+    color: '#818cf8', bg: 'rgba(129,140,248,0.08)', border: 'rgba(129,140,248,0.2)',
+    navBg: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
+    shadow: 'rgba(129,140,248,0.25)',
+  },
+  'Drinking Water': {
+    emoji: '💧', label: 'Drinking Water',
+    color: '#38bdf8', bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.2)',
+    navBg: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
+    shadow: 'rgba(56,189,248,0.25)',
+  },
+  Temple: {
+    emoji: '🛕', label: 'Temple',
+    color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)',
+    navBg: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
+    shadow: 'rgba(245,158,11,0.25)',
+  },
+  'Lost and Found': {
+    emoji: '🧳', label: 'Lost and Found',
+    color: '#6366f1', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.2)',
+    navBg: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+    shadow: 'rgba(99,102,241,0.25)',
+  },
+  Parking: {
+    emoji: '🅿️', label: 'Parking',
+    color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)',
+    navBg: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+    shadow: 'rgba(16,185,129,0.25)',
+  },
+  'Food & Dining': {
+    emoji: '🍽️', label: 'Food & Dining',
+    color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.2)',
+    navBg: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
+    shadow: 'rgba(249,115,22,0.25)',
+  },
+  Food: {
+    emoji: '🍽️', label: 'Food & Dining',
+    color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.2)',
+    navBg: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
+    shadow: 'rgba(249,115,22,0.25)',
+  },
 };
 
 /* ── FacilityCard ────────────────────────────────── */
@@ -39,6 +94,7 @@ function FacilityCard({ type, data, locationSlug }) {
   const name = data?.name || '—';
   const distance = data?.distanceFormatted || '—';
   const walkTime = data?.walkingTimeFormatted || '—';
+  const categoryLabel = t(type) || t(cfg.label) || cfg.label;
 
   return (
     <div
@@ -57,7 +113,7 @@ function FacilityCard({ type, data, locationSlug }) {
           <span className="text-xl shrink-0">{cfg.emoji}</span>
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>
-              {cfg.label}
+              {categoryLabel}
             </p>
             <h3 className="text-sm font-bold text-slate-900 leading-tight truncate">{name}</h3>
           </div>
@@ -106,6 +162,8 @@ export default function LocationLanding() {
   const [toilet, setToilet] = useState(null);
   const [police, setPolice] = useState(null);
   const [help, setHelp] = useState(null);
+  const [temple, setTemple] = useState(null);
+  const [water, setWater] = useState(null);
   const [sosActive, setSosActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -119,24 +177,29 @@ export default function LocationLanding() {
         const resolvedLocation = locationResponse.data;
         setLocation(resolvedLocation);
 
-        const fetchFacility = async (type, setter) => {
+        const fetchFacility = async (types, setter) => {
           try {
-            const res = await api.get(`/medical/nearest/${resolvedLocation._id || resolvedLocation.id}?type=${type}`);
-            if (res && res.success && res.data) {
-              setter(res.data);
-            } else {
-              setter(null);
+            const queryTypes = Array.isArray(types) ? types : [types];
+            for (const type of queryTypes) {
+              const res = await api.get(`/medical/nearest/${resolvedLocation._id || resolvedLocation.id}?type=${encodeURIComponent(type)}`);
+              if (res && res.success && res.data) {
+                setter(res.data);
+                return;
+              }
             }
+            setter(null);
           } catch {
             setter(null);
           }
         };
 
         await Promise.all([
-          fetchFacility('Medical', setMedical),
-          fetchFacility('Toilet', setToilet),
-          fetchFacility('Police', setPolice),
-          fetchFacility('Help', setHelp),
+          fetchFacility(['Temple', 'Mandir'], setTemple),
+          fetchFacility(['Medical', 'Clinic'], setMedical),
+          fetchFacility(['Restrooms', 'Toilet', 'Toilets'], setToilet),
+          fetchFacility(['Drinking Water', 'Water'], setWater),
+          fetchFacility(['Help Desk', 'Help', 'Information'], setHelp),
+          fetchFacility(['Security', 'Police'], setPolice),
         ]);
       } catch (err) {
         setError(err.message || 'Failed to load location.');
@@ -178,7 +241,7 @@ export default function LocationLanding() {
             {/* Header: Title & Close Button */}
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-sm font-extrabold text-[#1e293b] tracking-tight font-sans">
-                One Tap Call
+                {t('emergencyHelpline') || 'One Tap Call'}
               </h3>
               <button
                 onClick={() => setSosActive(false)}
@@ -194,7 +257,7 @@ export default function LocationLanding() {
               {/* Police Control Room */}
               <a href="tel:100" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
                 <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
-                  Police Control Room
+                  {t('police') || 'Police Control Room'}
                 </span>
                 <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
                   <span className="text-[#ef4444] text-xs">📞</span>
@@ -204,7 +267,7 @@ export default function LocationLanding() {
               {/* Ambulance Service */}
               <a href="tel:102" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
                 <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
-                  Ambulance Service
+                  {t('ambulance') || 'Ambulance Service'}
                 </span>
                 <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
                   <span className="text-[#ef4444] text-xs">📞</span>
@@ -214,7 +277,7 @@ export default function LocationLanding() {
               {/* Fire Brigade */}
               <a href="tel:101" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
                 <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
-                  Fire Brigade
+                  {t('fire') || 'Fire Brigade'}
                 </span>
                 <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
                   <span className="text-[#ef4444] text-xs">📞</span>
@@ -224,7 +287,7 @@ export default function LocationLanding() {
               {/* Women Helpline */}
               <a href="tel:1091" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
                 <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
-                  Women Helpline
+                  {t('womenHelpline') || 'Women Helpline'}
                 </span>
                 <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
                   <span className="text-[#ef4444] text-xs">📞</span>
@@ -234,7 +297,7 @@ export default function LocationLanding() {
               {/* Child Helpline */}
               <a href="tel:1098" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
                 <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
-                  Child Helpline
+                  Child Helpline (1098)
                 </span>
                 <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
                   <span className="text-[#ef4444] text-xs">📞</span>
@@ -244,7 +307,7 @@ export default function LocationLanding() {
               {/* Disaster Management */}
               <a href="tel:1070" className="flex justify-between items-center py-3 border-b border-[#f1f5f9] text-decoration-none group">
                 <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
-                  Disaster Management
+                  {t('disasterMgmt') || 'Disaster Management'}
                 </span>
                 <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
                   <span className="text-[#ef4444] text-xs">📞</span>
@@ -254,7 +317,7 @@ export default function LocationLanding() {
               {/* Medical Emergency */}
               <a href="tel:112" className="flex justify-between items-center py-3 text-decoration-none group">
                 <span className="text-xs font-bold text-[#1e293b] group-hover:text-red-500 transition-colors font-sans">
-                  Medical Emergency
+                  {t('emergencyServices') || 'Medical Emergency (112)'}
                 </span>
                 <div className="w-8 h-8 rounded-full border border-[#fca5a5]/30 bg-white flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all">
                   <span className="text-[#ef4444] text-xs">📞</span>
@@ -273,12 +336,15 @@ export default function LocationLanding() {
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           {t('scanConfirmed')}
         </div>
-        <button
-          onClick={() => setSosActive(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-red-300/60 bg-red-50 text-red-600 text-[11px] font-bold transition-all hover:bg-red-100 cursor-pointer"
-        >
-          🚨 SOS
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageSelector />
+          <button
+            onClick={() => setSosActive(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-red-300/60 bg-red-50 text-red-600 text-[11px] font-bold transition-all hover:bg-red-100 cursor-pointer"
+          >
+            🚨 SOS
+          </button>
+        </div>
       </div>
 
       {/* ── Main Layout Split ── */}
@@ -307,10 +373,10 @@ export default function LocationLanding() {
               </div>
 
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t('youAreHere')}</p>
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight">{location?.name}</h1>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1 leading-normal">{t('youAreHere')}</p>
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-snug py-0.5">{location?.name}</h1>
                 {location?.description && (
-                  <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">{location.description}</p>
+                  <p className="text-sm text-slate-500 mt-2 leading-relaxed">{location.description}</p>
                 )}
               </div>
 
@@ -334,7 +400,7 @@ export default function LocationLanding() {
 
         {/* Right Column: Nearby Facilities Section */}
         <div className="col-span-12 md:col-span-6 w-full mt-6 md:mt-0 space-y-4">
-          {(medical || help || toilet || police) && (
+          {(temple || medical || toilet || water || help || police) && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-black text-slate-900">{t('nearbyFacilities')}</h2>
@@ -343,10 +409,12 @@ export default function LocationLanding() {
 
               {/* 2-column dynamic grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {temple && <FacilityCard type="Temple" data={temple} locationSlug={location?.slug} />}
                 {medical && <FacilityCard type="Medical" data={medical} locationSlug={location?.slug} />}
-                {help && <FacilityCard type="Help" data={help} locationSlug={location?.slug} />}
-                {toilet && <FacilityCard type="Toilet" data={toilet} locationSlug={location?.slug} />}
-                {police && <FacilityCard type="Police" data={police} locationSlug={location?.slug} />}
+                {toilet && <FacilityCard type="Restrooms" data={toilet} locationSlug={location?.slug} />}
+                {water && <FacilityCard type="Drinking Water" data={water} locationSlug={location?.slug} />}
+                {help && <FacilityCard type="Help Desk" data={help} locationSlug={location?.slug} />}
+                {police && <FacilityCard type="Security" data={police} locationSlug={location?.slug} />}
               </div>
             </div>
           )}
@@ -357,9 +425,9 @@ export default function LocationLanding() {
       {/* ── Powered by footer ── */}
       <div className="text-center text-[10px] text-slate-500 font-medium pt-4 w-full border-t border-slate-200/50">
         Powered by{' '}
-        <a href="https://confluxaa.com" target="_blank" rel="noopener noreferrer"
+        <a href="https://yugantasolutions.in" target="_blank" rel="noopener noreferrer"
           className="font-extrabold text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text hover:opacity-80 transition-opacity">
-          Confluxaa
+          Yuganta Solutions
         </a>
       </div>
     </div>

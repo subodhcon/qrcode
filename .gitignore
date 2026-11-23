@@ -1,3 +1,7 @@
+# ==========================================
+# PRODUCTION .GITIGNORE FOR BODH GAYA QR & GUIDE
+# ==========================================
+
 # Logs
 logs
 *.log
@@ -7,34 +11,60 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Diagnostic / Runtime
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
 # Dependencies
 node_modules/
 **/node_modules/
 
-# Production builds
+# Production builds & PWA / Vite Caches
 dist/
 **/dist/
 dist-ssr
-*.local
+dev-dist/
+**/dev-dist/
+.vite/
+**/.vite/
+.eslintcache
+.stylelintcache
 
-# Environment variables
+# Environment variables & secrets (CRITICAL: Never commit secrets)
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.*.local
+client/.env
+client/.env.local
+server/.env
+server/.env.local
 **/client/.env
 **/server/.env
+!.env.example
+!client/.env.example
+!server/.env.example
 
-# Editor files
+# Ephemeral dynamic server uploads & generated assets
+server/public/uploads/
+server/public/uploads/**/*
+!server/public/uploads/.gitkeep
+server/public/qrcodes/*.png
+!server/public/qrcodes/.gitkeep
+
+# Editor & OS files
 .vscode/*
 !.vscode/extensions.json
 .idea/
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
+Thumbs.db
 
-# Ephemeral dynamic server uploads/generations
-server/public/qrcodes/*.png
-!server/public/qrcodes/.gitkeep
+# Test coverage
+coverage/
+*.lcov

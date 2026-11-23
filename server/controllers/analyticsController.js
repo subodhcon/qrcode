@@ -1,5 +1,6 @@
 import { Scan } from '../models/Scan.js';
 import { NavigationClick } from '../models/NavigationClick.js';
+import { MedicalClick } from '../models/MedicalClick.js';
 import { Category } from '../models/Category.js';
 
 /**
@@ -44,16 +45,19 @@ export const getTelemetryStats = async (req, res, next) => {
       facilityClicks[cat.name] = 0;
     });
 
-    // 2. Fetch and count click logs
-    const clicks = await NavigationClick.find({});
-    clicks.forEach((c) => {
-      const cat = c.locationId || 'General';
-      if (facilityClicks[cat] !== undefined) {
-        facilityClicks[cat] += 1;
-      } else {
-        // Log custom or legacy categories if they have clicks
-        facilityClicks[cat] = 1;
+    // 2. Fetch aggregated click counts directly from DB via Aggregation Pipeline (O(1) memory)
+    const aggregatedClicks = await NavigationClick.aggregate([
+      {
+        $group: {
+          _id: { $ifNull: ['$locationId', 'General'] },
+          count: { $sum: 1 }
+        }
       }
+    ]);
+
+    aggregatedClicks.forEach((item) => {
+      const cat = item._id || 'General';
+      facilityClicks[cat] = item.count;
     });
 
     return res.status(200).json({
@@ -68,3 +72,20 @@ export const getTelemetryStats = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Track medical/facility click event.
+ * POST /api/qrcodes/medical/:id/click
+ */
+export const trackMedicalClick = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await MedicalClick.create({ medicalCenterId: id });
+    return res.status(201).json({ success: true, message: 'Click recorded.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Alias for dashboard telemetry
+export const getDashboardStats = getTelemetryStats;

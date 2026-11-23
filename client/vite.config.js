@@ -17,9 +17,9 @@ export default defineConfig({
       },
       includeAssets: ['favicon.svg', 'gaya_hero.png', 'icons.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'DIN — Dynamic QR & Location Guide',
-        short_name: 'DIN Guide',
-        description: 'Dynamic QR Code Navigation & Location Landing Guide for Pilgrims and Visitors',
+        name: 'Bodh Gaya — Dynamic QR & Navigation Guide',
+        short_name: 'Bodh Gaya Guide',
+        description: 'Bodh Gaya Land of Enlightenment — Dynamic QR Code Navigation & Location Landing Guide',
         theme_color: '#059669',
         background_color: '#0f172a',
         display: 'standalone',
@@ -84,14 +84,62 @@ export default defineConfig({
               }
             }
           },
+          // =========================================================================
+          // [PRESERVED]: Google Maps API runtime caching
+          // {
+          //   urlPattern: /^https:\/\/maps\.googleapis\.com\/.*/i,
+          //   handler: 'NetworkFirst',
+          //   options: {
+          //     cacheName: 'google-maps-cache',
+          //     expiration: {
+          //       maxEntries: 30,
+          //       maxAgeSeconds: 60 * 60 * 24
+          //     },
+          //     cacheableResponse: {
+          //       statuses: [0, 200]
+          //     }
+          //   }
+          // },
+          // =========================================================================
+          // =========================================================================
+          // [ACTIVE]: OpenStreetMap Tiles & OSRM Routing runtime caching
+          // =========================================================================
           {
-            urlPattern: /^https:\/\/maps\.googleapis\.com\/.*/i,
+            urlPattern: /^https:\/\/[abc]\.tile\.openstreetmap\.org\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'osm-tiles-cache',
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/router\.project-osrm\.org\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'google-maps-cache',
+              cacheName: 'osrm-routes-cache',
               expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 2
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/api\/(categories|facilities|health)/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-offline-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days offline availability
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -104,7 +152,15 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
+    },
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
   },
 })

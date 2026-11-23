@@ -1,15 +1,41 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
+import L from 'leaflet';
 import api from '../services/api';
 import Loading from '../components/Loading';
 import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
-// Map Style Switcher options for Google Maps
-const MAP_TYPES = [
-  { key: 'roadmap', label: 'Standard Map', icon: '🗺️' },
-  { key: 'satellite', label: 'Satellite', icon: '🛰️' },
-  { key: 'hybrid', label: 'Hybrid', icon: '🌲' },
+const CANONICAL_CATEGORIES = [
+  { name: 'Temple', emoji: '🛕', status: 'Active' },
+  { name: 'Lost and Found', emoji: '🧳', status: 'Active' },
+  { name: 'Drinking Water', emoji: '💧', status: 'Active' },
+  { name: 'Restrooms', emoji: '🚻', status: 'Active' },
+  { name: 'Medical', emoji: '🏥', status: 'Active' },
+  { name: 'Help Desk', emoji: 'ℹ️', status: 'Active' },
+  { name: 'Security', emoji: '🛡️', status: 'Active' },
+  { name: 'Parking', emoji: '🅿️', status: 'Active' },
+  { name: 'Food & Dining', emoji: '🍽️', status: 'Active' }
 ];
+
+// =========================================================================
+// [PRESERVED]: Map Style Switcher options for Google Maps
+// const MAP_TYPES = [
+//   { key: 'roadmap', label: 'Standard Map', icon: '🗺️' },
+//   { key: 'satellite', label: 'Satellite', icon: '🛰️' },
+//   { key: 'hybrid', label: 'Hybrid', icon: '🌲' },
+// ];
+// =========================================================================
+
+// =========================================================================
+// [ACTIVE]: Map Style Switcher options for OpenStreetMap (OSM)
+// =========================================================================
+const MAP_TYPES = [
+  { key: 'osm', label: 'Street Map', icon: '🗺️' },
+  { key: 'satellite', label: 'Satellite', icon: '🛰️' },
+  { key: 'topo', label: 'Topography', icon: '⛰️' },
+];
+
 // Haversine distance helper in meters
 const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371e3; // Earth radius in meters
@@ -24,30 +50,44 @@ const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
+// Canonical fallback center: Mahabodhi Temple Complex, Bodh Gaya
+const DEFAULT_BODHGAYA_CENTER = {
+  latitude: 24.6961,
+  longitude: 84.9913,
+  name: 'Bodh Gaya (Mahabodhi Temple Complex)',
+};
+
 export default function NavigationMap() {
   const { locationId } = useParams();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const destinationParam = searchParams.get('destination');
 
-  // API Key state
-  const [googleMapsKey, setGoogleMapsKey] = useState(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || null);
+  // =========================================================================
+  // [PRESERVED]: Google Maps State & Directions Refs
+  // const [googleMapsKey, setGoogleMapsKey] = useState(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || null);
+  // const directionsRendererRef = useRef(null);
+  // const directionsServiceRef = useRef(null);
+  // const lastRoutedCoordsRef = useRef(null);
+  // const lastRouteTimeRef = useRef(0);
+  // =========================================================================
 
-  // Refs for Google Map instances
+  // [ACTIVE]: OpenStreetMap Provider configuration state
+  const [_mapProvider, setMapProvider] = useState('osm');
+
+  // Map DOM & Engine references (Works for both Leaflet/OSM & Google Maps)
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const tileLayerRef = useRef(null);
   const markersRef = useRef([]);
   const userMarkerRef = useRef(null);
   const userCircleRef = useRef(null);
+  const routePolylineRef = useRef(null);
   const hasCenteredRef = useRef(false);
   const lastFetchedCoordsRef = useRef(null);
-  const directionsRendererRef = useRef(null);
-  const directionsServiceRef = useRef(null);
-  const lastRoutedCoordsRef = useRef(null);
-  const lastRouteTimeRef = useRef(0);
 
   // State
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState(CANONICAL_CATEGORIES);
   const [facilities, setFacilities] = useState([]);
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +96,6 @@ export default function NavigationMap() {
 
   // Geolocation & Map State
   const [gpsPosition, setGpsPosition] = useState(null);
-  const [gpsError, setGpsError] = useState(null);
   const [heading, setHeading] = useState(0);
   const prevGpsPositionRef = useRef(null);
   const categoryParam = searchParams.get('category');
@@ -65,7 +104,7 @@ export default function NavigationMap() {
   // State
   const [selectedCategory, setSelectedCategory] = useState(categoryParam || 'All');
   const [searchQuery, setSearchQuery] = useState(queryParam || '');
-  const [mapType, setMapType] = useState('roadmap');
+  const [mapType, setMapType] = useState('osm');
   const [showSteps, setShowSteps] = useState(false);
   const [navigationSteps, setNavigationSteps] = useState([]);
   const [distanceText, setDistanceText] = useState('');
@@ -75,9 +114,10 @@ export default function NavigationMap() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [showMapTypes, setShowMapTypes] = useState(false);
   const [sosActive, setSosActive] = useState(false);
-  const [liveAddress, setLiveAddress] = useState('Gaya Ji, Bihar, India');
+  const [liveAddress, setLiveAddress] = useState('Bodh Gaya, Bihar, India');
+  const [gateLocation, setGateLocation] = useState(null);
 
-  // Active Origin coordinate
+  // Active Origin coordinate: GPS if available, else Gate location from URL, else Bodh Gaya Center fallback
   const activeOrigin = useMemo(() => {
     if (gpsPosition) {
       return {
@@ -86,8 +126,32 @@ export default function NavigationMap() {
         name: 'My Live GPS Location',
       };
     }
-    return null;
-  }, [gpsPosition]);
+    if (gateLocation) {
+      return {
+        latitude: gateLocation.latitude,
+        longitude: gateLocation.longitude,
+        name: gateLocation.name || 'Gate Location',
+      };
+    }
+    return DEFAULT_BODHGAYA_CENTER;
+  }, [gpsPosition, gateLocation]);
+
+  // Fetch gate location from backend if locationId URL param is present
+  useEffect(() => {
+    if (!locationId) return;
+    const fetchGateLocation = async () => {
+      try {
+        const res = await api.get(`/location/${locationId}`);
+        if (res && res.data) {
+          setGateLocation(res.data);
+          setError(null);
+        }
+      } catch (err) {
+        console.warn('Could not load gate location from slug:', err);
+      }
+    };
+    fetchGateLocation();
+  }, [locationId]);
 
   // Sync URL search parameters (category, q) to component state
   useEffect(() => {
@@ -108,26 +172,55 @@ export default function NavigationMap() {
     setShowStatus(true);
   }, [loading, scriptLoaded]);
 
-  // Fetch Google Maps API Key from backend if not set in client env
+  // =========================================================================
+  // [PRESERVED]: Fetch Google Maps API Key from backend
+  // useEffect(() => {
+  //   if (googleMapsKey) return;
+  //   const fetchMapsKey = async () => {
+  //     try {
+  //       const res = await api.get('/config/maps-key');
+  //       if (res.key) {
+  //         setGoogleMapsKey(res.key);
+  //       } else {
+  //         setError('Google Maps API key is missing on the server.');
+  //         setLoading(false);
+  //       }
+  //     } catch (err) {
+  //       console.error('Failed to load Google Maps key:', err);
+  //       setError('Failed to fetch Google Maps configuration from server.');
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchMapsKey();
+  // }, [googleMapsKey]);
+  // =========================================================================
+
+  // =========================================================================
+  // [ACTIVE]: Fetch Map Engine Configuration (OpenStreetMap / DB-Primary)
+  // =========================================================================
   useEffect(() => {
-    if (googleMapsKey) return;
-    const fetchMapsKey = async () => {
+    const fetchMapConfig = async () => {
       try {
         const res = await api.get('/config/maps-key');
-        if (res.key) {
+        if (res && res.provider === 'osm') {
+          setMapProvider('osm');
+          setScriptLoaded(true);
+        } else if (res && res.key) {
           setGoogleMapsKey(res.key);
+          setScriptLoaded(true);
         } else {
-          setError('Google Maps API key is missing on the server.');
-          setLoading(false);
+          // Fallback to OSM
+          setMapProvider('osm');
+          setScriptLoaded(true);
         }
       } catch (err) {
-        console.error('Failed to load Google Maps key:', err);
-        setError('Failed to fetch Google Maps configuration from server.');
-        setLoading(false);
+        console.warn('Map config load failed, defaulting to OpenStreetMap:', err);
+        setMapProvider('osm');
+        setScriptLoaded(true);
       }
     };
-    fetchMapsKey();
-  }, [googleMapsKey]);
+    fetchMapConfig();
+  }, []);
 
   // 1. Log QR scan event on mount
   useEffect(() => {
@@ -147,10 +240,12 @@ export default function NavigationMap() {
       try {
         const res = await api.get('/categories');
         // Filter only active categories
-        const activeCats = (res.data || []).filter(c => c.status === 'Active');
-        setCategories(activeCats);
+        const activeCats = (res.data || []).filter((c) => c.status === 'Active');
+        if (activeCats.length > 0) {
+          setCategories(activeCats);
+        }
       } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.warn('Using canonical fallback categories:', err.message || err);
       }
     };
     fetchCategories();
@@ -159,7 +254,6 @@ export default function NavigationMap() {
   // 3. Check Geolocation on Mount
   useEffect(() => {
     if (!navigator.geolocation) {
-      setGpsError('Geolocation is not supported by your browser.');
       setError('Geolocation is not supported by your browser.');
       setLoading(false);
       return;
@@ -200,13 +294,12 @@ export default function NavigationMap() {
           }
         }
         prevGpsPositionRef.current = { latitude: newLat, longitude: newLng };
-        setGpsError(null);
         setError(null);
       },
       (err) => {
-        console.warn('GPS Error:', err);
-        setGpsError('GPS access is blocked or timed out.');
-        setError('Geolocation access is required to use this map. Please enable location permissions in your browser or device settings.');
+        console.warn('GPS Notice (using Bodh Gaya Center fallback):', err);
+        // Do not block the user with a fatal error screen; gracefully use Bodh Gaya Center
+        setError(null);
         setLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -215,7 +308,7 @@ export default function NavigationMap() {
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, []);
+  }, [locationId]);
 
   // 3a. Device orientation listener to rotate compass arrow on compatible phones
   useEffect(() => {
@@ -232,66 +325,92 @@ export default function NavigationMap() {
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, []);
 
-  // 4. Load Google Maps script dynamically
+  // =========================================================================
+  // [PRESERVED]: Load Google Maps script dynamically
+  // useEffect(() => {
+  //   if (!googleMapsKey) return;
+  //   window.gm_authFailure = () => {
+  //     console.error('[Google Maps Auth Error]: API key authentication failed.');
+  //     setError('Google Maps failed to authenticate with the current API key.');
+  //     setLoading(false);
+  //   };
+  //   if (window.google && window.google.maps && window.google.maps.Map) {
+  //     setScriptLoaded(true);
+  //     return;
+  //   }
+  //   const scriptId = 'google-maps-script';
+  //   const existingScript = document.getElementById(scriptId);
+  //   if (!existingScript) {
+  //     window.initGoogleMaps = () => { setScriptLoaded(true); };
+  //     const script = document.createElement('script');
+  //     script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places&loading=async&callback=initGoogleMaps`;
+  //     script.id = scriptId;
+  //     script.async = true;
+  //     script.defer = true;
+  //     script.onerror = () => {
+  //       setError('Failed to load Google Maps script. Check your API key.');
+  //       setLoading(false);
+  //     };
+  //     document.body.appendChild(script);
+  //   } else {
+  //     const interval = setInterval(() => {
+  //       if (window.google && window.google.maps && window.google.maps.Map) {
+  //         setScriptLoaded(true);
+  //         clearInterval(interval);
+  //       }
+  //     }, 100);
+  //     return () => clearInterval(interval);
+  //   }
+  // }, [googleMapsKey]);
+  // =========================================================================
+
+  // =========================================================================
+  // [PRESERVED]: Google Maps Reverse Geocode active GPS coordinates
+  // useEffect(() => {
+  //   if (!scriptLoaded || !activeOrigin) return;
+  //   const lat = activeOrigin.latitude;
+  //   const lng = activeOrigin.longitude;
+  //   const geocoder = new window.google.maps.Geocoder();
+  //   geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+  //     if (status === 'OK' && results[0]) {
+  //       setLiveAddress(results[0].formatted_address);
+  //     }
+  //   });
+  // }, [scriptLoaded, activeOrigin]);
+  // =========================================================================
+
+  // =========================================================================
+  // [ACTIVE]: OpenStreetMap Reverse Geocode active GPS coordinates via Nominatim
+  // =========================================================================
   useEffect(() => {
-    if (!googleMapsKey) {
-      return;
-    }
-
-    if (window.google && window.google.maps && window.google.maps.Map) {
-      setScriptLoaded(true);
-      return;
-    }
-
-    const scriptId = 'google-maps-script';
-    const existingScript = document.getElementById(scriptId);
-
-    if (!existingScript) {
-      window.initGoogleMaps = () => {
-        setScriptLoaded(true);
-      };
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places&loading=async&callback=initGoogleMaps`;
-      script.id = scriptId;
-      script.async = true;
-      script.defer = true;
-      script.onerror = () => {
-        setError('Failed to load Google Maps script. Check your API key.');
-        setLoading(false);
-      };
-      document.body.appendChild(script);
-    } else {
-      // If script tag already exists, poll until window.google.maps.Map is fully loaded
-      const interval = setInterval(() => {
-        if (window.google && window.google.maps && window.google.maps.Map) {
-          setScriptLoaded(true);
-          clearInterval(interval);
-        }
-      }, 100);
-      return () => clearInterval(interval);
-    }
-  }, [googleMapsKey]);
-
-  // 4b. Reverse Geocode active GPS coordinates into physical address
-  useEffect(() => {
-    if (!scriptLoaded || !activeOrigin) return;
+    if (!activeOrigin) return;
     const lat = activeOrigin.latitude;
     const lng = activeOrigin.longitude;
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === 'OK' && results[0]) {
-        setLiveAddress(results[0].formatted_address);
-      } else {
-        console.warn('Geocoder failed due to:', status);
-      }
-    });
-  }, [scriptLoaded, activeOrigin]);
+
+    const controller = new AbortController();
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+      headers: { 'User-Agent': 'BodhGaya-Navigation/1.0' },
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.display_name) {
+          const parts = data.display_name.split(',');
+          setLiveAddress(parts.slice(0, 3).join(', '));
+        }
+      })
+      .catch(() => {
+        setLiveAddress('Bodh Gaya, Bihar, India');
+      });
+
+    return () => controller.abort();
+  }, [activeOrigin]);
 
   // 5. Fetch facilities near User's GPS or Scanned Location Slug
   useEffect(() => {
     const fetchFacilities = async () => {
-      // Don't start loading until we have GPS coordinates
-      if (!gpsPosition) {
+      // Don't start loading until we have origin coordinates (GPS or Gate)
+      if (!activeOrigin) {
         return;
       }
 
@@ -302,8 +421,8 @@ export default function NavigationMap() {
 
       let isFarEnough = false;
       if (lastFetchedCoordsRef.current) {
-        const dLat = gpsPosition.latitude - lastFetchedCoordsRef.current.latitude;
-        const dLng = gpsPosition.longitude - lastFetchedCoordsRef.current.longitude;
+        const dLat = activeOrigin.latitude - lastFetchedCoordsRef.current.latitude;
+        const dLng = activeOrigin.longitude - lastFetchedCoordsRef.current.longitude;
         // 0.0005 degrees is approx 50 meters
         if (Math.abs(dLat) > 0.0005 || Math.abs(dLng) > 0.0005) {
           isFarEnough = true;
@@ -318,24 +437,29 @@ export default function NavigationMap() {
         const params = {
           category: selectedCategory,
           q: searchQuery.trim() || undefined,
-          lat: gpsPosition.latitude,
-          lng: gpsPosition.longitude
+          lat: activeOrigin.latitude,
+          lng: activeOrigin.longitude
         };
 
         const res = await api.get('/facilities/near', { params });
         setFacilities(res.facilities || []);
 
         lastFetchedCoordsRef.current = {
-          latitude: gpsPosition.latitude,
-          longitude: gpsPosition.longitude,
+          latitude: activeOrigin.latitude,
+          longitude: activeOrigin.longitude,
           category: selectedCategory,
           searchQuery: searchQuery
         };
 
-        // Auto-select destination from query parameter if matches
+        // Auto-select destination from query parameter if matches (exact, substring, or id)
         if (destinationParam && res.facilities) {
+          const qDest = destinationParam.toLowerCase().trim();
           const match = res.facilities.find(
-            (f) => f.name.toLowerCase() === destinationParam.toLowerCase() || f.id === destinationParam
+            (f) =>
+              f.name.toLowerCase() === qDest ||
+              f.id === destinationParam ||
+              f.name.toLowerCase().includes(qDest) ||
+              qDest.includes(f.name.toLowerCase())
           );
           if (match) setSelectedFacility(match);
         }
@@ -350,55 +474,131 @@ export default function NavigationMap() {
     };
 
     fetchFacilities();
-  }, [gpsPosition, selectedCategory, searchQuery, destinationParam]);
+  }, [activeOrigin, selectedCategory, searchQuery, destinationParam]);
 
 
-  // 6. Initialize Google Map Instance
+  // =========================================================================
+  // [PRESERVED]: Initialize Google Map Instance
+  // useEffect(() => {
+  //   if (!scriptLoaded || !mapRef.current || !activeOrigin) return;
+  //   if (!mapInstanceRef.current) {
+  //     mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+  //       center: { lat: activeOrigin.latitude, lng: activeOrigin.longitude },
+  //       zoom: 17,
+  //       disableDefaultUI: true,
+  //       zoomControl: false,
+  //       mapTypeControl: false,
+  //       gestureHandling: 'greedy',
+  //       styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'on' }] }],
+  //     });
+  //     directionsServiceRef.current = new window.google.maps.DirectionsService();
+  //     directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
+  //       map: mapInstanceRef.current,
+  //       suppressMarkers: true,
+  //       preserveViewport: true,
+  //       polylineOptions: { strokeColor: '#10b981', strokeWeight: 6, strokeOpacity: 0.85 },
+  //     });
+  //     hasCenteredRef.current = true;
+  //   } else if (!hasCenteredRef.current) {
+  //     mapInstanceRef.current.setCenter({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
+  //     hasCenteredRef.current = true;
+  //   }
+  // }, [scriptLoaded, activeOrigin]);
+  //
+  // useEffect(() => {
+  //   if (mapInstanceRef.current) {
+  //     mapInstanceRef.current.setMapTypeId(mapType);
+  //   }
+  // }, [mapType]);
+  // =========================================================================
+
+  // =========================================================================
+  // [ACTIVE]: Initialize Leaflet / OpenStreetMap Instance (with resize observer)
+  // =========================================================================
   useEffect(() => {
-    if (!scriptLoaded || !mapRef.current || !activeOrigin) return;
+    if (!mapRef.current || !activeOrigin) return;
 
     if (!mapInstanceRef.current) {
-      // Create new Google Map
-      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-        center: { lat: activeOrigin.latitude, lng: activeOrigin.longitude },
+      if (mapRef.current._leaflet_id) {
+        delete mapRef.current._leaflet_id;
+      }
+
+      const map = L.map(mapRef.current, {
+        center: [activeOrigin.latitude, activeOrigin.longitude],
         zoom: 17,
-        disableDefaultUI: true,
         zoomControl: false,
-        mapTypeControl: false,
-        gestureHandling: 'greedy',
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'on' }],
-          },
-        ],
+        attributionControl: false,
       });
 
-      // Setup directions
-      directionsServiceRef.current = new window.google.maps.DirectionsService();
-      directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
-        map: mapInstanceRef.current,
-        suppressMarkers: true,
-        preserveViewport: true,
-        polylineOptions: {
-          strokeColor: '#10b981',
-          strokeWeight: 6,
-          strokeOpacity: 0.85,
-        },
+      const initialTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
       });
+      initialTile.addTo(map);
+      tileLayerRef.current = initialTile;
+
+      mapInstanceRef.current = map;
       hasCenteredRef.current = true;
     } else if (!hasCenteredRef.current) {
-      mapInstanceRef.current.setCenter({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
+      mapInstanceRef.current.setView([activeOrigin.latitude, activeOrigin.longitude], 17);
       hasCenteredRef.current = true;
     }
-  }, [scriptLoaded, activeOrigin]);
 
-  // 7. Update Map Type
+    // Invalidate size on window resize or device orientation change to prevent grey edge tiles
+    const handleResize = () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, [activeOrigin]);
+
+  // Cleanup Leaflet map instance on component unmount
   useEffect(() => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.setMapTypeId(mapType);
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        hasCenteredRef.current = false;
+      }
+    };
+  }, []);
+
+  // [ACTIVE]: Update OpenStreetMap Tile Layer based on mapType
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
     }
+
+    let newTileLayer;
+    if (mapType === 'satellite') {
+      newTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri',
+      });
+    } else if (mapType === 'topo') {
+      newTileLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxZoom: 17,
+        attribution: 'Map data &copy; OpenTopoMap',
+      });
+    } else {
+      newTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
+      });
+    }
+
+    newTileLayer.addTo(map);
+    tileLayerRef.current = newTileLayer;
   }, [mapType]);
 
   // Compute nearest services dynamically from local facilities array
@@ -428,52 +628,83 @@ export default function NavigationMap() {
 
       if (name.includes(q) || type.includes(q) || addr.includes(q) || desc.includes(q)) return true;
       if (q === 'temple' && (name.includes('mandir') || type === 'temple')) return true;
+      if ((q === 'lost' || q === 'found' || q.includes('lost')) && (name.includes('lost') || name.includes('found') || type.includes('lost') || desc.includes('lost'))) return true;
       if (q === 'police' && (name.includes('thana') || name.includes('outpost') || type === 'police')) return true;
       if (q === 'medical' && (name.includes('hospital') || name.includes('clinic') || type === 'medical')) return true;
       return false;
     });
   }, [facilities, searchQuery]);
 
-  // 8a. Draw & Update User Location Marker (Navigation Arrow)
+  // =========================================================================
+  // [PRESERVED]: Draw & Update Google Maps User Location Marker (Navigation Arrow)
+  // useEffect(() => {
+  //   if (!scriptLoaded || !mapInstanceRef.current || !activeOrigin) return;
+  //   const map = mapInstanceRef.current;
+  //   const position = { lat: activeOrigin.latitude, lng: activeOrigin.longitude };
+  //   const arrowIcon = {
+  //     path: 'M 0,-12 L 8,8 L 3,5 L -3,5 L -8,8 Z',
+  //     fillColor: '#3b82f6',
+  //     fillOpacity: 1,
+  //     strokeColor: '#ffffff',
+  //     strokeWeight: 2,
+  //     scale: 1.6,
+  //     rotation: heading || 0,
+  //     anchor: new window.google.maps.Point(0, 0),
+  //   };
+  //   if (!userMarkerRef.current) {
+  //     userMarkerRef.current = new window.google.maps.Marker({ position, map, title: t('youAreHere'), icon: arrowIcon });
+  //   } else {
+  //     userMarkerRef.current.setPosition(position);
+  //     userMarkerRef.current.setIcon(arrowIcon);
+  //   }
+  //   const accuracyRadius = Math.min(gpsPosition?.accuracy || 15, 30);
+  //   if (!userCircleRef.current) {
+  //     userCircleRef.current = new window.google.maps.Circle({ map, center: position, radius: accuracyRadius, fillColor: '#3b82f6', fillOpacity: 0.15, strokeColor: '#3b82f6', strokeOpacity: 0.35, strokeWeight: 1.5, clickable: false });
+  //   } else {
+  //     userCircleRef.current.setCenter(position);
+  //     userCircleRef.current.setRadius(accuracyRadius);
+  //   }
+  // }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, t]);
+  // =========================================================================
+
+  // =========================================================================
+  // [ACTIVE]: Leaflet / OpenStreetMap User Location Marker & Accuracy Halo
+  // =========================================================================
   useEffect(() => {
-    if (!scriptLoaded || !mapInstanceRef.current || !activeOrigin) {
-      if (userMarkerRef.current) {
-        userMarkerRef.current.setMap(null);
+    if (!mapInstanceRef.current || !activeOrigin) {
+      if (userMarkerRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(userMarkerRef.current);
         userMarkerRef.current = null;
       }
-      if (userCircleRef.current) {
-        userCircleRef.current.setMap(null);
+      if (userCircleRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(userCircleRef.current);
         userCircleRef.current = null;
       }
       return;
     }
 
     const map = mapInstanceRef.current;
-    const position = { lat: activeOrigin.latitude, lng: activeOrigin.longitude };
+    const latlng = [activeOrigin.latitude, activeOrigin.longitude];
 
-    // Beautiful navigation wedge SVG pointing UP
-    const arrowIcon = {
-      path: 'M 0,-12 L 8,8 L 3,5 L -3,5 L -8,8 Z',
-      fillColor: '#3b82f6',
-      fillOpacity: 1,
-      strokeColor: '#ffffff',
-      strokeWeight: 2,
-      scale: 1.6, // slightly larger for visibility
-      rotation: heading || 0,
-      anchor: new window.google.maps.Point(0, 0),
-    };
+    const arrowSvg = `
+      <div style="transform: rotate(${heading || 0}deg); transform-origin: center; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+        <svg viewBox="0 0 24 24" width="34" height="34" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));">
+          <path d="M12 2 L20 20 L12 16 L4 20 Z" fill="#3b82f6" stroke="#ffffff" stroke-width="2"/>
+        </svg>
+      </div>
+    `;
+
+    const userIcon = L.divIcon({
+      html: arrowSvg,
+      className: 'user-nav-heading-icon',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    });
 
     if (!userMarkerRef.current) {
-      userMarkerRef.current = new window.google.maps.Marker({
-        position,
-        map,
-        title: t('youAreHere'),
-        icon: arrowIcon,
-      });
-
-      const userInfoWindow = new window.google.maps.InfoWindow({
-        disableAutoPan: true,
-        content: `<div style="font-family: system-ui, -apple-system, sans-serif; padding: 2px 4px; min-width: 100px; text-align: left;">
+      const marker = L.marker(latlng, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+      marker.bindPopup(`
+        <div style="font-family: system-ui, -apple-system, sans-serif; padding: 2px 4px; min-width: 100px; text-align: left;">
           <div style="font-size: 11px; font-weight: 850; color: #0f172a; display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
             <span style="font-size: 12px;">📍</span> ${t('youAreHere')}
           </div>
@@ -481,229 +712,50 @@ export default function NavigationMap() {
             <span style="width: 4px; height: 4px; background: #3b82f6; border-radius: 50%;"></span>
             Accuracy: ±${Math.round(gpsPosition?.accuracy || 0)}m
           </div>
-        </div>`,
-      });
-
-      userMarkerRef.current.addListener('click', () => {
-        userInfoWindow.open(map, userMarkerRef.current);
-      });
-
-      // Auto-open "You are here" InfoWindow popup by default on map load
-      userInfoWindow.open(map, userMarkerRef.current);
+        </div>
+      `);
+      userMarkerRef.current = marker;
+      marker.openPopup();
     } else {
-      userMarkerRef.current.setPosition(position);
-      userMarkerRef.current.setIcon(arrowIcon);
+      userMarkerRef.current.setLatLng(latlng);
+      userMarkerRef.current.setIcon(userIcon);
     }
 
-    // Dynamic accuracy circle (representing the blue halo in Google Maps) - capped to max 30m for visual neatness
     const accuracyRadius = Math.min(gpsPosition?.accuracy || 15, 30);
     if (!userCircleRef.current) {
-      userCircleRef.current = new window.google.maps.Circle({
-        map,
-        center: position,
+      userCircleRef.current = L.circle(latlng, {
         radius: accuracyRadius,
+        color: '#3b82f6',
         fillColor: '#3b82f6',
         fillOpacity: 0.15,
-        strokeColor: '#3b82f6',
-        strokeOpacity: 0.35,
-        strokeWeight: 1.5,
-        clickable: false
-      });
+        weight: 1.5,
+      }).addTo(map);
     } else {
-      userCircleRef.current.setCenter(position);
+      userCircleRef.current.setLatLng(latlng);
       userCircleRef.current.setRadius(accuracyRadius);
     }
+  }, [activeOrigin, heading, gpsPosition?.accuracy, t]);
 
-    // User marker updated cleanly on GPS change without locking map center
-  }, [scriptLoaded, activeOrigin, heading, gpsPosition?.accuracy, t]);
-
-  // 8b. Draw Facilities Markers
-  useEffect(() => {
-    if (!scriptLoaded || !mapInstanceRef.current) return;
-
-    // Clear existing markers
-    markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = [];
-
-    const map = mapInstanceRef.current;
-
-    filteredFacilities.forEach((fac) => {
-      const typeLower = (fac.type || '').toLowerCase();
-      const nameLower = (fac.name || '').toLowerCase();
-      const descLower = (fac.description || '').toLowerCase();
-      const combined = `${typeLower} ${nameLower} ${descLower}`;
-
-      let emoji = null;
-
-      // Helper regex check for whole word / clean matching
-      const hasWord = (term) => new RegExp(`\\b${term}\\b`, 'i').test(combined);
-
-      if (typeLower === 'police' || hasWord('police') || hasWord('thana') || hasWord('outpost') || hasWord('security')) {
-        emoji = '🛡️';
-      } else if (typeLower === 'medical' || typeLower === 'hospital' || hasWord('hospital') || hasWord('medical') || hasWord('clinic') || hasWord('doctor') || hasWord('pharmacy')) {
-        emoji = '🏥';
-      } else if (typeLower === 'toilet' || typeLower === 'restroom' || hasWord('toilet') || hasWord('restroom') || hasWord('washroom')) {
-        emoji = '🚻';
-      } else if (typeLower === 'water' || hasWord('water') || hasWord('drinking')) {
-        emoji = '💧';
-      } else if (typeLower === 'parking' || hasWord('parking')) {
-        emoji = '🅿️';
-      } else if (typeLower === 'temple' || hasWord('temple') || hasWord('mandir') || hasWord('ghat') || hasWord('worship')) {
-        emoji = '🛕';
-      } else if (typeLower === 'transport' || hasWord('bus') || hasWord('railway') || hasWord('station')) {
-        emoji = '🚌';
-      } else if (hasWord('restaurant') || hasWord('food') || hasWord('hotel') || hasWord('cafe') || hasWord('bhojanalaya')) {
-        emoji = '🍽️';
-      } else {
-        const catConfig = categories.find(c => c.name.toLowerCase() === typeLower);
-        emoji = catConfig?.emoji || '📍';
-      }
-
-      const color = '#10b981';
-      const isSelected = selectedFacility && selectedFacility.id === fac.id;
-
-      const marker = new window.google.maps.Marker({
-        position: { lat: fac.latitude, lng: fac.longitude },
-        map,
-        title: fac.name,
-        label: {
-          text: emoji,
-          fontSize: isSelected ? '22px' : '18px',
-        },
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: isSelected ? 20 : 16,
-          fillColor: '#ffffff',
-          fillOpacity: 0.95,
-          strokeColor: color,
-          strokeWeight: 3,
-        },
-      });
-
-      const displayCategory = fac.type && fac.type !== 'General' ? fac.type : 'Location';
-
-      const infoContent = `
-        <div style="font-family: sans-serif; padding: 6px; min-width: 140px; color: #0f172a;">
-          <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: ${color}; margin-bottom: 2px;">
-            ${emoji} ${displayCategory}
-          </div>
-          <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">${fac.name}</div>
-          <div style="font-size: 10px; color: #64748b; margin-bottom: 6px;">
-            Distance: ${fac.distanceFormatted}
-          </div>
-          ${isSelected
-          ? '<span style="font-size:10px;font-weight:bold;color:#10b981;">✓ Selected Destination</span>'
-          : `<button id="nav-btn-${fac.id}" style="background-color:${color};color:#ffffff;border:none;padding:5px 10px;font-size:10px;font-weight:bold;border-radius:4px;cursor:pointer;width:100%;">Navigate Here</button>`
-        }
-        </div>
-      `;
-
-      const infoWindow = new window.google.maps.InfoWindow({
-        content: infoContent,
-      });
-
-      marker.addListener('click', () => {
-        infoWindow.open(map, marker);
-
-        // Bind navigation click event inside popup dynamically
-        window.google.maps.event.addListener(infoWindow, 'domready', () => {
-          const btn = document.getElementById(`nav-btn-${fac.id}`);
-          if (btn) {
-            btn.onclick = () => {
-              handleNavigateTo(fac);
-              infoWindow.close();
-            };
-          }
-        });
-      });
-
-      markersRef.current.push(marker);
-    });
-
-    // Auto-fit map bounds ONCE when category or search query changes so all radius markers are cleanly visible
-    if (filteredFacilities.length > 0 && !selectedFacility && mapInstanceRef.current) {
-      const bounds = new window.google.maps.LatLngBounds();
-      if (activeOrigin) {
-        bounds.extend({ lat: activeOrigin.latitude, lng: activeOrigin.longitude });
-      }
-      filteredFacilities.forEach((fac) => {
-        bounds.extend({ lat: fac.latitude, lng: fac.longitude });
-      });
-      mapInstanceRef.current.fitBounds(bounds, 60);
-    }
-  }, [scriptLoaded, filteredFacilities, selectedFacility, categories]);
-
-  // 9. Calculate Walking Directions (Optimized)
-  useEffect(() => {
-    if (!scriptLoaded || !directionsRendererRef.current || !directionsServiceRef.current || !activeOrigin || !selectedFacility) {
-      if (directionsRendererRef.current) {
-        directionsRendererRef.current.setDirections({ routes: [] });
-      }
-      return;
-    }
-
-    const now = Date.now();
-    const timeElapsed = now - lastRouteTimeRef.current;
-
-    let isFarEnough = true;
-    if (lastRoutedCoordsRef.current) {
-      const distance = getHaversineDistance(
-        activeOrigin.latitude,
-        activeOrigin.longitude,
-        lastRoutedCoordsRef.current.latitude,
-        lastRoutedCoordsRef.current.longitude
-      );
-      // Skip updates if user has moved less than 8 meters
-      if (distance < 8) {
-        isFarEnough = false;
-      }
-    }
-
-    // Force call if the selected facility has changed
-    const hasDestinationChanged =
-      !lastRoutedCoordsRef.current ||
-      lastRoutedCoordsRef.current.destinationId !== (selectedFacility._id || selectedFacility.id) ||
-      lastRoutedCoordsRef.current.destinationName !== selectedFacility.name;
-
-    // Only skip if the destination is the same, user hasn't moved far enough, AND it's been less than 10 seconds
-    if (!hasDestinationChanged && !isFarEnough && timeElapsed < 10000) {
-      return;
-    }
-
-    directionsServiceRef.current.route(
-      {
-        origin: { lat: activeOrigin.latitude, lng: activeOrigin.longitude },
-        destination: { lat: selectedFacility.latitude, lng: selectedFacility.longitude },
-        travelMode: window.google.maps.TravelMode.WALKING,
-      },
-      (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
-          directionsRendererRef.current.setDirections(result);
-
-          const leg = result.routes[0].legs[0];
-          setDistanceText(leg.distance.text);
-          setDurationText(leg.duration.text);
-          setNavigationSteps(leg.steps);
-          setRouteError(null);
-
-          // Update tracking refs on successful route calculation
-          lastRoutedCoordsRef.current = {
-            latitude: activeOrigin.latitude,
-            longitude: activeOrigin.longitude,
-            destinationId: selectedFacility._id || selectedFacility.id,
-            destinationName: selectedFacility.name,
-          };
-          lastRouteTimeRef.current = Date.now();
-        } else {
-          console.error('Directions request failed:', status);
-          setRouteError('Could not calculate walking path to this destination.');
-        }
-      }
-    );
-  }, [scriptLoaded, activeOrigin, selectedFacility]);
+  // =========================================================================
+  // [PRESERVED]: Draw Google Maps Facilities Markers
+  // useEffect(() => {
+  //   if (!scriptLoaded || !mapInstanceRef.current) return;
+  //   markersRef.current.forEach((marker) => marker.setMap(null));
+  //   markersRef.current = [];
+  //   const map = mapInstanceRef.current;
+  //   filteredFacilities.forEach((fac) => {
+  //     const marker = new window.google.maps.Marker({
+  //       position: { lat: fac.latitude, lng: fac.longitude },
+  //       map,
+  //       title: fac.name,
+  //     });
+  //     markersRef.current.push(marker);
+  //   });
+  // }, [scriptLoaded, filteredFacilities, selectedFacility]);
+  // =========================================================================
 
   // Navigation click handler
-  const handleNavigateTo = async (facility) => {
+  const handleNavigateTo = useCallback(async (facility) => {
     setSelectedFacility(facility);
     setIsNavigating(false);
     setSearchParams({ destination: facility.name });
@@ -714,35 +766,280 @@ export default function NavigationMap() {
     } catch (err) {
       console.warn('Failed to log click telemetry:', err);
     }
-  };
+  }, [setSearchParams]);
+
+  // =========================================================================
+  // [ACTIVE]: Leaflet / OpenStreetMap Facilities Markers
+  // =========================================================================
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const map = mapInstanceRef.current;
+
+    // Clear existing Leaflet markers
+    markersRef.current.forEach((marker) => {
+      if (marker && map.hasLayer(marker)) {
+        map.removeLayer(marker);
+      }
+    });
+    markersRef.current = [];
+
+    filteredFacilities.forEach((fac) => {
+      const typeLower = (fac.type || '').toLowerCase();
+      const nameLower = (fac.name || '').toLowerCase();
+      const descLower = (fac.description || '').toLowerCase();
+      const combined = `${typeLower} ${nameLower} ${descLower}`;
+
+      let emoji = null;
+      const hasWord = (term) => new RegExp(`\\b${term}\\b`, 'i').test(combined);
+
+      if (typeLower === 'police' || hasWord('police') || hasWord('thana') || hasWord('outpost') || hasWord('security')) {
+        emoji = '🛡️';
+      } else if (typeLower === 'medical' || typeLower === 'hospital' || hasWord('hospital') || hasWord('medical') || hasWord('clinic') || hasWord('doctor') || hasWord('pharmacy')) {
+        emoji = '🏥';
+      } else if (typeLower === 'toilet' || typeLower === 'restroom' || typeLower === 'restrooms' || hasWord('toilet') || hasWord('restroom') || hasWord('washroom')) {
+        emoji = '🚻';
+      } else if (typeLower === 'drinking water' || typeLower === 'water' || hasWord('water') || hasWord('drinking')) {
+        emoji = '💧';
+      } else if (typeLower === 'parking' || hasWord('parking')) {
+        emoji = '🅿️';
+      } else if (typeLower === 'temple' || hasWord('temple') || hasWord('mandir') || hasWord('ghat') || hasWord('worship')) {
+        emoji = '🛕';
+      } else if (typeLower === 'lost and found' || hasWord('lost') || hasWord('found') || hasWord('khoya') || hasWord('paya')) {
+        emoji = '🧳';
+      } else if (typeLower === 'help desk' || typeLower === 'help' || hasWord('help') || hasWord('information') || hasWord('inquiry')) {
+        emoji = 'ℹ️';
+      } else if (typeLower === 'food & dining' || typeLower === 'food' || hasWord('restaurant') || hasWord('food') || hasWord('dining') || hasWord('hotel') || hasWord('cafe') || hasWord('bhojanalaya')) {
+        emoji = '🍽️';
+      } else if (typeLower === 'transport' || hasWord('bus') || hasWord('railway') || hasWord('station')) {
+        emoji = '🚌';
+      } else {
+        const catConfig = categories.find((c) => c.name.toLowerCase() === typeLower);
+        emoji = catConfig?.emoji || '📍';
+      }
+
+      const isSelected = selectedFacility && (selectedFacility.id === fac.id || selectedFacility._id === fac.id);
+      const color = isSelected ? '#059669' : '#10b981';
+
+      const markerHtml = `
+        <div style="
+          width: ${isSelected ? '38px' : '32px'};
+          height: ${isSelected ? '38px' : '32px'};
+          background: #ffffff;
+          border: 3px solid ${color};
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: ${isSelected ? '20px' : '16px'};
+          box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+          cursor: pointer;
+          transition: transform 0.2s;
+        ">
+          ${emoji}
+        </div>
+      `;
+
+      const customIcon = L.divIcon({
+        html: markerHtml,
+        className: 'facility-osm-marker',
+        iconSize: [isSelected ? 38 : 32, isSelected ? 38 : 32],
+        iconAnchor: [isSelected ? 19 : 16, isSelected ? 19 : 16],
+      });
+
+      const marker = L.marker([fac.latitude, fac.longitude], { icon: customIcon }).addTo(map);
+
+      const displayCategory = fac.type && fac.type !== 'General' ? fac.type : 'Location';
+      const popupHtml = `
+        <div style="font-family: system-ui, -apple-system, sans-serif; padding: 4px; min-width: 140px; color: #0f172a;">
+          <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: ${color}; margin-bottom: 2px;">
+            ${emoji} ${displayCategory}
+          </div>
+          <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">${fac.name}</div>
+          <div style="font-size: 10px; color: #64748b; margin-bottom: 6px;">
+            ${t('distance') || 'Distance'}: ${fac.distanceFormatted || 'Nearby'}
+          </div>
+          ${
+            isSelected
+              ? `<span style="font-size:10px;font-weight:bold;color:#059669;">✓ ${t('navigatingTo') || 'Selected Destination'}</span>`
+              : `<button id="osm-nav-${fac.id}" style="background-color:${color};color:#ffffff;border:none;padding:5px 10px;font-size:10px;font-weight:bold;border-radius:4px;cursor:pointer;width:100%;">${t('navigate') || 'Navigate Here'}</button>`
+          }
+        </div>
+      `;
+
+      marker.bindPopup(popupHtml);
+      marker.on('popupopen', () => {
+        const btn = document.getElementById(`osm-nav-${fac.id}`);
+        if (btn) {
+          btn.onclick = () => {
+            handleNavigateTo(fac);
+            marker.closePopup();
+          };
+        }
+      });
+
+      markersRef.current.push(marker);
+    });
+
+    // Auto-fit map bounds when viewing search results without active destination
+    if (filteredFacilities.length > 0 && !selectedFacility && mapInstanceRef.current) {
+      const bounds = L.latLngBounds();
+      if (activeOrigin) {
+        bounds.extend([activeOrigin.latitude, activeOrigin.longitude]);
+      }
+      filteredFacilities.forEach((fac) => {
+        bounds.extend([fac.latitude, fac.longitude]);
+      });
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18 });
+    }
+  }, [filteredFacilities, selectedFacility, categories, activeOrigin, handleNavigateTo, t]);
+
+  // =========================================================================
+  // [PRESERVED]: Google Maps Directions Calculation
+  // useEffect(() => {
+  //   if (!scriptLoaded || !directionsRendererRef.current || !directionsServiceRef.current || !activeOrigin || !selectedFacility) return;
+  //   directionsServiceRef.current.route({
+  //     origin: { lat: activeOrigin.latitude, lng: activeOrigin.longitude },
+  //     destination: { lat: selectedFacility.latitude, lng: selectedFacility.longitude },
+  //     travelMode: window.google.maps.TravelMode.WALKING,
+  //   }, (result, status) => {
+  //     if (status === window.google.maps.DirectionsStatus.OK) {
+  //       directionsRendererRef.current.setDirections(result);
+  //     }
+  //   });
+  // }, [scriptLoaded, activeOrigin, selectedFacility]);
+  // =========================================================================
+
+  // =========================================================================
+  // [ACTIVE]: OpenStreetMap / OSRM Walking Directions Route
+  // =========================================================================
+  useEffect(() => {
+    if (!mapInstanceRef.current || !activeOrigin || !selectedFacility) {
+      if (routePolylineRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(routePolylineRef.current);
+        routePolylineRef.current = null;
+      }
+      return;
+    }
+
+    const map = mapInstanceRef.current;
+    const originLat = activeOrigin.latitude;
+    const originLng = activeOrigin.longitude;
+    const destLat = selectedFacility.latitude;
+    const destLng = selectedFacility.longitude;
+
+    const controller = new AbortController();
+    const osrmUrl = `https://router.project-osrm.org/route/v1/walking/${originLng},${originLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true`;
+
+    fetch(osrmUrl, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          const coordinates = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+
+          if (routePolylineRef.current && map.hasLayer(routePolylineRef.current)) {
+            map.removeLayer(routePolylineRef.current);
+          }
+
+          routePolylineRef.current = L.polyline(coordinates, {
+            color: '#10b981',
+            weight: 6,
+            opacity: 0.85,
+            lineJoin: 'round',
+          }).addTo(map);
+
+          const distMeters = route.distance;
+          const durSec = route.duration;
+          setDistanceText(distMeters < 1000 ? `${Math.round(distMeters)} m` : `${(distMeters / 1000).toFixed(1)} km`);
+          const mins = Math.max(1, Math.round(durSec / 60));
+          setDurationText(`${mins} min${mins > 1 ? 's' : ''}`);
+
+          if (route.legs && route.legs[0] && route.legs[0].steps) {
+            const steps = route.legs[0].steps.map((st) => ({
+              instructions: st.maneuver?.type === 'depart'
+                ? (t('startWalking') || 'Start walking towards destination')
+                : (st.name ? `${t('walkAlong') || 'Walk along'} ${st.name}` : (t('continuePathway') || 'Continue along pathway')),
+              distance: { text: st.distance < 1000 ? `${Math.round(st.distance)} m` : `${(st.distance / 1000).toFixed(1)} km` },
+              duration: { text: `${Math.round(st.duration / 60)} min` },
+            }));
+            setNavigationSteps(steps);
+          }
+          setRouteError(null);
+
+          map.fitBounds(routePolylineRef.current.getBounds(), { padding: [60, 60] });
+        } else {
+          // Fallback to straight-line navigation if OSRM route is unavailable
+          if (routePolylineRef.current && map.hasLayer(routePolylineRef.current)) {
+            map.removeLayer(routePolylineRef.current);
+          }
+          routePolylineRef.current = L.polyline(
+            [[originLat, originLng], [destLat, destLng]],
+            { color: '#10b981', weight: 4, dashArray: '6, 8', opacity: 0.85 }
+          ).addTo(map);
+
+          const distanceMeters = getHaversineDistance(originLat, originLng, destLat, destLng);
+          setDistanceText(distanceMeters < 1000 ? `${Math.round(distanceMeters)} m` : `${(distanceMeters / 1000).toFixed(1)} km`);
+          const mins = Math.max(1, Math.round(distanceMeters / 80));
+          setDurationText(`${mins} min${mins > 1 ? 's' : ''}`);
+        }
+      })
+      .catch(() => {
+        // Safe fallback polyline on network error or offline mode
+        if (routePolylineRef.current && map.hasLayer(routePolylineRef.current)) {
+          map.removeLayer(routePolylineRef.current);
+        }
+        routePolylineRef.current = L.polyline(
+          [[originLat, originLng], [destLat, destLng]],
+          { color: '#10b981', weight: 4, dashArray: '6, 8', opacity: 0.85 }
+        ).addTo(map);
+
+        const distanceMeters = getHaversineDistance(originLat, originLng, destLat, destLng);
+        setDistanceText(distanceMeters < 1000 ? `${Math.round(distanceMeters)} m` : `${(distanceMeters / 1000).toFixed(1)} km`);
+        const mins = Math.max(1, Math.round(distanceMeters / 80));
+        setDurationText(`${mins} min${mins > 1 ? 's' : ''}`);
+      });
+
+    return () => controller.abort();
+  }, [activeOrigin, selectedFacility, t]);
 
   // Recenter map to origin and force fetch facilities around current coordinates
   const handleRecenter = () => {
     if (mapInstanceRef.current && activeOrigin) {
       const map = mapInstanceRef.current;
       const zoom = 17;
-      map.setZoom(zoom);
-
       const latOffset = selectedFacility ? 0.08 / Math.pow(2, zoom - 10) : 0;
-      map.setCenter({ lat: activeOrigin.latitude - latOffset, lng: activeOrigin.longitude });
+      const targetLat = activeOrigin.latitude - latOffset;
+      const targetLng = activeOrigin.longitude;
+
+      if (typeof map.setView === 'function') {
+        // Leaflet / OpenStreetMap
+        map.setView([targetLat, targetLng], zoom);
+      } else if (typeof map.setCenter === 'function') {
+        // Google Maps
+        map.setZoom(zoom);
+        map.setCenter({ lat: targetLat, lng: targetLng });
+      }
 
       // Clear cache to force a fresh fetch call in useEffect
       lastFetchedCoordsRef.current = null;
-      setGpsPosition({ ...gpsPosition });
+      setGpsPosition((prev) => (prev ? { ...prev } : null));
     }
   };
 
-  // Missing API Key warning UI
-  if (!googleMapsKey && !loading) {
-    return (
-      <div className="max-w-md mx-auto my-12 bg-white border border-amber-300/40 rounded-2xl p-8 text-center shadow-xl">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Google Maps API Key Missing</h2>
-        <p className="text-slate-600 text-sm mb-6">
-          To run this dynamic real-time map, configure <code className="bg-slate-100 px-1 py-0.5 rounded text-amber-600">VITE_GOOGLE_MAPS_API_KEY</code> in your client's environment variables.
-        </p>
-      </div>
-    );
-  }
+  // =========================================================================
+  // [PRESERVED]: Google Maps Missing API Key warning UI
+  // if (!googleMapsKey && !loading && mapProvider === 'google') {
+  //   return (
+  //     <div className="max-w-md mx-auto my-12 bg-white border border-amber-300/40 rounded-2xl p-8 text-center shadow-xl">
+  //       <h2 className="text-xl font-bold text-slate-900 mb-2">Google Maps API Key Missing</h2>
+  //       <p className="text-slate-600 text-sm mb-6">
+  //         To run this dynamic real-time map, configure <code className="bg-slate-100 px-1 py-0.5 rounded text-amber-600">VITE_GOOGLE_MAPS_API_KEY</code> in your client's environment variables.
+  //       </p>
+  //     </div>
+  //   );
+  // }
+  // =========================================================================
 
   /* ── Error ── */
   if (error && !activeOrigin) {
@@ -760,7 +1057,7 @@ export default function NavigationMap() {
           </h2>
 
           <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-5">
-            To provide live navigation, calculate walking distances, and show nearby services on the map, DIN requires access to your device's location (GPS).
+            To provide live navigation, calculate walking distances, and show nearby services on the map, Bodh Gaya Guide requires access to your device's location (GPS).
           </p>
 
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left mb-6 space-y-2">
@@ -845,7 +1142,7 @@ export default function NavigationMap() {
         <div className="absolute top-3 inset-x-3 z-30 flex flex-col items-center gap-2 pointer-events-none">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pointer-events-auto w-full max-w-xl">
             
-            {/* Top Bar with Back Button & Search Input */}
+            {/* Top Bar with Back Button, Search Input & Language Selector */}
             <div className="flex items-center gap-2 w-full">
               {/* Back to Home / Welcome Page Button */}
               <Link
@@ -883,6 +1180,11 @@ export default function NavigationMap() {
                 ) : (
                   <span className="text-slate-400 text-xs">🔍</span>
                 )}
+              </div>
+
+              {/* Language Selector */}
+              <div className="shrink-0">
+                <LanguageSelector />
               </div>
             </div>
 
@@ -922,7 +1224,7 @@ export default function NavigationMap() {
             <div className="pointer-events-auto mt-2 bg-white/95 border border-amber-300/80 rounded-2xl p-3 shadow-xl backdrop-blur-md text-center max-w-md w-full animate-fade-in flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-800 text-left">
                 <span className="text-base">⚠️</span>
-                <span>No places found for "{searchQuery}"</span>
+                <span>{t('noPlacesFound') || 'No places found for'} "{searchQuery}"</span>
               </div>
               <button
                 onClick={() => {
@@ -931,7 +1233,7 @@ export default function NavigationMap() {
                 }}
                 className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-extrabold cursor-pointer transition-all active:scale-95 shrink-0"
               >
-                Clear Search
+                {t('close') || 'Clear Search'}
               </button>
             </div>
           )}
@@ -969,7 +1271,7 @@ export default function NavigationMap() {
         </div>
       )}
 
-      {/* ── Google Map Container ── */}
+      {/* ── [PRESERVED]: Google Map Container / [ACTIVE]: OpenStreetMap Leaflet Container ── */}
       <div ref={mapRef} className="flex-1 w-full h-full relative z-10" />
 
       {/* ── Floating Map Control Stack (Bottom Right) ── */}
@@ -1115,14 +1417,17 @@ export default function NavigationMap() {
                     <button
                       onClick={() => {
                         setIsNavigating(true);
-                        // Focus once on starting position when Start is tapped
+                        // Focus once on starting position when Start is tapped (Leaflet & Google Maps safe)
                         if (mapInstanceRef.current && activeOrigin) {
-                          mapInstanceRef.current.setZoom(19);
                           const latOffset = 0.08 / Math.pow(2, 19 - 10);
-                          mapInstanceRef.current.setCenter({ 
-                            lat: activeOrigin.latitude - latOffset, 
-                            lng: activeOrigin.longitude 
-                          });
+                          const targetLat = activeOrigin.latitude - latOffset;
+                          const targetLng = activeOrigin.longitude;
+                          if (typeof mapInstanceRef.current.setView === 'function') {
+                            mapInstanceRef.current.setView([targetLat, targetLng], 19);
+                          } else if (typeof mapInstanceRef.current.setCenter === 'function') {
+                            mapInstanceRef.current.setZoom(19);
+                            mapInstanceRef.current.setCenter({ lat: targetLat, lng: targetLng });
+                          }
                         }
                       }}
                       className="col-span-2 sm:col-span-1 bg-slate-800 hover:bg-slate-750 text-white font-extrabold py-2 px-4 rounded-full border border-slate-750 shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer shrink-0"
@@ -1226,12 +1531,12 @@ export default function NavigationMap() {
               <span className="text-[9px] text-slate-500 font-semibold">
                 Powered by{' '}
                 <a
-                  href="https://confluxaa.com"
+                  href="https://yugantasolutions.in"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 bg-clip-text hover:opacity-85 transition-opacity ml-0.5 cursor-pointer"
                 >
-                  Confluxaa
+                  Yuganta Solutions
                 </a>
               </span>
             </div>

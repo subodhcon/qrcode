@@ -1,6 +1,20 @@
 import jwt from 'jsonwebtoken';
 
 /**
+ * Returns JWT secret with strict security enforcement for production.
+ */
+export const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[Security Exception]: JWT_SECRET must be defined in production environment.');
+    }
+    return 'local_development_jwt_secret_key_1234567890';
+  }
+  return secret;
+};
+
+/**
  * Authentication middleware to validate JWTs in Request Headers.
  */
 export const requireAuth = (req, res, next) => {
@@ -16,7 +30,7 @@ export const requireAuth = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'local_development_jwt_secret_key_1234567890');
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded;
     next();
   } catch (error) {

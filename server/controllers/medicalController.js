@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Facility } from '../models/Facility.js';
 import { Location } from '../models/Location.js';
+import { CATEGORY_SYNONYMS } from './mapController.js';
 
 // Haversine distance calculator in meters
 function getHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -44,8 +45,14 @@ export const getNearestMedicalCenter = async (req, res, next) => {
       });
     }
 
-    // Find all active, non-deleted facilities of this specific type
-    const activeFacilities = await Facility.find({ type, status: 'Active', deletedAt: null });
+    // Find all active, non-deleted facilities of this specific type (with synonym matching)
+    const synonyms = CATEGORY_SYNONYMS[type] || [type];
+    const regexList = synonyms.map((s) => new RegExp(`^${s}$`, 'i'));
+    const activeFacilities = await Facility.find({ 
+      type: { $in: regexList }, 
+      status: 'Active', 
+      deletedAt: null 
+    });
 
     if (!activeFacilities || activeFacilities.length === 0) {
       return res.status(404).json({

@@ -1,6 +1,13 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure .env is loaded from server directory or fallback to cwd
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
