@@ -22,14 +22,34 @@ app.use(helmet({
   contentSecurityPolicy: false // Disable CSP to allow Leaflet tiles and scripts to run cleanly
 }));
 
-// Bulletproof Universal CORS & Preflight Handler for Vercel Serverless & Production
+// Strict CORS Origin Whitelist for Vercel Serverless & Production
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://bodhmahotsav.vercel.app',
+  'https://qrcode-yu4p.vercel.app',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+];
+const envOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+export const ALLOWED_ORIGINS = Array.from(new Set([...DEFAULT_ALLOWED_ORIGINS, ...envOrigins]));
+
 app.use((req, res, next) => {
-  const origin = req.headers.origin || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-CSRF-Token');
-  
+  const origin = req.headers.origin;
+  if (origin) {
+    const normalized = origin.replace(/\/$/, '');
+    if (ALLOWED_ORIGINS.includes(normalized)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-CSRF-Token');
+    } else if (req.method === 'OPTIONS') {
+      return res.status(403).json({ success: false, message: 'CORS origin not allowed.' });
+    }
+  }
+
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
@@ -38,7 +58,12 @@ app.use((req, res, next) => {
 
 // Complementary Express CORS Middleware
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const normalized = origin.replace(/\/$/, '');
+    if (ALLOWED_ORIGINS.includes(normalized)) return callback(null, true);
+    return callback(new Error('CORS origin not allowed'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']

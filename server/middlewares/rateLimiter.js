@@ -58,3 +58,9 @@ export const apiLimiter = createRateLimiter({
   max: 60, // Max 60 requests per minute
   message: 'Too many requests. Please slow down.'
 });
+
+export const lostReportLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 15, // Max 15 SOS reports per 10m per IP
+  message: 'Too many lost pilgrim reports submitted from this device. Please wait a few minutes or call Control Room 112.'
+});

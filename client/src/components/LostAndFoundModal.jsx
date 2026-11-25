@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../context/LanguageContext';
 import { MELA_COUNTERS } from '../constants/counters';
 import api from '../services/api';
 
-export default function LostAndFoundModal({ isOpen, onClose, initialMode = 'choose' }) {
+export default function LostAndFoundModal({ isOpen, onClose, initialMode = 'choose', initialPassId = '' }) {
   const { t, currentLanguage } = useTranslation();
   const navigate = useNavigate();
 
@@ -12,7 +12,7 @@ export default function LostAndFoundModal({ isOpen, onClose, initialMode = 'choo
   const [modalMode, setModalMode] = useState(initialMode);
 
   // Form State
-  const [passId, setPassId] = useState('');
+  const [passId, setPassId] = useState(initialPassId);
   const [isVerifyingPass, setIsVerifyingPass] = useState(false);
   const [passVerifiedData, setPassVerifiedData] = useState(null);
   const [passError, setPassError] = useState(null);
@@ -33,18 +33,16 @@ export default function LostAndFoundModal({ isOpen, onClose, initialMode = 'choo
   const [submitError, setSubmitError] = useState(null);
   const [submittedReport, setSubmittedReport] = useState(null);
 
-  if (!isOpen) return null;
-
   // Handle Verify Pass ID
-  const handleVerifyPass = async () => {
-    if (!passId.trim()) return;
+  const verifyPassById = useCallback(async (idToVerify) => {
+    const target = (idToVerify || '').trim().toUpperCase();
+    if (!target) return;
     setIsVerifyingPass(true);
     setPassError(null);
     setPassVerifiedData(null);
 
     try {
-      const cleanId = passId.trim().toUpperCase();
-      const res = await api.get(`/tourists/${cleanId}`);
+      const res = await api.get(`/tourists/${target}`);
       if (res && res.success && res.data) {
         const data = res.data;
         setPassVerifiedData(data);
@@ -64,7 +62,22 @@ export default function LostAndFoundModal({ isOpen, onClose, initialMode = 'choo
     } finally {
       setIsVerifyingPass(false);
     }
-  };
+  }, [currentLanguage]);
+
+  const handleVerifyPass = () => verifyPassById(passId);
+
+  useEffect(() => {
+    if (isOpen) {
+      setModalMode(initialMode);
+      if (initialPassId) {
+        const clean = initialPassId.trim().toUpperCase();
+        setPassId(clean);
+        verifyPassById(clean);
+      }
+    }
+  }, [isOpen, initialMode, initialPassId, verifyPassById]);
+
+  if (!isOpen) return null;
 
   // Handle Form Submit
   const handleSubmitReport = async (e) => {

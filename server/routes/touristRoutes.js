@@ -7,7 +7,8 @@ import {
   updateTouristStatus,
   deleteTourist
 } from '../controllers/touristController.js';
-import { requireAuth } from '../middlewares/auth.js';
+import { requireAuth, optionalAuth } from '../middlewares/auth.js';
+import { apiLimiter } from '../middlewares/rateLimiter.js';
 
 const router = Router();
 
@@ -38,7 +39,7 @@ const uploadFields = upload.fields([
 // Tourist Registration & Management Endpoints
 router.post('/register', requireAuth, uploadFields, registerTourist);
 router.get('/', requireAuth, getTourists);
-router.get('/:id', getTouristById);
+router.get('/:id', apiLimiter, optionalAuth, getTouristById);
 router.put('/:id/status', requireAuth, updateTouristStatus);
 router.delete('/:id', requireAuth, deleteTourist);
 

@@ -11,6 +11,7 @@ const LocationLanding = lazy(() => import('../pages/LocationLanding'));
 const NavigationMap = lazy(() => import('../pages/NavigationMap'));
 const AdminLogin = lazy(() => import('../pages/AdminLogin'));
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
+const PassVerification = lazy(() => import('../pages/PassVerification'));
 const NotFound = lazy(() => import('../pages/NotFound'));
 
 // Loader helper for lazy pages
@@ -44,6 +45,10 @@ export const router = createBrowserRouter([
       {
         path: 'map/:locationId',
         element: withSuspense(NavigationMap),
+      },
+      {
+        path: 'pass/:passId',
+        element: withSuspense(PassVerification),
       },
       {
         path: 'admin',

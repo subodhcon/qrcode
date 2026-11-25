@@ -40,3 +40,20 @@ export const requireAuth = (req, res, next) => {
     });
   }
 };
+
+/**
+ * Optional authentication middleware: attaches req.user if a valid Bearer token is present,
+ * otherwise continues without failing so public endpoints can return masked vs full views.
+ */
+export const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      req.user = jwt.verify(token, getJwtSecret());
+    } catch {
+      req.user = null;
+    }
+  }
+  next();
+};

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
 import TouristDesk from '../components/TouristDesk';
 import LostReportsDesk from '../components/LostReportsDesk';
+import FacilitiesManager from '../components/FacilitiesManager';
 import { useTranslation } from '../context/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
 
@@ -13,9 +14,11 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const { t, currentLanguage } = useTranslation();
 
-  // Tabs: 'tourists' | 'lostReports' | 'categories' | 'analytics' | 'announcements' | 'feedback'
+  // Tabs: 'tourists' | 'lostReports' | 'categories' | 'places' | 'analytics' | 'announcements' | 'feedback'
   const [activeTab, setActiveTab] = useState('tourists');
   const [activeLostCount, setActiveLostCount] = useState(0);
+  const [sosSoundMuted, setSosSoundMuted] = useState(() => localStorage.getItem('sosSoundMuted') === 'true');
+  const prevLostCountRef = useRef(0);
 
   // Shared List States
   const [categories, setCategories] = useState([]);
@@ -221,7 +224,7 @@ export default function AdminDashboard() {
       fetchTelemetry();
     } else if (activeTab === 'announcements') {
       fetchAnnouncement();
-    } else if (activeTab === 'lostReports') {
+    } else if (activeTab === 'lostReports' || activeTab === 'places') {
       setLoading(false);
       setError(null);
     } else if (activeTab === 'feedback') {
@@ -229,13 +232,49 @@ export default function AdminDashboard() {
     }
   }, [activeTab]);
 
+  const playSosChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      [880, 1174.66].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.18);
+        gain.gain.setValueAtTime(0.12, now + idx * 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.18 + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.18);
+        osc.stop(now + idx * 0.18 + 0.26);
+      });
+    } catch {
+      // Ignore audio autoplay blocks before user gesture
+    }
+  };
+
+  const toggleSosSound = () => {
+    setSosSoundMuted((prev) => {
+      const next = !prev;
+      localStorage.setItem('sosSoundMuted', String(next));
+      return next;
+    });
+  };
+
   // Live monitoring of missing pilgrim SOS reports
   useEffect(() => {
     const fetchLostStats = async () => {
       try {
         const res = await api.get('/lost-reports?status=Reported');
         if (res && res.stats) {
-          setActiveLostCount(res.stats.active || 0);
+          const nextCount = res.stats.active || 0;
+          if (nextCount > prevLostCountRef.current && !sosSoundMuted) {
+            playSosChime();
+          }
+          prevLostCountRef.current = nextCount;
+          setActiveLostCount(nextCount);
         }
       } catch {
         // ignore
@@ -244,7 +283,7 @@ export default function AdminDashboard() {
     fetchLostStats();
     const interval = setInterval(fetchLostStats, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [sosSoundMuted]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -402,6 +441,20 @@ export default function AdminDashboard() {
             )}
 
             <button
+              type="button"
+              onClick={toggleSosSound}
+              className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1.5 ${
+                sosSoundMuted
+                  ? 'bg-slate-800/80 text-slate-400 border-slate-700/60'
+                  : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+              }`}
+              title={sosSoundMuted ? 'Unmute SOS Audio Alert' : 'Mute SOS Audio Alert'}
+            >
+              <span>{sosSoundMuted ? '🔕' : '🔔'}</span>
+              <span className="hidden sm:inline">{sosSoundMuted ? 'Muted' : 'SOS Alert'}</span>
+            </button>
+
+            <button
               onClick={handleLogout}
               className="py-2.5 px-3.5 rounded-xl bg-slate-800/80 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 text-slate-300 text-xs sm:text-sm font-bold transition-all border border-slate-700/60 cursor-pointer flex items-center gap-1.5"
             >
@@ -489,6 +542,17 @@ export default function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveTab('places')}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+              activeTab === 'places'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
+            }`}
+          >
+            <span>📍 {t('placesTab') || 'Places & Facilities'}</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('announcements')}
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'announcements'
@@ -541,6 +605,8 @@ export default function AdminDashboard() {
           </div>
         ) : activeTab === 'lostReports' ? (
           <LostReportsDesk />
+        ) : activeTab === 'places' ? (
+          <FacilitiesManager />
         ) : activeTab === 'tourists' ? (
           <TouristDesk />
         ) : activeTab === 'categories' ? (

@@ -236,7 +236,19 @@ export default function LostReportsDesk() {
         </div>
       </div>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-bold">
+          ⚠️ {error}
+        </div>
+      )}
+
       {/* ── Incidents Table / Cards ── */}
+      {error && (
+        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-bold text-center">
+          ⚠️ {error}
+        </div>
+      )}
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-sm">
           <span className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin inline-block mr-2" />

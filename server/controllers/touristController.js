@@ -104,15 +104,12 @@ export const registerTourist = async (req, res, next) => {
 
     const savedTourist = await newTourist.save();
 
-    // Generate QR Code for pass verification
-    const qrPayload = JSON.stringify({
-      passId: savedTourist.registrationNo,
-      name: savedTourist.fullName,
-      type: savedTourist.type,
-      phone: `${savedTourist.countryCode} ${savedTourist.phone}`,
-      members: savedTourist.totalMembers,
-      date: savedTourist.createdAt
-    });
+    // Generate scannable URL QR Code for public pass verification
+    const frontendBase = (process.env.CLIENT_URL || 'https://bodhmahotsav.vercel.app')
+      .split(',')[0]
+      .trim()
+      .replace(/\/$/, '');
+    const qrPayload = `${frontendBase}/pass/${savedTourist.registrationNo}`;
 
     const qrCodeDataUrl = await QRCode.toDataURL(qrPayload, {
       errorCorrectionLevel: 'M',
@@ -202,24 +199,56 @@ export const getTouristById = async (req, res, next) => {
       });
     }
 
-    // Generate dynamic verification QR Code
-    const qrPayload = JSON.stringify({
-      passId: tourist.registrationNo,
-      name: tourist.fullName,
-      type: tourist.type,
-      phone: `${tourist.countryCode} ${tourist.phone}`,
-      members: tourist.totalMembers,
-      date: tourist.createdAt
-    });
+    // Generate scannable URL QR Code for public pass verification
+    const frontendBase = (process.env.CLIENT_URL || 'https://bodhmahotsav.vercel.app')
+      .split(',')[0]
+      .trim()
+      .replace(/\/$/, '');
+    const qrPayload = `${frontendBase}/pass/${tourist.registrationNo}`;
 
     const qrCodeDataUrl = await QRCode.toDataURL(qrPayload, {
       errorCorrectionLevel: 'M',
       margin: 2
     });
 
+    // Mask sensitive PII for unauthenticated public pass lookups
+    const maskValue = (val) => {
+      const str = String(val || '').trim();
+      if (!str) return '';
+      if (str.length <= 4) return '****';
+      return `${'*'.repeat(Math.min(6, str.length - 4))}${str.slice(-4)}`;
+    };
+
+    const responseData = req.user
+      ? tourist
+      : {
+          _id: tourist._id,
+          registrationNo: tourist.registrationNo,
+          type: tourist.type,
+          fullName: tourist.fullName,
+          phone: maskValue(tourist.phone),
+          countryCode: tourist.countryCode,
+          emergencyContact: {
+            name: tourist.emergencyContact?.name || '',
+            phone: maskValue(tourist.emergencyContact?.phone),
+            relation: tourist.emergencyContact?.relation || ''
+          },
+          photoUrl: tourist.photoUrl,
+          idCardType: tourist.idCardType,
+          idCardNumber: maskValue(tourist.idCardNumber),
+          city: tourist.city,
+          state: tourist.state,
+          country: tourist.country,
+          groupName: tourist.groupName,
+          totalMembers: tourist.totalMembers,
+          status: tourist.status,
+          createdAt: tourist.createdAt,
+          isMaskedPublicView: true
+        };
+
     return res.status(200).json({
       success: true,
-      data: tourist,
+      data: responseData,
       qrCodeDataUrl
     });
   } catch (error) {

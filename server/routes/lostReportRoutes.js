@@ -6,11 +6,12 @@ import {
   deleteLostReport
 } from '../controllers/lostReportController.js';
 import { requireAuth } from '../middlewares/auth.js';
+import { lostReportLimiter } from '../middlewares/rateLimiter.js';
 
 const router = Router();
 
-// Public endpoint for mela counters and pilgrims to report a lost person
-router.post('/', createLostReport);
+// Public endpoint for mela counters and pilgrims to report a lost person (rate-limited)
+router.post('/', lostReportLimiter, createLostReport);
 
 // Superadmin / Control Room endpoints
 router.get('/', requireAuth, getLostReports);
