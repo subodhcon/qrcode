@@ -15,7 +15,14 @@ export default defineConfig({
         enabled: true,
         type: 'module'
       },
-      includeAssets: ['favicon.svg', 'gaya_hero.png', 'icons.svg', 'apple-touch-icon.png'],
+      includeAssets: [
+        'favicon.svg',
+        'bodhgaya_mahabodhi.jpg',
+        'bodhgaya_buddha.jpg',
+        'bodhgaya_monastery.jpg',
+        'icons.svg',
+        'apple-touch-icon.png'
+      ],
       manifest: {
         name: 'Bodh Gaya — Dynamic QR & Navigation Guide',
         short_name: 'Bodh Gaya Guide',
@@ -68,7 +75,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,json}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

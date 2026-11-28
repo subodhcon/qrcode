@@ -5,6 +5,12 @@ import LanguageSelector from '../components/LanguageSelector';
 import LostAndFoundModal from '../components/LostAndFoundModal';
 import api from '../services/api';
 
+const HERO_BACKGROUNDS = [
+  '/bodhgaya_mahabodhi.jpg',
+  '/bodhgaya_buddha.jpg',
+  '/bodhgaya_monastery.jpg',
+];
+
 export default function Welcome() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -25,6 +31,7 @@ export default function Welcome() {
   // Advisory Slider State
   const [activeSlide, setActiveSlide] = useState(0);
   const [slides, setSlides] = useState(['advisoryQueue', 'advisoryCleanliness', 'advisorySecurity']);
+  const [bgIndex, setBgIndex] = useState(0);
 
   // Feedback Form State
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
@@ -60,6 +67,17 @@ export default function Welcome() {
     }, 5000);
     return () => clearInterval(interval);
   }, [slides]);
+
+  // Smooth 6.5s crossfade slideshow for Bodh Gaya hero backgrounds
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      return undefined;
+    }
+    const bgTimer = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % HERO_BACKGROUNDS.length);
+    }, 6500);
+    return () => clearInterval(bgTimer);
+  }, []);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -121,11 +139,17 @@ export default function Welcome() {
   return (
     <div className="relative min-h-screen w-full bg-slate-50 text-slate-900 flex flex-col items-center justify-between md:justify-center overflow-x-hidden font-sans selection:bg-emerald-100 selection:text-emerald-800">
       
-      {/* ── Background Image & Dark Overlay ── */}
-      <div 
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 pointer-events-none opacity-80 scale-105"
-        style={{ backgroundImage: `url('/gaya_hero.png')` }}
-      />
+      {/* ── Bodh Gaya Background Slideshow & Dark Overlay ── */}
+      {HERO_BACKGROUNDS.map((imgUrl, idx) => (
+        <div
+          key={imgUrl}
+          aria-hidden="true"
+          className={`fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ease-in-out pointer-events-none scale-105 ${
+            idx === bgIndex ? 'opacity-80' : 'opacity-0'
+          }`}
+          style={{ backgroundImage: `url('${imgUrl}')` }}
+        />
+      ))}
       {/* Deep ambient dark gradient overlay for crystal-clear outdoor sunlight readability */}
       <div className="fixed inset-0 z-0 bg-gradient-to-b from-slate-950/75 via-slate-900/50 to-slate-950/85 pointer-events-none" />
 
